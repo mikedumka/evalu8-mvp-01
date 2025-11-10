@@ -5,6 +5,7 @@ import {
   Sparkles,
   Users2,
 } from "lucide-react";
+import { useAuth } from "./hooks/useAuth";
 
 const highlights: Array<{
   icon: LucideIcon;
@@ -38,6 +39,16 @@ const highlights: Array<{
 ];
 
 function App() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-surface-950 via-surface-900 to-surface-950">
+        <div className="text-surface-300">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-surface-950 via-surface-900 to-surface-950 px-4 py-12 text-surface-50">
       <main className="mx-auto w-full max-w-3xl rounded-3xl border border-white/10 bg-surface-900/70 px-8 py-12 text-center shadow-glow backdrop-blur sm:px-12">
@@ -49,12 +60,11 @@ function App() {
           aria-hidden="true"
         />
         <h1 className="mt-6 text-balance text-3xl font-semibold tracking-tight text-white xs:text-4xl md:text-5xl">
-          Violet themed UI ready for build-out
+          {user ? `Welcome, ${user.email}` : "Supabase Connected"}
         </h1>
         <p className="mt-4 text-pretty text-base text-surface-200 sm:text-lg">
-          Tailwind CSS is configured with our violet tokens and evaluator-first
-          breakpoints. Next up: wiring the components that bring the BDD
-          specifications to life.
+          Supabase client is configured with auth context. Authentication state: {user ? 'Authenticated' : 'Not authenticated'}.
+          Ready to build the season management workflows.
         </p>
 
         <div className="mt-10 grid gap-4 xs:grid-cols-2">
@@ -74,7 +84,7 @@ function App() {
           type="button"
           className="mt-10 inline-flex items-center justify-center rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_20px_45px_-18px_rgba(134,72,255,0.65)] transition hover:bg-brand-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300"
         >
-          View BDD Specifications
+          {user ? 'Continue to Dashboard' : 'Get Started'}
         </button>
       </main>
     </div>
