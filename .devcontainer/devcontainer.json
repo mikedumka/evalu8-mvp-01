@@ -4,8 +4,8 @@
   
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers-extra/features/postgres-asdf:1": {
-      "version": "15"
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
     }
   },
 
@@ -37,24 +37,12 @@
     }
   },
 
-  "forwardPorts": [
-    5173,
-    54321,
-    54323
-  ],
+  "forwardPorts": [5173],
 
   "portsAttributes": {
     "5173": {
       "label": "Vite Dev Server",
       "onAutoForward": "notify"
-    },
-    "54321": {
-      "label": "Supabase API",
-      "onAutoForward": "silent"
-    },
-    "54323": {
-      "label": "Supabase Studio",
-      "onAutoForward": "silent"
     }
   },
 

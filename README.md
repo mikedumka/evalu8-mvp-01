@@ -7,8 +7,9 @@ This repository is configured with GitHub Codespaces for instant cloud-based dev
 ### Runtime & Tools
 - **Node.js 20** (LTS version)
 - **pnpm** (fast, disk-efficient package manager)
-- **PostgreSQL 15** (for Supabase local development)
 - **GitHub CLI** (gh command)
+
+> **Note:** This setup uses Supabase Cloud rather than local PostgreSQL. You'll connect to your Supabase project via API keys.
 
 ### VS Code Extensions
 - **GitHub Copilot** & **Copilot Chat** (AI pair programming)
@@ -20,8 +21,6 @@ This repository is configured with GitHub Codespaces for instant cloud-based dev
 
 ### Auto-configured Ports
 - **5173** - Vite dev server (auto-opens in browser)
-- **54321** - Supabase API
-- **54323** - Supabase Studio
 
 ## Getting Started
 
@@ -43,17 +42,15 @@ pnpm install
 pnpm dev
 ```
 
-### Install Supabase CLI (when needed)
-```bash
-# Install Supabase CLI
-npm install -g supabase
-
-# Initialize Supabase project
-supabase init
-
-# Start local Supabase
-supabase start
-```
+### Set Up Supabase (Cloud)
+1. Go to https://supabase.com and create a new project
+2. Save your project URL and anon key
+3. Create `.env.local` file with:
+   ```
+   VITE_SUPABASE_URL=your-project-url
+   VITE_SUPABASE_ANON_KEY=your-anon-key
+   ```
+4. Install Supabase client: `pnpm add @supabase/supabase-js`
 
 ## Project Structure (After Setup)
 ```
@@ -68,7 +65,7 @@ supabase start
 ## Next Steps
 1. Initialize Vite project
 2. Install shadcn/ui components
-3. Set up Supabase project
+3. Create Supabase Cloud project and add credentials
 4. Start building features based on BDD specs
 
 ## Tips
@@ -76,3 +73,4 @@ supabase start
 - Use `gh` CLI for GitHub operations
 - Port 5173 forwards automatically when Vite starts
 - Stop/restart Codespace from GitHub web UI to save compute hours
+- Use Supabase Cloud for database (simpler than local setup)
