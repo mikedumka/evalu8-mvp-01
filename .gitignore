@@ -17,6 +17,9 @@ dist/
 .env.test.local
 .env.production.local
 
+# Supabase link metadata
+supabase/.temp/
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
