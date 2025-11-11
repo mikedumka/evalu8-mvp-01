@@ -1,4 +1,5 @@
 # BDD Specifications: Evalu8 Sports Player Evaluation System
+
 ## Behavior-Driven Development (Gherkin Format)
 
 **Project:** Evalu8 - Sports Player Evaluation System  
@@ -17,9 +18,11 @@ This document defines acceptance criteria for MVP Release 1 user stories using G
 ## 1️⃣ SETUP & CONFIGURATION
 
 ### Feature: Set Up New Season
+
 **User Story:** As an Association Administrator, I want to set up a new season so that we can run annual evaluations
 
 **Business Rules:**
+
 - Season must have a unique name (e.g., "2025 Fall", "2025-2026")
 - Only one season can be "active" at a time
 - Previous season data remains accessible but read-only when new season starts
@@ -29,7 +32,7 @@ This document defines acceptance criteria for MVP Release 1 user stories using G
 - Session capacity must be configured during season setup (applies to all cohorts in the season)
 - Session capacity is locked after the first session is created (any type: bulk or individual)
 
-```gherkin
+````gherkin
 Scenario: Create first season
   Given I am logged in as an Association Administrator
   And no seasons exist in the system
@@ -127,7 +130,77 @@ Scenario: Session capacity locked after first session created
   And I see a message "Session capacity locked: sessions have been created for this season"
   And I cannot modify the session capacity
   And I see a note "Session capacity was set to 20 and is now locked to maintain wave structure integrity"
-```
+
+### Feature: Manage Associations & Personnel
+**User Story:** As a Platform Administrator, I want to create associations and assign personnel so that organizations can manage their own evaluation programs
+
+**Business Rules:**
+- Creating a new association automatically assigns the creator as an Administrator
+- Association slugs must be unique and auto-generated based on the name
+- Every association must be linked to an active sport type
+- Administrators can invite existing users by email and assign one or more roles
+- Supported roles: Administrator, Evaluator, Intake Personnel (combinations allowed)
+- Administrators can change member roles or deactivate memberships, but cannot remove themselves if they are the sole administrator
+- Only active members appear in association, season, and session management screens
+
+```gherkin
+Scenario: Create a new association and become the first administrator
+  Given I am logged in with a Supabase account
+  And I have no active association memberships
+  When I open "Association Management"
+  And I click "Create Association"
+  And I enter "Selkirk Minor Hockey" as the association name
+  And I select sport type "Hockey"
+  And I enter "info@selkirkminorhockey.ca" as the contact email
+  And I click "Save"
+  Then the association "Selkirk Minor Hockey" is created with status "Active"
+  And a unique slug is generated for the association
+  And I am automatically added as an Administrator for this association
+  And the association becomes my active context for subsequent actions
+
+Scenario: Add additional administrators to an association
+  Given I am logged in as an Administrator for "Selkirk Minor Hockey"
+  And I am viewing "Association Personnel"
+  When I add the email "coach.baker@example.com"
+  And I assign the roles "Administrator" and "Evaluator"
+  Then the member "coach.baker@example.com" appears in the personnel list
+  And the member has active roles "Administrator" and "Evaluator"
+  And an entry is recorded in audit logs noting the role assignment
+
+Scenario: Assign evaluators and intake personnel to an association
+  Given I am logged in as an Administrator for "Selkirk Minor Hockey"
+  And the member "pat.singh@example.com" exists in the personnel list
+  When I edit the member's roles
+  And I select "Evaluator" and "Intake Personnel"
+  And I save the changes
+  Then the member's roles update to "Evaluator, Intake Personnel"
+  And the member remains active in the association
+  And I see a confirmation message "Roles updated"
+
+Scenario: Deactivate an association member
+  Given I am logged in as an Administrator for "Selkirk Minor Hockey"
+  And "coach.baker@example.com" has roles "Administrator, Evaluator"
+  When I change their status to "Inactive"
+  Then the member is removed from active personnel lists
+  And the member can no longer access association data
+  And the deactivation is recorded in the audit log
+
+Scenario: Prevent removing the last administrator
+  Given I am the only Administrator for "Selkirk Minor Hockey"
+  When I attempt to deactivate my account or remove the Administrator role
+  Then I see an error message "At least one administrator is required"
+  And my membership remains unchanged
+
+Scenario: Update association profile
+  Given I am logged in as an Administrator for "Selkirk Minor Hockey"
+  When I update the association name to "Selkirk Hockey Association"
+  And I change the contact email to "admin@selkirkha.ca"
+  Then the association profile reflects the new name and contact email
+  And the slug remains unchanged for continuity
+  And I see a confirmation message "Association profile updated"
+````
+
+````
 
 ---
 
@@ -214,14 +287,16 @@ Scenario: View cohort statistics across seasons
     | Sessions Scheduled | 5 |
     | Evaluations Completed | 3 |
   And I can view historical statistics from previous seasons
-```
+````
 
 ---
 
 ### Feature: Define Previous Levels for Player Distribution
+
 **User Story:** As an Association Administrator, I want to define previous levels so that the "Previous Level" distribution algorithm can assign players based on prior rankings
 
 **Business Rules:**
+
 - Previous levels represent rankings from prior evaluations (e.g., A, B, C or Gold, Silver, Bronze)
 - Each association can define custom level names
 - Levels must be unique within an association
@@ -304,9 +379,11 @@ Scenario: Cannot delete level with assigned players
 ---
 
 ### Feature: Define Position Types for Sport
+
 **User Story:** As an Association Administrator, I want to define position types for our sport so that players can be evaluated in appropriate positions
 
 **Business Rules:**
+
 - Position types must have unique names within an association
 - Position types are sport-specific (e.g., Forward, Defense, Goalie for hockey)
 - Position types can be marked as active/inactive
@@ -371,9 +448,11 @@ Scenario: Cannot delete position type with assigned players
 ---
 
 ### Feature: Create Drills and Evaluation Criteria
+
 **User Story:** As an Association Administrator, I want to create evaluation criteria/drills so that evaluators score consistent attributes
 
 **Business Rules:**
+
 - Drills are reusable objects stored in a drill library
 - Each drill must have a unique name within the association
 - Drills have properties: name, evaluation criteria, scoring scale (fixed: 1-10)
@@ -470,9 +549,11 @@ Scenario: Delete unused drill
 ---
 
 ### Feature: Invite Users and Assign Roles
+
 **User Story:** As an Association Administrator, I want to invite users and assign roles (Admin, Intake, Evaluator) so that team members have appropriate access
 
 **Business Rules:**
+
 - Users must have valid email addresses
 - Available roles: Association Administrator, Intake Personnel, Evaluator
 - Users can have multiple roles
@@ -566,9 +647,11 @@ Scenario: Bulk invite multiple evaluators
 ## 2️⃣ PLAYER REGISTRATION & COHORT MANAGEMENT
 
 ### Feature: Bulk Import Players via CSV
+
 **User Story:** As an Association Administrator, I want to bulk import players via CSV with their details (name, birth year, position) so that registration is efficient for large groups
 
 **Business Rules:**
+
 - CSV must contain columns: First Name, Last Name, Birth Year, Position
 - CSV can optionally contain column: Cohort
 - Birth year must be a valid 4-digit year
@@ -698,9 +781,11 @@ Scenario: Download CSV template
 ---
 
 ### Feature: Manually Add Individual Players
+
 **User Story:** As an Association Administrator, I want to manually add individual players with their details so that late registrations are accommodated
 
 **Business Rules:**
+
 - Required fields: First Name, Last Name, Birth Year, Position
 - Optional fields: Notes
 - Birth year must be a valid 4-digit year
@@ -774,9 +859,11 @@ Scenario: Add multiple players in sequence
 ---
 
 ### Feature: Edit Player Information
+
 **User Story:** As an Association Administrator, I want to edit player information so that errors can be corrected
 
 **Business Rules:**
+
 - All player fields can be edited (name, birth year, position, notes)
 - Cannot change player's season assignment after creation
 - Editing a player does not affect historical evaluation data
@@ -844,9 +931,11 @@ Scenario: Cancel edit without saving
 ---
 
 ### Feature: Mark Players as Withdrawn
+
 **User Story:** As an Association Administrator, I want to mark players as withdrawn so that they are removed from evaluation sessions
 
 **Business Rules:**
+
 - Players can be marked as "Withdrawn" when they leave the program
 - Withdrawn players are automatically removed from all future session assignments
 - Withdrawn players do not appear in evaluator player lists
@@ -936,9 +1025,11 @@ Scenario: No-shows are handled during intake not player status
 ---
 
 ### Feature: Mark Players with "Other" Status
+
 **User Story:** As an Association Administrator, I want to mark players with "Other" status and provide a reason so that injured, sick, or unavailable players are tracked appropriately and can be manually ranked later
 
 **Business Rules:**
+
 - Players can be marked as "Other" status when they cannot participate in evaluations due to injury, illness, or other circumstances
 - A description/reason must be provided when marking a player as "Other" status (e.g., "Broken arm", "Sick with flu", "Family emergency")
 - Players with "Other" status remain in the active season roster
@@ -1071,9 +1162,11 @@ Scenario: Filter and export players by status including "Other"
 ---
 
 ### Feature: Assign Players to Cohorts
+
 **User Story:** As an Association Administrator, I want to assign players to cohorts so that they're evaluated with peers
 
 **Business Rules:**
+
 - Players can only be assigned to one cohort at a time within a season
 - Players must be active to be assigned to cohorts
 - Cohort must be active to receive new player assignments
@@ -1147,9 +1240,11 @@ Scenario: View unassigned players
 ---
 
 ### Feature: View Player Lists by Cohort
+
 **User Story:** As an Association Administrator, I want to view player lists by cohort so that I can verify registration accuracy
 
 **Business Rules:**
+
 - Player lists show: last name, first name, birth year, position, status, cohort assignment, previous level
 - Lists can be filtered by cohort, position, status, previous level
 - Lists can be sorted by last name, first name, birth year, position, previous level
@@ -1236,9 +1331,11 @@ Scenario: Export player list for cohort
 ## 3️⃣ SESSION SCHEDULING & CONFIGURATION
 
 ### Feature: Create Sessions in Bulk
+
 **User Story:** As an Association Administrator, I want to create sessions in bulk via CSV so that scheduling multiple sessions is efficient
 
 **Business Rules:**
+
 - CSV must contain columns: Session Name, Date, Time, Location, Cohort
 - **All sessions in a single import must be for the same cohort** (single cohort per import)
 - Date must be in valid format (MM/DD/YYYY or YYYY-MM-DD)
@@ -1506,9 +1603,11 @@ Scenario: Edit CSV after preview
 ## 4️⃣ PLAYER DISTRIBUTION & WAVE MANAGEMENT
 
 ### Feature: Organize Sessions into Waves
+
 **User Story:** As an Association Administrator, I want sessions to be automatically organized into waves so that each athlete is evaluated the required number of times across multiple rounds
 
 **Business Rules:**
+
 - A **wave** is a complete evaluation round where every athlete in a cohort is evaluated exactly once
 - **Wave requirements are pre-calculated when a cohort is assigned active players** (using session capacity from season settings)
 - Sessions per Wave = Total Athletes in Cohort ÷ Session Capacity (rounded up if needed)
@@ -1749,9 +1848,11 @@ Scenario: Prevent distributing multiple waves simultaneously
 ---
 
 ### Feature: Create Custom Evaluation Waves
+
 **User Story:** As an Association Administrator, I want to create custom evaluation waves for specialized groups so that position-specific or skill-specific evaluations can be conducted separately
 
 **Business Rules:**
+
 - Custom waves are created for specific subsets of athletes (e.g., 5 catchers out of 100 total players)
 - Custom waves require a descriptive name (e.g., "Catcher Evaluation Wave", "Advanced Skills Wave")
 - Administrator manually sets the number of sessions in a custom wave
@@ -1894,9 +1995,11 @@ Scenario: Apply distribution algorithm to custom wave players
 ---
 
 ### Feature: Create Individual Sessions
+
 **User Story:** As an Association Administrator, I want to create individual sessions manually so that I can schedule sessions one at a time when needed
 
 **Business Rules:**
+
 - Sessions are created in "Draft" status
 - Required fields: Session Name, Date, Time, Location, Season (auto-assigned to active season)
 - Sessions must be assigned to exactly one cohort
@@ -2248,9 +2351,11 @@ Scenario: Allow creating individual session when below wave requirements
 ---
 
 ### Feature: Assign Evaluators to Sessions
+
 **User Story:** As an Association Administrator, I want to assign evaluators to sessions so that there are sufficient scorers
 
 **Business Rules:**
+
 - Multiple evaluators can be assigned to one session
 - Users must have "Evaluator" role to be assigned
 - System validates that minimum evaluators requirement is met (from season settings)
@@ -2373,9 +2478,11 @@ Scenario: Only users with Evaluator role appear in assignment list
 ---
 
 ### Feature: Assign Intake Personnel to Sessions
+
 **User Story:** As an Association Administrator, I want to assign intake personnel to sessions so that player check-in is managed
 
 **Business Rules:**
+
 - Multiple intake personnel can be assigned to one session
 - Users must have "Intake Personnel" role to be assigned
 - At least 1 intake personnel must be assigned before session can be marked "Ready"
@@ -2461,9 +2568,11 @@ Scenario: View intake personnel's assigned sessions
 ---
 
 ### Feature: Distribute Players to Sessions Using Alphabetical Algorithm
+
 **User Story:** As an Association Administrator, I want to distribute players alphabetically so that sessions have balanced player lists
 
 **Business Rules:**
+
 - Players are sorted by last name, then first name
 - **Two-level distribution:** Players distributed to sessions first, then to teams within each session
 - Players are distributed evenly across selected sessions
@@ -2552,9 +2661,11 @@ Scenario: Exclude withdrawn and "Other" status players from wave distribution
 ---
 
 ### Feature: Distribute Players to Sessions Using Random Algorithm
+
 **User Story:** As an Association Administrator, I want to distribute players randomly so that sessions have unbiased player assignments
 
 **Business Rules:**
+
 - Players are randomized before distribution
 - **Two-level distribution:** Players distributed to sessions first, then to teams within each session
 - Players are distributed evenly across selected sessions
@@ -2615,9 +2726,11 @@ Scenario: Finalize random distribution for wave
 ---
 
 ### Feature: Distribute Players to Sessions Using Previous Level Algorithm
+
 **User Story:** As an Association Administrator, I want to distribute players by previous level so that sessions have balanced skill distributions
 
 **Business Rules:**
+
 - Players are grouped by previous level (A, B, C, D, etc.)
 - **Two-level distribution:** Players distributed to sessions first (by level), then to teams within each session
 - Within each level, players are distributed evenly across sessions
@@ -2699,9 +2812,11 @@ Scenario: Finalize previous level distribution for wave
 ---
 
 ### Feature: Distribute Players to Sessions Using Current Ranking Algorithm
+
 **User Story:** As an Association Administrator, I want to distribute players by current ranking so that sessions have balanced skill distributions based on in-progress evaluation scores
 
 **Business Rules:**
+
 - **[TO BE DEFINED]** This algorithm will be designed for Wave 2+ distributions after Wave 1 evaluations are completed
 - Players are ranked by their cumulative evaluation scores from previous waves
 - **Two-level distribution:** Players distributed to sessions first (by rank), then to teams within each session
@@ -2722,9 +2837,11 @@ Scenario: Finalize previous level distribution for wave
 ---
 
 ### Feature: Clone Sessions for Recurring Schedules
+
 **User Story:** As an Association Administrator, I want to clone sessions so that I can quickly create similar sessions
 
 **Business Rules:**
+
 - Cloned sessions copy: name (with suffix), cohort, drills, location
 - Cloned sessions require new: date, time
 - Cloned sessions do NOT copy: player assignments, evaluator assignments, intake personnel assignments
@@ -2778,9 +2895,11 @@ Scenario: Clone multiple sessions in sequence
 ---
 
 ### Feature: Reassign Players Between Sessions
+
 **User Story:** As an Association Administrator, I want to reassign players between sessions so that I can balance attendance or handle schedule conflicts
 
 **Business Rules:**
+
 - Players can only be reassigned between sessions of the same cohort
 - Players can only be reassigned from "Draft" or "Ready" status sessions
 - Cannot reassign players from "In Progress" or "Completed" sessions
@@ -2847,9 +2966,11 @@ Scenario: Cannot reassign player to session of different cohort
 ## 5️⃣ SESSION INTAKE & CHECK-IN
 
 ### Feature: Session Intake & Check-In
+
 **User Story:** As Intake Personnel, I want to check in athletes and assign jersey colors and numbers so that each team has identifiable players during evaluations
 
 **Business Rules:**
+
 - Intake personnel checks in athletes upon arrival at the session
 - Athletes are pre-assigned to teams based on wave distribution (read-only during check-in)
 - Each athlete must be assigned a jersey color and jersey number during check-in
@@ -3001,9 +3122,11 @@ Scenario: Handle player no-show during intake
 ## 6️⃣ REAL-TIME PLAYER EVALUATION
 
 ### Feature: Access Evaluator Interface
+
 **User Story:** As an Evaluator, I want to access my assigned session so that I can begin scoring athletes
 
 **Business Rules:**
+
 - Evaluators can only access sessions they are assigned to
 - Evaluators cannot access sessions until status is "In Progress"
 - Evaluator sees only checked-in athletes (no-shows are hidden)
@@ -3060,9 +3183,11 @@ Scenario: View only checked-in athletes in evaluation interface
 ---
 
 ### Feature: View Athletes by Team with Jersey Identification
+
 **User Story:** As an Evaluator, I want to see athletes organized by team with jersey colors and numbers so that I can identify them during evaluations without knowing their names
 
 **Business Rules:**
+
 - Athletes grouped by team number (Team 1, Team 2, etc.)
 - Each athlete displays: Team number, jersey color, jersey number (names hidden)
 - Evaluator can expand/collapse team groups
@@ -3138,9 +3263,11 @@ Scenario: Visual color indicators for jerseys
 ---
 
 ### Feature: Enter Evaluation Scores for Athletes
+
 **User Story:** As an Evaluator, I want to enter scores for athletes on each drill so that evaluations are recorded accurately
 
 **Business Rules:**
+
 - Scores range: 1-10 (integers only)
 - Each athlete scored once per drill by each evaluator
 - Evaluator can score athletes in any order
@@ -3277,9 +3404,11 @@ Scenario: Score athletes athlete-by-athlete (all drills for one athlete)
 ---
 
 ### Feature: View Drill Details During Evaluation
+
 **User Story:** As an Evaluator, I want to view drill criteria and weights so that I can score athletes accurately
 
 **Business Rules:**
+
 - Drill details include: name, weight, evaluation criteria
 - Criteria displayed as reference during scoring
 - Weights visible to understand drill importance
@@ -3314,9 +3443,11 @@ Scenario: View drill weights to understand importance
 ---
 
 ### Feature: Finalize Evaluation Session
+
 **User Story:** As an Evaluator, I want to finalize my evaluation so that my scores are locked and submitted
 
 **Business Rules:**
+
 - Evaluators can finalize their evaluation at any time (complete or incomplete)
 - Warning shown if incomplete, displaying count of missing scores
 - If finalizing incomplete, evaluator must provide a reason (e.g., "Ran out of time", "Had to leave early", "Technical issues")
@@ -3396,9 +3527,11 @@ Scenario: Administrator views evaluator finalization status
 ## 7️⃣ QUALITY CONTROL & VALIDATION
 
 ### Feature: Detect Score Outliers Using Deviation Threshold
+
 **User Story:** As an Association Administrator, I want the system to flag scores that deviate significantly from other evaluators so that I can review potentially problematic evaluations
 
 **Business Rules:**
+
 - Outlier threshold set per season (10-50%, default 25%)
 - Outlier threshold locked after season activation (cannot be changed mid-season)
 - System calculates standard deviation for each athlete's drill scores
@@ -3495,9 +3628,11 @@ Scenario: Outliers do not prevent finalization
 ---
 
 ### Feature: Enforce Minimum Evaluators Per Athlete
+
 **User Story:** As an Association Administrator, I want to ensure each athlete is scored by at least the minimum number of evaluators so that rankings are reliable
 
 **Business Rules:**
+
 - Minimum evaluators set per season (1-10, default 3)
 - Minimum evaluators locked after season activation
 - System validates athlete has minimum evaluators before including in rankings
@@ -3571,9 +3706,11 @@ Scenario: Reports include warning for athletes below minimum
 ---
 
 ### Feature: Validate Score Completeness and Data Integrity
+
 **User Story:** As an Association Administrator, I want to ensure all evaluation data is complete and valid so that reports are accurate
 
 **Business Rules:**
+
 - All checked-in athletes must have scores from all assigned evaluators
 - All scores must be within valid range (1-10)
 - No duplicate scores (same athlete, drill, evaluator combination)
@@ -3675,9 +3812,11 @@ Scenario: View data integrity summary across all sessions in cohort
 ---
 
 ### Feature: Reconcile Incomplete Evaluations
+
 **User Story:** As an Association Administrator, I want to reconcile incomplete evaluations so that I can generate accurate rankings despite missing scores
 
 **Business Rules:**
+
 - Reconciliation required before generating final rankings report
 - Administrator must manually review and reconcile each incomplete evaluation
 - Three reconciliation methods available:
@@ -3763,7 +3902,7 @@ Scenario: Mark specific drill as invalid for athlete
                            = 300 + 150
                            = 450 / 10
                            = 45.0 out of 100
-    
+
     Note: Puck Control (35 weight points) excluded - no weight redistribution
     Maximum possible score reduced to 65 (40 + 25)
     """
@@ -3849,9 +3988,11 @@ Scenario: Cannot generate report without reconciling incomplete evaluations
 ## 8️⃣ REPORTING & ANALYTICS
 
 ### Feature: Generate Final Rankings Report
+
 **User Story:** As an Association Administrator, I want to generate final rankings for a cohort so that I can assign players to teams
 
 **Business Rules:**
+
 - Rankings calculated using overall position scores (0-100 scale)
 - Session position score = Σ (Drill Score × Drill Weight) / 10, result out of 100
 - Overall position score = Average of all session position scores
@@ -3942,9 +4083,11 @@ Scenario: Export rankings report
 ---
 
 ### Feature: View Athlete Evaluation Details
+
 **User Story:** As an Association Administrator, I want to view detailed evaluation data for an athlete so that I can understand their ranking
 
 **Business Rules:**
+
 - Athlete detail page shows all session scores across all waves
 - Shows individual evaluator scores by drill (anonymized or named based on settings)
 - Displays position score calculation with drill weights
@@ -4024,9 +4167,11 @@ Scenario: View quality control flags in athlete details
 ---
 
 ### Feature: Compare Athletes Side-by-Side
+
 **User Story:** As an Association Administrator, I want to compare multiple athletes side-by-side so that I can make informed team placement decisions
 
 **Business Rules:**
+
 - Compare up to 4 athletes simultaneously
 - Shows position scores, drill breakdowns, and session performance
 - Highlights differences in performance areas
@@ -4081,9 +4226,11 @@ Scenario: Export athlete comparison
 ---
 
 ### Feature: View Session Performance Analytics
+
 **User Story:** As an Association Administrator, I want to view session-level analytics so that I can assess evaluation quality and consistency
 
 **Business Rules:**
+
 - Session analytics show score distribution, evaluator consistency, and completion rates
 - Displays outlier count and percentage by session
 - Shows evaluator-by-evaluator performance (score ranges, outlier rates)
@@ -4138,9 +4285,11 @@ Scenario: Compare sessions within cohort
 ## 9️⃣ SYSTEM ADMINISTRATION & MAINTENANCE
 
 ### Feature: Manage Association Accounts
+
 **User Story:** As a System Administrator, I want to create and manage association accounts so that organizations can use the platform independently
 
 **Business Rules:**
+
 - Each association is a separate tenant with isolated data
 - Association requires: Name, Sport Type, Contact Email
 - Associations have unique identifiers (slug/subdomain)
@@ -4245,9 +4394,11 @@ Scenario: Prevent duplicate subdomain
 ---
 
 ### Feature: Configure Sport Types for Associations
+
 **User Story:** As a System Administrator, I want to configure sport types so that associations can select appropriate sports for their evaluations
 
 **Business Rules:**
+
 - System supports multiple sport types (Hockey, Basketball, Soccer, Baseball, etc.)
 - Sport types are system-wide (managed by System Administrator)
 - Each sport type has: Name, Active/Inactive status
@@ -4319,9 +4470,11 @@ Scenario: Prevent duplicate sport type names
 ---
 
 ### Feature: Monitor System Performance and Uptime
+
 **User Story:** As a System Administrator, I want to monitor system uptime and performance so that SLAs are met (99.5% target)
 
 **Business Rules:**
+
 - System tracks uptime, response times, error rates, concurrent users
 - SLA target: 99.5% uptime during evaluation season
 - Performance target: Page loads under 2 seconds
@@ -4414,9 +4567,11 @@ Scenario: Configure performance alert thresholds
 ---
 
 ### Feature: Backup Data with 10-Year Retention
+
 **User Story:** As a System Administrator, I want to backup data with 10-year retention so that historical records are preserved
 
 **Business Rules:**
+
 - Automated daily backups of all association data
 - 10-year retention policy for all evaluation data
 - Backups include: Players, Sessions, Evaluations, Scores, Reports, Users
@@ -4516,9 +4671,11 @@ Scenario: View 10-year historical data retention
 ---
 
 ### Feature: View Usage Analytics by Association
+
 **User Story:** As a System Administrator, I want to view usage analytics by association so that capacity planning is informed
 
 **Business Rules:**
+
 - Track usage metrics per association: Active users, sessions, evaluations, storage
 - Real-time and historical analytics available
 - Identify peak usage times for capacity planning
@@ -4612,9 +4769,11 @@ Scenario: Export usage analytics
 ---
 
 ### Feature: Audit Logs for Security Events
+
 **User Story:** As a System Administrator, I want to audit logs for security events so that breaches are detected
 
 **Business Rules:**
+
 - Log all security-relevant events: Logins, data access, configuration changes, exports
 - Each log entry includes: Timestamp, User, Association, Action, Resource, IP Address, Status
 - Logs retained for 10 years
@@ -4704,6 +4863,7 @@ Scenario: Export audit logs for compliance
 ---
 
 ## Document Status
+
 - ✅ Stage 1: SETUP & CONFIGURATION - Complete (6 features)
 - ✅ Stage 2: PLAYER REGISTRATION & COHORT MANAGEMENT - Complete (6 features)
 - ✅ Stage 3: SESSION SCHEDULING & CONFIGURATION - Complete (5 features)
