@@ -244,6 +244,14 @@ Scenario: Prevent duplicate cohort names
   Then I see an error message "Cohort 'U11' already exists"
   And the duplicate cohort is not created
 
+Scenario: Prevent creating cohort without name
+  Given I am logged in as an Association Administrator
+  When I click "Add Cohort"
+  And I leave the name blank
+  And I click "Save"
+  Then I see an error message "Cohort name is required."
+  And the cohort is not created
+
 Scenario: Edit cohort details
   Given I am logged in as an Association Administrator
   And cohort "U11" exists
@@ -266,6 +274,14 @@ Scenario: Deactivate cohort
   And it no longer appears when creating new sessions in any season
   But assigned players remain in the cohort
   And historical data from all seasons is preserved
+
+Scenario: Reactivate inactive cohort
+  Given I am logged in as an Association Administrator
+  And cohort "U9" exists and is inactive
+  When I click "Activate" next to the cohort
+  Then the cohort is marked as "Active"
+  And it appears again when creating new sessions
+  And I see a confirmation message "Cohort reactivated successfully"
 
 Scenario: Cannot delete cohort with assigned players
   Given I am logged in as an Association Administrator
@@ -350,7 +366,8 @@ Scenario: Reorder levels
   Given I am logged in as an Association Administrator
   And levels exist: A (rank 1), B (rank 2), C (rank 3)
   When I navigate to "Previous Levels"
-  And I drag level "C" to position 1
+  And I click "Move Up" next to level "C"
+  And I click "Move Up" next to level "C" again
   Then the rank order is updated:
     | Level | New Rank |
     | C | 1 |
