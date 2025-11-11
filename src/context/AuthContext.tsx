@@ -10,7 +10,7 @@ import { supabase } from "../lib/supabase";
 
 const AUTH_ASSOCIATION_KEY = "evalu8.currentAssociationId";
 
-type AssociationUser = {
+export type AssociationUser = {
   association_id: string;
   roles: string[];
   status: "active" | "inactive";

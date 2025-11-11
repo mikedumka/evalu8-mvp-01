@@ -1,46 +1,23 @@
-import {
-  type LucideIcon,
-  BarChart3,
-  ClipboardList,
-  Sparkles,
-  Users2,
-} from "lucide-react";
+import { Building2, LogOut } from "lucide-react";
 import { useAuth } from "./hooks/useAuth";
 import { Login } from "./components/Login";
-
-const highlights: Array<{
-  icon: LucideIcon;
-  title: string;
-  description: string;
-}> = [
-  {
-    icon: Sparkles,
-    title: "Google OAuth ready",
-    description:
-      "Authentication flow configured with Google OAuth provider for secure user access.",
-  },
-  {
-    icon: Users2,
-    title: "Multi-tenant ready",
-    description:
-      "Association-based user management with role-based permissions for administrators and evaluators.",
-  },
-  {
-    icon: ClipboardList,
-    title: "Season workflows next",
-    description:
-      "Season setup, cohort management, and player distribution screens are queued to follow the specs.",
-  },
-  {
-    icon: BarChart3,
-    title: "Database foundation",
-    description:
-      "Supabase client integrated with auth context, ready for database schema and RLS policies.",
-  },
-];
+import { AssociationSwitcher } from "./components/AssociationSwitcher";
+import { DrillLibraryManager } from "./components/drills/DrillLibraryManager";
+import { SessionDrillConfigurator } from "./components/sessions/SessionDrillConfigurator";
 
 function App() {
-  const { user, loading, signOut } = useAuth();
+  const {
+    user,
+    loading,
+    signOut,
+    associations,
+    currentAssociation,
+    setCurrentAssociationId,
+  } = useAuth();
+
+  const handleAssociationChange = (associationId: string) => {
+    void setCurrentAssociationId(associationId);
+  };
 
   if (loading) {
     return (
@@ -55,52 +32,52 @@ function App() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-surface-950 via-surface-900 to-surface-950 px-4 py-12 text-surface-50">
-      <main className="mx-auto w-full max-w-3xl rounded-3xl border border-white/10 bg-surface-900/70 px-8 py-12 text-center shadow-glow backdrop-blur sm:px-12">
-        <div className="flex items-center justify-between gap-4">
-          <span className="inline-flex items-center justify-center rounded-full bg-brand-500/15 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-brand-200">
-            Evalu8 Platform
+    <div className="min-h-screen bg-gradient-to-br from-surface-950 via-surface-900 to-surface-950 px-4 pb-16 pt-12 text-surface-50">
+      <header className="mx-auto flex w-full max-w-6xl flex-col gap-6 rounded-3xl border border-white/10 bg-surface-900/70 px-6 py-6 shadow-glow backdrop-blur md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center justify-center rounded-full bg-brand-500/15 p-3 text-brand-200">
+            <Building2 className="h-5 w-5" />
           </span>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-brand-200">
+              Evalu8 Platform
+            </p>
+            <p className="text-sm text-surface-300">
+              Signed in as {user.user_metadata?.full_name || user.email}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+          <AssociationSwitcher
+            associations={associations}
+            currentAssociationId={currentAssociation?.association_id ?? null}
+            onChange={handleAssociationChange}
+          />
           <button
             type="button"
             onClick={signOut}
-            className="text-sm text-surface-400 transition hover:text-surface-200"
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-surface-200 transition hover:border-rose-400 hover:text-white"
           >
-            Sign out
+            <LogOut className="h-4 w-4" /> Sign out
           </button>
         </div>
+      </header>
 
-        <ClipboardList
-          className="mx-auto mt-8 h-14 w-14 text-brand-300"
-          aria-hidden="true"
-        />
-        <h1 className="mt-6 text-balance text-3xl font-semibold tracking-tight text-white xs:text-4xl md:text-5xl">
-          Welcome, {user.user_metadata?.full_name || user.email}
-        </h1>
-        <p className="mt-4 text-pretty text-base text-surface-200 sm:text-lg">
-          Google OAuth authentication successful. Ready to build the season
-          management workflows and database schema.
-        </p>
-
-        <div className="mt-10 grid gap-4 xs:grid-cols-2">
-          {highlights.map(({ icon: Icon, title, description }) => (
-            <article
-              key={title}
-              className="rounded-2xl border border-white/10 bg-surface-900/60 p-6 text-left shadow-[0_25px_45px_-30px_rgba(16,16,32,0.8)]"
-            >
-              <Icon className="h-8 w-8 text-brand-300" aria-hidden="true" />
-              <h2 className="mt-4 text-lg font-semibold text-white">{title}</h2>
-              <p className="mt-2 text-sm text-surface-200">{description}</p>
-            </article>
-          ))}
-        </div>
-
-        <button
-          type="button"
-          className="mt-10 inline-flex items-center justify-center rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_20px_45px_-18px_rgba(134,72,255,0.65)] transition hover:bg-brand-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-300"
-        >
-          Continue to Dashboard
-        </button>
+      <main className="mx-auto mt-8 w-full max-w-6xl space-y-6">
+        {associations.length === 0 ? (
+          <section className="rounded-3xl border border-dashed border-white/10 bg-surface-900/60 px-6 py-12 text-center text-sm text-surface-200">
+            No associations found. Create an association to begin configuring drills and sessions.
+          </section>
+        ) : !currentAssociation ? (
+          <section className="rounded-3xl border border-dashed border-white/10 bg-surface-900/60 px-6 py-12 text-center text-sm text-surface-200">
+            Select an association to load drill and session data.
+          </section>
+        ) : (
+          <div className="space-y-6">
+            <DrillLibraryManager />
+            <SessionDrillConfigurator />
+          </div>
+        )}
       </main>
     </div>
   );

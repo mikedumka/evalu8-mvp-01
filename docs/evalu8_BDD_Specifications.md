@@ -455,7 +455,7 @@ Scenario: Cannot delete position type with assigned players
 
 - Drills are reusable objects stored in a drill library
 - Each drill must have a unique name within the association
-- Drills have properties: name, evaluation criteria, scoring scale (fixed: 1-10)
+- Drills capture name, description, and detailed evaluation criteria (1-10 scoring scale is fixed)
 - Drills are position-agnostic when created (no weight or position assignment)
 - Drills can be assigned to multiple sessions (many-to-many relationship)
 - When assigned to a session, each drill gets ONE weight that applies to ALL positions using it
@@ -471,6 +471,7 @@ Scenario: Create first evaluation drill in the library
   When I navigate to "Drill Library" settings
   And I click "Add Drill"
   And I enter "Skating Speed" as the drill name
+  And I enter "Acceleration and straight-line speed assessment" as the drill description
   And I enter "Evaluate player's straight-line skating speed from blue line to blue line" as the evaluation criteria
   And I see the scoring scale is fixed at "1-10"
   And I click "Save"
@@ -480,12 +481,27 @@ Scenario: Create first evaluation drill in the library
 
 Scenario: Create multiple drills
   Given I am logged in as an Association Administrator
-  When I create drill "Wrist Shot Accuracy" with evaluation criteria "Measure accuracy of wrist shots on net from various positions"
-  And I create drill "Passing Accuracy" with evaluation criteria "Evaluate precision and speed of passes to teammates"
-  And I create drill "Hockey Sense" with evaluation criteria "Assess player's ability to read the game and make smart decisions"
-  And I create drill "Backward Skating" with evaluation criteria "Evaluate backward skating technique and speed"
+  When I create drill "Wrist Shot Accuracy" with description "Assess shooting mechanics" and evaluation criteria "Measure accuracy of wrist shots on net from various positions"
+  And I create drill "Passing Accuracy" with description "Core tape-to-tape passing" and evaluation criteria "Evaluate precision and speed of passes to teammates"
+  And I create drill "Hockey Sense" with description "Game awareness" and evaluation criteria "Assess player's ability to read the game and make smart decisions"
+  And I create drill "Backward Skating" with description "Edge control" and evaluation criteria "Evaluate backward skating technique and speed"
   Then I see 4 drills in the library
   And each drill shows its name and evaluation criteria
+
+Scenario: Require drill description and evaluation criteria
+  Given I am logged in as an Association Administrator
+  When I click "Add Drill"
+  And I enter "Edge Control" as the drill name
+  And I leave the description blank
+  And I enter "Evaluate transitions between forward and backward skating" as the evaluation criteria
+  And I click "Save"
+  Then I see an error message "Description is required"
+  And the drill is not created
+  When I enter "Focus on transitions between forward and backward skating" as the description
+  And I clear the evaluation criteria field
+  And I click "Save"
+  Then I see an error message "Evaluation criteria is required"
+  And the drill is not created
 
 Scenario: Prevent duplicate drill names
   Given I am logged in as an Association Administrator
@@ -525,6 +541,14 @@ Scenario: Deactivate drill in library
   And "Backward Skating" no longer appears when selecting drills for new sessions
   But "Backward Skating" still appears in the drill library management list
   And historical sessions using "Backward Skating" are unaffected
+
+Scenario: Reactivate inactive drill
+  Given I am logged in as an Association Administrator
+  And drill "Backward Skating" is marked as "Inactive"
+  When I click "Activate" next to "Backward Skating"
+  Then "Backward Skating" is marked as "Active"
+  And I see a confirmation message "Drill reactivated"
+  And "Backward Skating" now appears in the drill selection list for sessions
 
 Scenario: Cannot delete drill used in completed sessions
   Given I am logged in as an Association Administrator

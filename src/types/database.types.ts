@@ -221,6 +221,7 @@ export type Database = {
         Row: {
           association_id: string
           created_at: string
+          criteria: string
           description: string | null
           id: string
           name: string
@@ -230,6 +231,7 @@ export type Database = {
         Insert: {
           association_id: string
           created_at?: string
+          criteria: string
           description?: string | null
           id?: string
           name: string
@@ -239,6 +241,7 @@ export type Database = {
         Update: {
           association_id?: string
           created_at?: string
+          criteria?: string
           description?: string | null
           id?: string
           name?: string
@@ -1042,10 +1045,166 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_association_member_by_email: {
+        Args: { p_association_id: string; p_email: string; p_roles: string[] }
+        Returns: {
+          association_id: string
+          created_at: string
+          id: string
+          invitation_expires_at: string | null
+          invited_at: string | null
+          invited_by: string | null
+          joined_at: string | null
+          roles: string[]
+          status: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "association_users"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      add_session_drill: {
+        Args: {
+          p_drill_id: string
+          p_position_ids: string[]
+          p_session_id: string
+          p_weight_percent: number
+        }
+        Returns: {
+          applies_to_positions: string[]
+          association_id: string
+          created_at: string
+          drill_id: string
+          id: string
+          session_id: string
+          weight_percent: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "session_drills"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_association_with_admin: {
+        Args: {
+          p_contact_email: string
+          p_name: string
+          p_sport_type_id: string
+        }
+        Returns: {
+          contact_email: string
+          created_at: string
+          id: string
+          last_activity_at: string | null
+          name: string
+          slug: string
+          sport_type_id: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "associations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_drill: {
+        Args: { p_criteria: string; p_description: string; p_name: string }
+        Returns: {
+          association_id: string
+          created_at: string
+          criteria: string
+          description: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "drills"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       current_association_id: { Args: never; Returns: string }
+      remove_session_drill: {
+        Args: { p_session_drill_id: string }
+        Returns: string
+      }
       set_association_context: {
         Args: { association: string }
         Returns: undefined
+      }
+      set_drill_status: {
+        Args: { p_drill_id: string; p_status: string }
+        Returns: {
+          association_id: string
+          created_at: string
+          criteria: string
+          description: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "drills"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_drill: {
+        Args: {
+          p_criteria: string
+          p_description: string
+          p_drill_id: string
+          p_name: string
+        }
+        Returns: {
+          association_id: string
+          created_at: string
+          criteria: string
+          description: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "drills"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_session_drill: {
+        Args: {
+          p_position_ids: string[]
+          p_session_drill_id: string
+          p_weight_percent: number
+        }
+        Returns: {
+          applies_to_positions: string[]
+          association_id: string
+          created_at: string
+          drill_id: string
+          id: string
+          session_id: string
+          weight_percent: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "session_drills"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
