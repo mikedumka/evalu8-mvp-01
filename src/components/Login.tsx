@@ -9,22 +9,22 @@ export function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-surface-950 via-surface-900 to-surface-950 px-4 py-12">
-      <div className="mx-auto w-full max-w-md rounded-3xl border border-white/10 bg-surface-900/70 px-8 py-12 text-center shadow-glow backdrop-blur">
-        <span className="inline-flex items-center justify-center rounded-full bg-brand-500/15 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-brand-200">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
+      <div className="mx-auto w-full max-w-md rounded-xl border border-border bg-card px-8 py-12 text-center shadow-sm">
+        <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-primary">
           Evalu8 Platform
         </span>
 
         <LogIn
-          className="mx-auto mt-8 h-14 w-14 text-brand-300"
+          className="mx-auto mt-8 h-14 w-14 text-primary"
           aria-hidden="true"
         />
 
-        <h1 className="mt-6 text-balance text-3xl font-semibold tracking-tight text-white">
+        <h1 className="mt-6 text-balance text-3xl font-semibold tracking-tight text-foreground">
           Welcome to Evalu8
         </h1>
 
-        <p className="mt-4 text-pretty text-base text-surface-200">
+        <p className="mt-4 text-pretty text-base text-muted-foreground">
           Sign in with your Google account to access the youth sports evaluation
           platform.
         </p>
@@ -33,7 +33,7 @@ export function Login() {
           type="button"
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="mt-10 inline-flex w-full items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-semibold text-surface-900 shadow-[0_20px_45px_-18px_rgba(255,255,255,0.25)] transition hover:bg-surface-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-50"
+          className="mt-10 inline-flex w-full items-center justify-center gap-3 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path

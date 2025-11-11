@@ -313,12 +313,12 @@ export function CohortManager() {
 
   if (!currentAssociation) {
     return (
-      <section className="rounded-3xl border border-white/10 bg-surface-900/60 p-6 text-surface-200 shadow-glow">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-          <UsersRound className="h-5 w-5 text-brand-300" />
+      <section className="rounded-xl border border-border bg-card p-6 text-muted-foreground shadow-sm">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <UsersRound className="h-5 w-5 text-primary" />
           Cohort Management
         </h2>
-        <p className="mt-4 text-sm text-surface-300">
+        <p className="mt-4 text-sm text-muted-foreground">
           Select an association to view cohorts.
         </p>
       </section>
@@ -327,12 +327,12 @@ export function CohortManager() {
 
   if (!canManage) {
     return (
-      <section className="rounded-3xl border border-white/10 bg-surface-900/60 p-6 text-surface-200 shadow-glow">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-          <UsersRound className="h-5 w-5 text-brand-300" />
+      <section className="rounded-xl border border-border bg-card p-6 text-muted-foreground shadow-sm">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <UsersRound className="h-5 w-5 text-primary" />
           Cohort Management
         </h2>
-        <p className="mt-4 text-sm text-surface-300">
+        <p className="mt-4 text-sm text-muted-foreground">
           You need Administrator privileges to manage cohorts for this
           association.
         </p>
@@ -341,17 +341,17 @@ export function CohortManager() {
   }
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-surface-900/60 p-6 text-surface-100 shadow-glow">
+    <section className="rounded-xl border border-border bg-card p-6 text-foreground shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-            <UsersRound className="h-5 w-5 text-brand-300" />
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <UsersRound className="h-5 w-5 text-primary" />
             Cohort Management
           </h2>
-          <p className="mt-1 text-sm text-surface-300">
+          <p className="mt-1 text-sm text-muted-foreground">
             Create, update, and activate cohorts across seasons.
           </p>
-          <p className="text-xs text-surface-400">
+          <p className="text-xs text-muted-foreground">
             {activeSeason
               ? `Player counts reflect ${activeSeason.name}.`
               : "No active season. Player counts show 0 until a season is activated."}
@@ -360,7 +360,7 @@ export function CohortManager() {
         <button
           type="button"
           onClick={() => void fetchCohorts()}
-          className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-surface-200 transition hover:border-brand-400 hover:text-white"
+          className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-muted-foreground transition hover:border-primary hover:text-foreground"
           disabled={loading || formSubmitting}
         >
           <RefreshCw className="h-4 w-4" /> Refresh
@@ -386,28 +386,28 @@ export function CohortManager() {
       )}
 
       <form
-        className="mt-6 grid gap-4 rounded-2xl border border-white/10 bg-surface-950/60 p-6"
+        className="mt-6 grid gap-4 rounded-xl border border-border bg-muted/40 p-6"
         onSubmit={handleSubmit}
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-surface-400">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
             {formMode === "create" ? "Create Cohort" : "Edit Cohort"}
           </h3>
           {formMode === "edit" && (
             <button
               type="button"
               onClick={startCreate}
-              className="text-xs text-surface-400 transition hover:text-surface-200"
+              className="text-xs text-muted-foreground transition hover:text-foreground"
               disabled={formSubmitting}
             >
               Cancel Edit
             </button>
           )}
         </div>
-        <label className="grid gap-2 text-sm text-surface-200">
-          <span className="font-medium text-white">Name</span>
+        <label className="grid gap-2 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">Name</span>
           <input
-            className="rounded-lg border border-white/10 bg-surface-900/70 px-3 py-2 text-sm text-white focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
             name="name"
             value={formState.name}
             onChange={handleInputChange}
@@ -416,10 +416,10 @@ export function CohortManager() {
             autoFocus
           />
         </label>
-        <label className="grid gap-2 text-sm text-surface-200">
-          <span className="font-medium text-white">Description</span>
+        <label className="grid gap-2 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">Description</span>
           <textarea
-            className="min-h-[80px] rounded-lg border border-white/10 bg-surface-900/70 px-3 py-2 text-sm text-white focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="min-h-[80px] rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
             name="description"
             value={formState.description}
             onChange={handleInputChange}
@@ -431,14 +431,14 @@ export function CohortManager() {
           <button
             type="button"
             onClick={resetForm}
-            className="inline-flex items-center rounded-full border border-white/10 px-4 py-2 text-sm text-surface-200 transition hover:border-surface-200 hover:text-white"
+            className="inline-flex items-center rounded-full border border-border px-4 py-2 text-sm text-muted-foreground transition hover:border-muted hover:text-foreground"
             disabled={formSubmitting}
           >
             Clear
           </button>
           <button
             type="submit"
-            className="inline-flex items-center rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_14px_32px_-22px_rgba(134,72,255,1)] transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={formSubmitting}
           >
             {formSubmitting
@@ -453,23 +453,23 @@ export function CohortManager() {
       </form>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-surface-950/50 p-5">
+        <div className="rounded-xl border border-border bg-card p-5">
           <header className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-surface-400">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
                 Active Cohorts
               </h3>
-              <p className="text-xs text-surface-400">
+              <p className="text-xs text-muted-foreground">
                 {activeCohorts.length} active
               </p>
             </div>
           </header>
           {loading ? (
-            <div className="mt-4 flex items-center justify-center py-8 text-sm text-surface-300">
+            <div className="mt-4 flex items-center justify-center py-8 text-sm text-muted-foreground">
               Loading cohorts…
             </div>
           ) : activeCohorts.length === 0 ? (
-            <div className="mt-4 rounded-xl border border-dashed border-white/10 bg-surface-900/50 px-4 py-6 text-center text-sm text-surface-300">
+            <div className="mt-4 rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
               No active cohorts yet.
             </div>
           ) : (
@@ -478,17 +478,17 @@ export function CohortManager() {
                 const players = playerCounts[cohort.id] ?? 0;
                 return (
                   <li key={cohort.id}>
-                    <article className="rounded-2xl border border-white/10 bg-surface-900/60 p-4">
-                      <div className="flex flex-col gap-2 text-sm">
+                    <article className="rounded-xl border border-border bg-card p-4">
+                      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="font-semibold text-white">
+                          <span className="font-semibold text-foreground">
                             {cohort.name}
                           </span>
                           <div className="flex gap-2">
                             <button
                               type="button"
                               onClick={() => startEdit(cohort)}
-                              className="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs font-medium text-surface-200 transition hover:border-brand-300 hover:text-white"
+                              className="inline-flex items-center rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-foreground"
                               disabled={formSubmitting}
                             >
                               Edit
@@ -498,19 +498,17 @@ export function CohortManager() {
                               onClick={(event) =>
                                 handleToggleStatus(event, cohort)
                               }
-                              className="inline-flex items-center rounded-full border border-amber-500/40 px-3 py-1 text-xs font-medium text-amber-200 transition hover:bg-amber-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex items-center rounded-full border border-muted-foreground/40 px-3 py-1 text-xs font-medium text-muted-foreground transition hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-50"
                               disabled={formSubmitting}
                             >
                               Deactivate
                             </button>
                           </div>
                         </div>
-                        <p className="text-surface-200">
-                          {cohort.description || "No description"}
-                        </p>
-                        <p className="text-[11px] uppercase tracking-[0.35em] text-surface-500">
+                        <p>{cohort.description || "No description"}</p>
+                        <p className="text-[11px] uppercase tracking-[0.35em] text-muted-foreground">
                           Players this season:
-                          <span className="ml-1 text-surface-100">
+                          <span className="ml-1 text-foreground">
                             {players}
                           </span>
                         </p>
@@ -523,23 +521,23 @@ export function CohortManager() {
           )}
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-surface-950/50 p-5">
+        <div className="rounded-xl border border-border bg-card p-5">
           <header className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-surface-400">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
                 Inactive Cohorts
               </h3>
-              <p className="text-xs text-surface-400">
+              <p className="text-xs text-muted-foreground">
                 {inactiveCohorts.length} inactive
               </p>
             </div>
           </header>
           {loading ? (
-            <div className="mt-4 flex items-center justify-center py-8 text-sm text-surface-300">
+            <div className="mt-4 flex items-center justify-center py-8 text-sm text-muted-foreground">
               Loading cohorts…
             </div>
           ) : inactiveCohorts.length === 0 ? (
-            <div className="mt-4 rounded-xl border border-dashed border-white/10 bg-surface-900/50 px-4 py-6 text-center text-sm text-surface-300">
+            <div className="mt-4 rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
               No inactive cohorts.
             </div>
           ) : (
@@ -548,17 +546,17 @@ export function CohortManager() {
                 const players = playerCounts[cohort.id] ?? 0;
                 return (
                   <li key={cohort.id}>
-                    <article className="rounded-2xl border border-white/10 bg-surface-900/60 p-4">
-                      <div className="flex flex-col gap-2 text-sm">
+                    <article className="rounded-xl border border-border bg-card p-4">
+                      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="font-semibold text-white">
+                          <span className="font-semibold text-foreground">
                             {cohort.name}
                           </span>
                           <div className="flex gap-2">
                             <button
                               type="button"
                               onClick={() => startEdit(cohort)}
-                              className="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs font-medium text-surface-200 transition hover:border-brand-300 hover:text-white"
+                              className="inline-flex items-center rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-foreground"
                               disabled={formSubmitting}
                             >
                               Edit
@@ -568,19 +566,17 @@ export function CohortManager() {
                               onClick={(event) =>
                                 handleToggleStatus(event, cohort)
                               }
-                              className="inline-flex items-center rounded-full border border-emerald-500/40 px-3 py-1 text-xs font-medium text-emerald-200 transition hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex items-center rounded-full border border-emerald-500/40 px-3 py-1 text-xs font-medium text-emerald-600 transition hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-50"
                               disabled={formSubmitting}
                             >
                               Activate
                             </button>
                           </div>
                         </div>
-                        <p className="text-surface-200">
-                          {cohort.description || "No description"}
-                        </p>
-                        <p className="text-[11px] uppercase tracking-[0.35em] text-surface-500">
+                        <p>{cohort.description || "No description"}</p>
+                        <p className="text-[11px] uppercase tracking-[0.35em] text-muted-foreground">
                           Players this season:
-                          <span className="ml-1 text-surface-100">
+                          <span className="ml-1 text-foreground">
                             {players}
                           </span>
                         </p>

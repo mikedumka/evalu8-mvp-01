@@ -302,12 +302,12 @@ export function DrillLibraryManager() {
 
   if (!currentAssociation) {
     return (
-      <section className="rounded-3xl border border-white/10 bg-surface-900/60 p-6 text-surface-200 shadow-glow">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-          <ClipboardList className="h-5 w-5 text-brand-300" />
+      <section className="rounded-xl border border-border bg-card p-6 text-muted-foreground shadow-sm">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <ClipboardList className="h-5 w-5 text-primary" />
           Drill Library
         </h2>
-        <p className="mt-4 text-sm text-surface-300">
+        <p className="mt-4 text-sm text-muted-foreground">
           Select an association to manage its drill library.
         </p>
       </section>
@@ -316,12 +316,12 @@ export function DrillLibraryManager() {
 
   if (!canManage) {
     return (
-      <section className="rounded-3xl border border-white/10 bg-surface-900/60 p-6 text-surface-200 shadow-glow">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-          <ClipboardList className="h-5 w-5 text-brand-300" />
+      <section className="rounded-xl border border-border bg-card p-6 text-muted-foreground shadow-sm">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <ClipboardList className="h-5 w-5 text-primary" />
           Drill Library
         </h2>
-        <p className="mt-4 text-sm text-surface-300">
+        <p className="mt-4 text-sm text-muted-foreground">
           You need Administrator privileges to manage drills for this
           association.
         </p>
@@ -330,14 +330,14 @@ export function DrillLibraryManager() {
   }
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-surface-900/60 p-6 text-surface-100 shadow-glow">
+    <section className="rounded-xl border border-border bg-card p-6 text-foreground shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-            <ClipboardList className="h-5 w-5 text-brand-300" />
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <ClipboardList className="h-5 w-5 text-primary" />
             Drill Library
           </h2>
-          <p className="mt-1 text-sm text-surface-300">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage reusable drills, descriptions, and evaluation criteria.
           </p>
         </div>
@@ -345,7 +345,7 @@ export function DrillLibraryManager() {
           <button
             type="button"
             onClick={() => void fetchDrills()}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-surface-200 transition hover:border-brand-400 hover:text-white"
+            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-muted-foreground transition hover:border-primary hover:text-foreground"
             disabled={loading}
           >
             <RefreshCw className="h-4 w-4" /> Refresh
@@ -353,7 +353,7 @@ export function DrillLibraryManager() {
           <button
             type="button"
             onClick={handleCreate}
-            className="inline-flex items-center rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_30px_-20px_rgba(134,72,255,1)] transition hover:bg-brand-400"
+            className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
           >
             Add Drill
           </button>
@@ -380,18 +380,18 @@ export function DrillLibraryManager() {
 
       {isFormOpen && (
         <form
-          className="mt-6 grid gap-4 rounded-2xl border border-white/10 bg-surface-950/60 p-6"
+          className="mt-6 grid gap-4 rounded-xl border border-border bg-muted/40 p-6"
           onSubmit={handleSubmit}
         >
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-surface-300">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               {formMode === "create" ? "Create Drill" : "Edit Drill"}
             </h3>
           </div>
-          <label className="grid gap-2 text-sm text-surface-200">
-            <span className="font-medium text-white">Name</span>
+          <label className="grid gap-2 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Name</span>
             <input
-              className="rounded-lg border border-white/10 bg-surface-900/70 px-3 py-2 text-sm text-white focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
               name="name"
               value={formState.name}
               onChange={handleInputChange}
@@ -400,10 +400,12 @@ export function DrillLibraryManager() {
               disabled={formSubmitting}
             />
           </label>
-          <label className="grid gap-2 text-sm text-surface-200">
-            <span className="font-medium text-white">Short Description</span>
+          <label className="grid gap-2 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">
+              Short Description
+            </span>
             <textarea
-              className="min-h-[72px] rounded-lg border border-white/10 bg-surface-900/70 px-3 py-2 text-sm text-white focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="min-h-[72px] rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
               name="description"
               value={formState.description}
               onChange={handleInputChange}
@@ -411,10 +413,12 @@ export function DrillLibraryManager() {
               disabled={formSubmitting}
             />
           </label>
-          <label className="grid gap-2 text-sm text-surface-200">
-            <span className="font-medium text-white">Evaluation Criteria</span>
+          <label className="grid gap-2 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">
+              Evaluation Criteria
+            </span>
             <textarea
-              className="min-h-[120px] rounded-lg border border-white/10 bg-surface-900/70 px-3 py-2 text-sm text-white focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="min-h-[120px] rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
               name="criteria"
               value={formState.criteria}
               onChange={handleInputChange}
@@ -426,14 +430,14 @@ export function DrillLibraryManager() {
             <button
               type="button"
               onClick={handleCancelForm}
-              className="inline-flex items-center rounded-full border border-white/10 px-4 py-2 text-sm text-surface-200 transition hover:border-surface-200 hover:text-white"
+              className="inline-flex items-center rounded-full border border-border px-4 py-2 text-sm text-muted-foreground transition hover:border-muted hover:text-foreground"
               disabled={formSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="inline-flex items-center rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_14px_32px_-22px_rgba(134,72,255,1)] transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={formSubmitting}
             >
               {formSubmitting
@@ -449,13 +453,13 @@ export function DrillLibraryManager() {
       )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <div className="rounded-2xl border border-white/10 bg-surface-950/40 p-4">
+        <div className="rounded-xl border border-border bg-card p-4">
           {loading ? (
-            <div className="flex items-center justify-center py-10 text-sm text-surface-300">
+            <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
               Loading drills…
             </div>
           ) : sortedDrills.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-white/10 bg-surface-900/50 px-4 py-8 text-center text-sm text-surface-300">
+            <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
               No drills found. Add your first drill to get started.
             </div>
           ) : (
@@ -477,10 +481,10 @@ export function DrillLibraryManager() {
                       onKeyDown={(event) =>
                         void handleRowKeyDown(event, drill.id)
                       }
-                      className={`flex flex-col gap-3 rounded-2xl border px-4 py-4 transition focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2 focus:ring-offset-surface-900 ${
+                      className={`flex flex-col gap-3 rounded-xl border px-4 py-4 transition focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background ${
                         isSelected
-                          ? "border-brand-400 bg-brand-500/20 text-white shadow-[0_18px_40px_-26px_rgba(134,72,255,0.9)]"
-                          : "border-white/10 bg-surface-950/40 hover:border-brand-400/60"
+                          ? "border-primary bg-primary/10 text-foreground shadow-sm"
+                          : "border-border bg-card hover:border-primary/40"
                       }`}
                     >
                       <div className="flex flex-wrap items-center gap-2">
@@ -497,17 +501,17 @@ export function DrillLibraryManager() {
                           {drill.status === "active" ? "Active" : "Inactive"}
                         </span>
                       </div>
-                      <p className="text-sm text-surface-200">
+                      <p className="text-sm text-muted-foreground">
                         {drill.description}
                       </p>
-                      <div className="flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-[0.25em] text-surface-500">
+                      <div className="flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
                         <span>Updated {updatedDisplay}</span>
                       </div>
                       <div className="flex flex-wrap gap-3 pt-1">
                         <button
                           type="button"
                           onClick={(event) => handleEditClick(event, drill)}
-                          className="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs font-medium text-surface-200 transition hover:border-brand-300 hover:text-white"
+                          className="inline-flex items-center rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-foreground"
                         >
                           Edit
                         </button>
@@ -516,8 +520,8 @@ export function DrillLibraryManager() {
                           onClick={(event) => handleStatusClick(event, drill)}
                           className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition ${
                             drill.status === "active"
-                              ? "border border-rose-500/40 text-rose-200 hover:bg-rose-500/10"
-                              : "border border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/10"
+                              ? "border border-rose-500/40 text-rose-600 hover:bg-rose-500/10"
+                              : "border border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10"
                           }`}
                         >
                           {drill.status === "active"
@@ -532,11 +536,11 @@ export function DrillLibraryManager() {
             </ul>
           )}
         </div>
-        <aside className="rounded-2xl border border-white/10 bg-surface-950/50 p-5">
+        <aside className="rounded-xl border border-border bg-card p-5">
           {selectedDrill && selectedDrillMeta ? (
             <div className="grid gap-4">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base font-semibold text-white">
+                <h3 className="text-base font-semibold text-foreground">
                   {selectedDrill.name}
                 </h3>
                 <span
@@ -549,40 +553,40 @@ export function DrillLibraryManager() {
                   {selectedDrill.status === "active" ? "Active" : "Inactive"}
                 </span>
               </div>
-              <p className="text-sm leading-relaxed text-surface-200">
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 {selectedDrill.description}
               </p>
-              <div className="rounded-2xl border border-white/10 bg-surface-900/60 p-4">
-                <h4 className="text-xs font-semibold uppercase tracking-[0.35em] text-surface-400">
+              <div className="rounded-xl border border-border bg-muted/40 p-4">
+                <h4 className="text-xs font-semibold uppercase tracking-[0.35em] text-muted-foreground">
                   Evaluation Criteria
                 </h4>
-                <p className="mt-2 text-sm leading-relaxed text-surface-100">
+                <p className="mt-2 text-sm leading-relaxed text-foreground">
                   {selectedDrill.criteria}
                 </p>
               </div>
-              <dl className="grid gap-2 text-sm text-surface-300">
+              <dl className="grid gap-2 text-sm text-muted-foreground">
                 <div className="flex items-center justify-between">
                   <dt>Times Used</dt>
-                  <dd className="text-surface-100">
+                  <dd className="text-foreground">
                     {selectedDrillMeta.usageDisplay}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between">
                   <dt>Created</dt>
-                  <dd className="text-surface-100">
+                  <dd className="text-foreground">
                     {selectedDrillMeta.createdDisplay}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between">
                   <dt>Last Updated</dt>
-                  <dd className="text-surface-100">
+                  <dd className="text-foreground">
                     {selectedDrillMeta.updatedDisplay}
                   </dd>
                 </div>
               </dl>
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-white/10 bg-surface-900/50 px-4 py-8 text-center text-sm text-surface-300">
+            <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
               Select a drill to view details, criteria, and usage.
             </div>
           )}

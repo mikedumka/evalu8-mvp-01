@@ -373,12 +373,12 @@ export function SessionDrillConfigurator() {
 
   if (!currentAssociation) {
     return (
-      <section className="rounded-3xl border border-white/10 bg-surface-900/60 p-6 text-surface-200 shadow-glow">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-          <ListChecks className="h-5 w-5 text-brand-300" />
+      <section className="rounded-xl border border-border bg-card p-6 text-muted-foreground shadow-sm">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <ListChecks className="h-5 w-5 text-primary" />
           Session Drill Configuration
         </h2>
-        <p className="mt-4 text-sm text-surface-300">
+        <p className="mt-4 text-sm text-muted-foreground">
           Select an association to configure session drills.
         </p>
       </section>
@@ -387,12 +387,12 @@ export function SessionDrillConfigurator() {
 
   if (!canManage) {
     return (
-      <section className="rounded-3xl border border-white/10 bg-surface-900/60 p-6 text-surface-200 shadow-glow">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-          <ListChecks className="h-5 w-5 text-brand-300" />
+      <section className="rounded-xl border border-border bg-card p-6 text-muted-foreground shadow-sm">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <ListChecks className="h-5 w-5 text-primary" />
           Session Drill Configuration
         </h2>
-        <p className="mt-4 text-sm text-surface-300">
+        <p className="mt-4 text-sm text-muted-foreground">
           You need Administrator privileges to manage session drill assignments.
         </p>
       </section>
@@ -400,21 +400,21 @@ export function SessionDrillConfigurator() {
   }
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-surface-900/60 p-6 text-surface-100 shadow-glow">
+    <section className="rounded-xl border border-border bg-card p-6 text-foreground shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-            <ListChecks className="h-5 w-5 text-brand-300" />
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <ListChecks className="h-5 w-5 text-primary" />
             Session Drill Configuration
           </h2>
-          <p className="mt-1 text-sm text-surface-300">
+          <p className="mt-1 text-sm text-muted-foreground">
             Assign drills with weights to positions for each evaluation session.
           </p>
         </div>
         <button
           type="button"
           onClick={() => void refreshAll()}
-          className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-surface-200 transition hover:border-brand-400 hover:text-white"
+          className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-muted-foreground transition hover:border-primary hover:text-foreground"
           disabled={loadingSessions || loadingSessionDrills || loadingRequest}
         >
           <RotateCw className="h-4 w-4" /> Refresh
@@ -434,16 +434,16 @@ export function SessionDrillConfigurator() {
       )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
-        <div className="rounded-2xl border border-white/10 bg-surface-950/40 p-4">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-surface-400">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
             Sessions
           </h3>
           {loadingSessions ? (
-            <div className="mt-4 flex items-center justify-center py-8 text-sm text-surface-300">
+            <div className="mt-4 flex items-center justify-center py-8 text-sm text-muted-foreground">
               Loading sessions…
             </div>
           ) : sessions.length === 0 ? (
-            <div className="mt-4 rounded-xl border border-dashed border-white/10 bg-surface-900/50 px-4 py-6 text-center text-sm text-surface-300">
+            <div className="mt-4 rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
               No sessions found. Create sessions before assigning drills.
             </div>
           ) : (
@@ -465,23 +465,23 @@ export function SessionDrillConfigurator() {
                           void handleSelectSession(session.id);
                         }
                       }}
-                      className={`rounded-2xl border px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2 focus:ring-offset-surface-900 ${
+                      className={`rounded-xl border px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background ${
                         isSelected
-                          ? "border-brand-400 bg-brand-500/20 text-white"
-                          : "border-white/10 bg-surface-950/40 hover:border-brand-400/50"
+                          ? "border-primary bg-primary/10 text-foreground"
+                          : "border-border bg-card hover:border-primary/40"
                       }`}
                     >
                       <div className="flex flex-col gap-1">
                         <span className="text-sm font-semibold">
                           {session.name}
                         </span>
-                        <span className="text-xs text-surface-300">
+                        <span className="text-xs text-muted-foreground">
                           {session.cohort ? session.cohort.name : "No Cohort"}
                         </span>
-                        <span className="text-[11px] uppercase tracking-[0.25em] text-surface-500">
+                        <span className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
                           {sessionDate} · {session.scheduled_time ?? "--"}
                         </span>
-                        <span className="text-[11px] uppercase tracking-[0.25em] text-surface-500">
+                        <span className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
                           Status: {session.status}
                         </span>
                       </div>
@@ -502,11 +502,11 @@ export function SessionDrillConfigurator() {
           )}
 
           <form
-            className="rounded-2xl border border-white/10 bg-surface-950/50 p-5"
+            className="rounded-xl border border-border bg-muted/40 p-5"
             onSubmit={handleSubmit}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-surface-400">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
                 {editingSessionDrillId
                   ? "Edit Assignment"
                   : "Add Drill to Session"}
@@ -515,7 +515,7 @@ export function SessionDrillConfigurator() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="text-xs text-surface-400 transition hover:text-surface-200"
+                  className="text-xs text-muted-foreground transition hover:text-foreground"
                   disabled={loadingRequest}
                 >
                   Cancel Edit
@@ -523,8 +523,8 @@ export function SessionDrillConfigurator() {
               )}
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="flex flex-col gap-2 text-sm text-surface-200 md:col-span-2">
-                <span className="font-medium text-white">Drill</span>
+              <label className="flex flex-col gap-2 text-sm text-muted-foreground md:col-span-2">
+                <span className="font-medium text-foreground">Drill</span>
                 <select
                   name="drillId"
                   value={formState.drillId}
@@ -532,7 +532,7 @@ export function SessionDrillConfigurator() {
                   disabled={
                     isLocked || loadingRequest || Boolean(editingSessionDrillId)
                   }
-                  className="rounded-lg border border-white/10 bg-surface-900/70 px-3 py-2 text-sm text-white focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <option value="">
                     {editingSessionDrillId
@@ -546,8 +546,8 @@ export function SessionDrillConfigurator() {
                   ))}
                 </select>
               </label>
-              <label className="flex flex-col gap-2 text-sm text-surface-200">
-                <span className="font-medium text-white">Weight (%)</span>
+              <label className="flex flex-col gap-2 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">Weight (%)</span>
                 <input
                   type="number"
                   name="weight"
@@ -557,16 +557,16 @@ export function SessionDrillConfigurator() {
                   max={100}
                   placeholder="e.g. 40"
                   disabled={isLocked || loadingRequest}
-                  className="rounded-lg border border-white/10 bg-surface-900/70 px-3 py-2 text-sm text-white focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </label>
               <fieldset className="md:col-span-2">
-                <legend className="text-sm font-medium text-white">
+                <legend className="text-sm font-medium text-foreground">
                   Positions
                 </legend>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {positions.length === 0 ? (
-                    <p className="text-xs text-surface-400">
+                    <p className="text-xs text-muted-foreground">
                       No active positions found. Configure position types first.
                     </p>
                   ) : (
@@ -583,17 +583,17 @@ export function SessionDrillConfigurator() {
                           key={position.id}
                           className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm transition ${
                             isChecked
-                              ? "border-brand-400 bg-brand-500/15 text-white"
-                              : "border-white/10 bg-surface-900/60 text-surface-200"
+                              ? "border-primary bg-primary/10 text-foreground"
+                              : "border-border bg-card text-muted-foreground"
                           }`}
                         >
                           <span>{position.name}</span>
-                          <span className="flex items-center gap-2 text-xs text-surface-300">
+                          <span className="flex items-center gap-2 text-xs text-muted-foreground">
                             <span>{summary.weight}%</span>
                             <span>{summary.count}/4</span>
                             <input
                               type="checkbox"
-                              className="h-4 w-4 rounded border border-white/10 bg-surface-950/80 text-brand-400 focus:ring-brand-500"
+                              className="h-4 w-4 rounded border border-border bg-background text-primary focus:ring-primary"
                               checked={isChecked}
                               onChange={() => handlePositionToggle(position.id)}
                               disabled={isLocked || loadingRequest}
@@ -609,7 +609,7 @@ export function SessionDrillConfigurator() {
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="submit"
-                className="inline-flex items-center rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white shadow-[0_14px_32px_-22px_rgba(134,72,255,1)] transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={isLocked || loadingRequest}
               >
                 {loadingRequest
@@ -623,16 +623,16 @@ export function SessionDrillConfigurator() {
             </div>
           </form>
 
-          <div className="rounded-2xl border border-white/10 bg-surface-950/50 p-5">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-surface-400">
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
               Current Assignments
             </h3>
             {loadingSessionDrills ? (
-              <div className="mt-4 flex items-center justify-center py-8 text-sm text-surface-300">
+              <div className="mt-4 flex items-center justify-center py-8 text-sm text-muted-foreground">
                 Loading assignments…
               </div>
             ) : sessionDrills.length === 0 ? (
-              <div className="mt-4 rounded-xl border border-dashed border-white/10 bg-surface-900/50 px-4 py-6 text-center text-sm text-surface-300">
+              <div className="mt-4 rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
                 No drills assigned to this session yet.
               </div>
             ) : (
@@ -640,17 +640,17 @@ export function SessionDrillConfigurator() {
                 {sessionDrills.map((assignment) => (
                   <li
                     key={assignment.id}
-                    className="rounded-2xl border border-white/10 bg-surface-900/60 p-4"
+                    className="rounded-xl border border-border bg-card p-4"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex flex-col gap-1 text-sm">
-                        <span className="font-semibold text-white">
+                      <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                        <span className="font-semibold text-foreground">
                           {assignment.drill?.name ?? "Unknown drill"}
                         </span>
-                        <span className="text-xs text-surface-300">
+                        <span className="text-xs text-muted-foreground">
                           Weight: {assignment.weight_percent}%
                         </span>
-                        <span className="text-xs text-surface-300">
+                        <span className="text-xs text-muted-foreground">
                           Positions:{" "}
                           {(assignment.applies_to_positions ?? [])
                             .map(
@@ -665,7 +665,7 @@ export function SessionDrillConfigurator() {
                         <button
                           type="button"
                           onClick={() => handleEditAssignment(assignment)}
-                          className="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs font-medium text-surface-200 transition hover:border-brand-300 hover:text-white"
+                          className="inline-flex items-center rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-foreground"
                           disabled={isLocked || loadingRequest}
                         >
                           Edit
@@ -675,7 +675,7 @@ export function SessionDrillConfigurator() {
                           onClick={(event) =>
                             handleRemoveAssignment(event, assignment)
                           }
-                          className="inline-flex items-center rounded-full border border-rose-500/40 px-3 py-1 text-xs font-medium text-rose-200 transition hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex items-center rounded-full border border-rose-500/40 px-3 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-50"
                           disabled={isLocked || loadingRequest}
                         >
                           Remove
