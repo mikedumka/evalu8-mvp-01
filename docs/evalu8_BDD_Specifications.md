@@ -4434,6 +4434,66 @@ Scenario: Prevent duplicate subdomain
 
 ---
 
+### Feature: Manage System Users
+
+**User Story:** As a System Administrator, I want to invite and manage system-level users so that association staff can access Evalu8 with the correct permissions.
+
+**Business Rules:**
+
+- Only users with the "System Administrator" role can invite system users.
+- Invitations send an automated email prompting the recipient to sign in with Google.
+- First name and last name are captured separately and stored as "Last, First" for roster alignment.
+- An association and at least one association role must be assigned at invite time.
+- Re-inviting an existing email updates roles and association membership without sending duplicate invites.
+- System roles and association roles are activated immediately after invite completion.
+
+```gherkin
+Scenario: Invite a brand-new system user
+  Given I am logged in as a System Administrator
+  And I navigate to "System Users"
+  When I click "Add user"
+  And I enter "rivera.alex@example.com" for email
+  And I enter "Rivera" for last name
+  And I enter "Alex" for first name
+  And I select association "Selkirk Minor Hockey"
+  And I assign association role "Administrator"
+  And I assign system role "System Administrator"
+  And I click "Send invitation"
+  Then the system sends an email invitation to "rivera.alex@example.com"
+  And the invite instructs the recipient to sign in with Google to activate their access
+  And the user appears in the System Users table with status "Active"
+  And I see confirmation "Invitation sent and system access configured."
+
+Scenario: Update roles for an existing system user
+  Given "lee.taylor@example.com" already exists in Auth and System Users
+  And I am logged in as a System Administrator
+  When I click "Add user"
+  And I enter "lee.taylor@example.com" for email
+  And I enter "Lee" for last name
+  And I enter "Taylor" for first name
+  And I select association "Los Angeles Minor Hockey"
+  And I assign association role "Evaluator"
+  And I click "Send invitation"
+  Then no duplicate invitation email is sent
+  And the system updates Lee Taylor's association roles and membership
+  And I see confirmation "User already exists; system access updated."
+
+Scenario: Prevent invite without required fields
+  Given I am logged in as a System Administrator
+  When I click "Add user"
+  And I leave the last name field blank
+  And I click "Send invitation"
+  Then I see an inline error "Last name is required."
+  And the invitation is not sent
+  When I enter "Morgan" for last name
+  And I leave the association selection blank
+  And I click "Send invitation"
+  Then I see an inline error "Association selection is required."
+  And the invitation is not sent
+```
+
+---
+
 ### Feature: Configure Sport Types for Associations
 
 **User Story:** As a System Administrator, I want to configure sport types so that associations can select appropriate sports for their evaluations

@@ -435,7 +435,7 @@ export function SessionDrillConfigurator() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
         <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+          <h3 className="text-sm font-semibold uppercase text-muted-foreground">
             Sessions
           </h3>
           {loadingSessions ? (
@@ -506,7 +506,7 @@ export function SessionDrillConfigurator() {
             onSubmit={handleSubmit}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+              <h3 className="text-sm font-semibold uppercase text-muted-foreground">
                 {editingSessionDrillId
                   ? "Edit Assignment"
                   : "Add Drill to Session"}
@@ -624,7 +624,7 @@ export function SessionDrillConfigurator() {
           </form>
 
           <div className="rounded-xl border border-border bg-card p-5">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+            <h3 className="text-sm font-semibold uppercase text-muted-foreground">
               Current Assignments
             </h3>
             {loadingSessionDrills ? (

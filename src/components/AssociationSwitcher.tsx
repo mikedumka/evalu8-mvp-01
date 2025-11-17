@@ -26,14 +26,14 @@ export function AssociationSwitcher({
   return (
     <div className="flex flex-col gap-1">
       <label
-        className="text-xs font-medium text-sidebar-foreground/80"
+        className="text-xs font-medium text-muted-foreground"
         htmlFor="association-selector"
       >
         Association
       </label>
       <select
         id="association-selector"
-        className="h-9 w-full rounded-md border border-sidebar-border bg-sidebar px-3 text-sm text-sidebar-foreground shadow-sm transition hover:border-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+        className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground shadow-sm transition hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         value={currentAssociationId ?? ""}
         onChange={handleChange}
       >
@@ -41,9 +41,11 @@ export function AssociationSwitcher({
           <option
             key={membership.association_id}
             value={membership.association_id}
-            className="bg-popover text-popover-foreground"
+            className="bg-card text-foreground"
           >
-            {membership.association.name}
+            {membership.association.abbreviation
+              ? `${membership.association.abbreviation} · ${membership.association.name}`
+              : membership.association.name}
           </option>
         ))}
       </select>

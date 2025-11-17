@@ -390,7 +390,7 @@ export function CohortManager() {
         onSubmit={handleSubmit}
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+          <h3 className="text-sm font-semibold uppercase text-muted-foreground">
             {formMode === "create" ? "Create Cohort" : "Edit Cohort"}
           </h3>
           {formMode === "edit" && (
@@ -456,7 +456,7 @@ export function CohortManager() {
         <div className="rounded-xl border border-border bg-card p-5">
           <header className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+              <h3 className="text-sm font-semibold uppercase text-muted-foreground">
                 Active Cohorts
               </h3>
               <p className="text-xs text-muted-foreground">
@@ -506,7 +506,7 @@ export function CohortManager() {
                           </div>
                         </div>
                         <p>{cohort.description || "No description"}</p>
-                        <p className="text-[11px] uppercase tracking-[0.35em] text-muted-foreground">
+                        <p className="text-[11px] uppercase text-muted-foreground">
                           Players this season:
                           <span className="ml-1 text-foreground">
                             {players}
@@ -524,7 +524,7 @@ export function CohortManager() {
         <div className="rounded-xl border border-border bg-card p-5">
           <header className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+              <h3 className="text-sm font-semibold uppercase text-muted-foreground">
                 Inactive Cohorts
               </h3>
               <p className="text-xs text-muted-foreground">
@@ -574,7 +574,7 @@ export function CohortManager() {
                           </div>
                         </div>
                         <p>{cohort.description || "No description"}</p>
-                        <p className="text-[11px] uppercase tracking-[0.35em] text-muted-foreground">
+                        <p className="text-[11px] uppercase text-muted-foreground">
                           Players this season:
                           <span className="ml-1 text-foreground">
                             {players}

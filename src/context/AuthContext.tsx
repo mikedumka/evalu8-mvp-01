@@ -18,6 +18,12 @@ export type AssociationUser = {
     id: string;
     name: string;
     status: string;
+    abbreviation: string | null;
+    sport_type: {
+      id: string;
+      name: string;
+      status: string;
+    } | null;
   };
 };
 
@@ -30,6 +36,7 @@ interface AuthContextType {
   associations: AssociationUser[];
   currentAssociation: AssociationUser | null;
   setCurrentAssociationId: (associationId: string) => Promise<void>;
+  refreshAssociations: () => Promise<void>;
   hasRole: (role: Role) => boolean;
   hasAnyRole: (roles: Role[]) => boolean;
   signOut: () => Promise<void>;
@@ -77,6 +84,66 @@ export function AuthProvider({ children }: AuthProviderProps) {
     []
   );
 
+  const fetchAssociations = useCallback(async () => {
+    if (!user) {
+      setAssociations([]);
+      setCurrentAssociationIdState(null);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(AUTH_ASSOCIATION_KEY);
+      }
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("association_users")
+        .select(
+          `association_id, roles, status, association:associations!inner ( id, name, status, abbreviation, sport_type:sport_types!associations_sport_type_id_fkey ( id, name, status ) )`
+        )
+        .eq("user_id", user.id)
+        .eq("status", "active");
+
+      if (error) {
+        console.error("Error fetching association memberships", error.message);
+        setAssociations([]);
+        return;
+      }
+
+      const activeAssociations = (data ?? []).filter(
+        (item) => item.association?.status === "active"
+      ) as AssociationUser[];
+
+      setAssociations(activeAssociations);
+
+      if (!activeAssociations.length) {
+        setCurrentAssociationIdState(null);
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(AUTH_ASSOCIATION_KEY);
+        }
+        return;
+      }
+
+      const storedAssociationId =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem(AUTH_ASSOCIATION_KEY)
+          : null;
+
+      const defaultAssociationId = activeAssociations[0]?.association_id;
+      const validAssociationId = activeAssociations.some(
+        (membership) => membership.association_id === storedAssociationId
+      )
+        ? storedAssociationId
+        : defaultAssociationId;
+
+      if (validAssociationId) {
+        await setCurrentAssociationIdHandler(validAssociationId);
+      }
+    } catch (error) {
+      console.error("Unexpected error loading association memberships", error);
+      setAssociations([]);
+    }
+  }, [user, setCurrentAssociationIdHandler]);
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -98,74 +165,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   useEffect(() => {
-    const fetchAssociations = async () => {
-      if (!user) {
-        setAssociations([]);
-        setCurrentAssociationIdState(null);
-        if (typeof window !== "undefined") {
-          window.localStorage.removeItem(AUTH_ASSOCIATION_KEY);
-        }
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from("association_users")
-          .select(
-            `association_id, roles, status, association:associations!inner ( id, name, status )`
-          )
-          .eq("user_id", user.id)
-          .eq("status", "active");
-
-        if (error) {
-          console.error(
-            "Error fetching association memberships",
-            error.message
-          );
-          setAssociations([]);
-          return;
-        }
-
-        const activeAssociations = (data ?? []).filter(
-          (item) => item.association?.status === "active"
-        ) as AssociationUser[];
-
-        setAssociations(activeAssociations);
-
-        if (!activeAssociations.length) {
-          setCurrentAssociationIdState(null);
-          if (typeof window !== "undefined") {
-            window.localStorage.removeItem(AUTH_ASSOCIATION_KEY);
-          }
-          return;
-        }
-
-        const storedAssociationId =
-          typeof window !== "undefined"
-            ? window.localStorage.getItem(AUTH_ASSOCIATION_KEY)
-            : null;
-
-        const defaultAssociationId = activeAssociations[0]?.association_id;
-        const validAssociationId = activeAssociations.some(
-          (membership) => membership.association_id === storedAssociationId
-        )
-          ? storedAssociationId
-          : defaultAssociationId;
-
-        if (validAssociationId) {
-          await setCurrentAssociationIdHandler(validAssociationId);
-        }
-      } catch (error) {
-        console.error(
-          "Unexpected error loading association memberships",
-          error
-        );
-        setAssociations([]);
-      }
-    };
-
     void fetchAssociations();
-  }, [user, setCurrentAssociationIdHandler]);
+  }, [fetchAssociations]);
 
   useEffect(() => {
     const applyAssociationContext = async () => {
@@ -251,6 +252,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     associations,
     currentAssociation,
     setCurrentAssociationId: setCurrentAssociationIdHandler,
+    refreshAssociations: fetchAssociations,
     hasRole,
     hasAnyRole,
     signOut,

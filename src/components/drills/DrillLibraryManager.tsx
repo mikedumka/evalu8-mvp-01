@@ -557,7 +557,7 @@ export function DrillLibraryManager() {
                 {selectedDrill.description}
               </p>
               <div className="rounded-xl border border-border bg-muted/40 p-4">
-                <h4 className="text-xs font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+                <h4 className="text-xs font-semibold uppercase text-muted-foreground">
                   Evaluation Criteria
                 </h4>
                 <p className="mt-2 text-sm leading-relaxed text-foreground">

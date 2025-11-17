@@ -420,7 +420,7 @@ export function PreviousLevelManager() {
         onSubmit={handleSubmit}
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+          <h3 className="text-sm font-semibold uppercase text-muted-foreground">
             {formMode === "create"
               ? "Add Previous Level"
               : "Edit Previous Level"}
@@ -530,7 +530,7 @@ export function PreviousLevelManager() {
                           </button>
                         </div>
                       </div>
-                      <p className="text-[11px] uppercase tracking-[0.35em] text-muted-foreground">
+                      <p className="text-[11px] uppercase text-muted-foreground">
                         Players this season:
                         <span className="ml-1 text-foreground">{players}</span>
                       </p>

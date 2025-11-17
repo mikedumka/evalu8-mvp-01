@@ -11,7 +11,7 @@ export function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="mx-auto w-full max-w-md rounded-xl border border-border bg-card px-8 py-12 text-center shadow-sm">
-        <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-primary">
+        <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase text-primary">
           Evalu8 Platform
         </span>
 
