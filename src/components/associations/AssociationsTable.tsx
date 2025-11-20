@@ -334,7 +334,7 @@ export function AssociationsTable() {
         p_name: data.name.trim(),
         p_sport_type_id: data.sportTypeId!,
         p_contact_email: data.contactEmail.trim() || null,
-      };
+      } as any;
 
       const { data: result, error } = await supabase.rpc(
         "create_association_with_admin",

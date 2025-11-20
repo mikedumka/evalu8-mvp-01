@@ -39,18 +39,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import { UserDialog } from "./UserDialog";
 import { EditUserDialog } from "./EditUserDialog";
-
-export type SystemUserRow = {
-  id: string;
-  email: string;
-  full_name: string | null;
-  status: "active" | "inactive";
-  system_roles: string[];
-  created_at: string;
-  last_login_at: string | null;
-  association_count: number;
-  active_association_count: number;
-};
+import type { SystemUserRow } from "./types";
 
 type ColumnKey =
   | "lastName"

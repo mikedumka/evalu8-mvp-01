@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
-import type { SystemUserRow } from "./UsersTable";
+import type { SystemUserRow } from "./types";
 
 const SYSTEM_ROLE_OPTIONS = ["System Administrator", "Support"] as const;
 
