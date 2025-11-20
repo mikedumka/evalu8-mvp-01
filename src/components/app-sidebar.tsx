@@ -7,6 +7,7 @@ import {
   ClipboardCheck,
   ChevronsUpDown,
   Building2,
+  History,
   IdCardLanyard,
   LineChart,
   LogOut,
@@ -58,16 +59,16 @@ interface NavItem {
 
 const adminNavItems: NavItem[] = [
   {
+    id: "previous-levels",
+    label: "Previous Levels",
+    icon: History,
+    to: "/previous-levels",
+  },
+  {
     id: "cohort-management",
     label: "Cohort Management",
     icon: Users,
     to: "/cohort-management",
-  },
-  {
-    id: "previous-levels",
-    label: "Previous Levels",
-    icon: BadgeCheck,
-    to: "/previous-levels",
   },
   {
     id: "drill-library",

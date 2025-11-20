@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Login } from "@/components/Login";
-import { PreviousLevelManager } from "@/components/previous-levels/PreviousLevelManager";
+import { PreviousLevelsTable } from "@/components/previous-levels/PreviousLevelsTable";
 import { AdminPage } from "@/components/layout/AdminPage";
 
 export default function PreviousLevelsPage() {
@@ -23,7 +23,7 @@ export default function PreviousLevelsPage() {
       title="Previous Levels"
       description="Maintain previous level rankings used for distribution balancing."
     >
-      <PreviousLevelManager />
+      <PreviousLevelsTable />
     </AdminPage>
   );
 }

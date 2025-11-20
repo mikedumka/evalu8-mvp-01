@@ -1259,6 +1259,10 @@ export type Database = {
         Args: { p_user_id: string; p_status: string };
         Returns: unknown;
       };
+      swap_previous_level_ranks: {
+        Args: { level_id_1: string; level_id_2: string };
+        Returns: void;
+      };
     };
     Enums: {
       [_ in never]: never;
