@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Login } from "@/components/Login";
-import { CohortManager } from "@/components/cohorts/CohortManager";
+import { CohortsTable } from "@/components/cohorts/CohortsTable";
 import { AdminPage } from "@/components/layout/AdminPage";
 
 export default function CohortManagementPage() {
@@ -23,7 +23,7 @@ export default function CohortManagementPage() {
       title="Cohort Management"
       description="Create, update, and organize cohorts for the current season."
     >
-      <CohortManager />
+      <CohortsTable />
     </AdminPage>
   );
 }
