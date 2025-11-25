@@ -1153,6 +1153,10 @@ export type Database = {
         Args: { p_drill_id: string };
         Returns: void;
       };
+      delete_position_type: {
+        Args: { p_position_type_id: string };
+        Returns: void;
+      };
       remove_session_drill: {
         Args: { p_session_drill_id: string };
         Returns: string;

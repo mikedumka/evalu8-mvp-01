@@ -8,6 +8,7 @@ import CohortManagementPage from "@/pages/CohortManagementPage";
 import DrillLibraryPage from "@/pages/DrillLibraryPage";
 import LandingPage from "@/pages/LandingPage";
 import PreviousLevelsPage from "@/pages/PreviousLevelsPage";
+import PositionTypesPage from "@/pages/PositionTypesPage";
 import SessionDrillConfigurationPage from "@/pages/SessionDrillConfigurationPage";
 import SystemAssociationsPage from "@/pages/SystemAssociationsPage";
 import SystemUsersPage from "@/pages/SystemUsersPage";
@@ -38,6 +39,7 @@ function App() {
               path="/cohort-management"
               element={<CohortManagementPage />}
             />
+            <Route path="/position-types" element={<PositionTypesPage />} />
             <Route path="/previous-levels" element={<PreviousLevelsPage />} />
             <Route path="/drill-library" element={<DrillLibraryPage />} />
             <Route

@@ -14,6 +14,7 @@ import {
   Settings2,
   Users,
   UserCog,
+  Shirt,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -69,6 +70,12 @@ const adminNavItems: NavItem[] = [
     label: "Cohort Management",
     icon: Users,
     to: "/cohort-management",
+  },
+  {
+    id: "position-types",
+    label: "Position Types",
+    icon: Shirt,
+    to: "/position-types",
   },
   {
     id: "drill-library",
