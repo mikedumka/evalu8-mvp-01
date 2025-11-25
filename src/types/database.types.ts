@@ -1157,6 +1157,22 @@ export type Database = {
         Args: { p_position_type_id: string };
         Returns: void;
       };
+      activate_season: {
+        Args: {
+          p_season_id: string;
+        };
+        Returns: void;
+      };
+      complete_season: {
+        Args: {
+          p_season_id: string;
+        };
+        Returns: void;
+      };
+      delete_season: {
+        Args: { p_season_id: string };
+        Returns: void;
+      };
       remove_session_drill: {
         Args: { p_session_drill_id: string };
         Returns: string;

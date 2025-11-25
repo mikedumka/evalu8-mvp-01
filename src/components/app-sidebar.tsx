@@ -137,6 +137,24 @@ const navigationSections: Array<{
       },
     ],
   },
+  {
+    id: "setup-configuration",
+    label: "Setup & Configuration",
+    items: [
+      {
+        id: "season-management",
+        label: "Season Management",
+        icon: Settings2,
+        to: "/season-management",
+      },
+      {
+        id: "cohort-management",
+        label: "Cohort Management",
+        icon: Users,
+        to: "/cohort-management",
+      },
+    ],
+  },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
