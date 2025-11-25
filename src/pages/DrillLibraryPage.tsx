@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Login } from "@/components/Login";
-import { DrillLibraryManager } from "@/components/drills/DrillLibraryManager";
+import { DrillsTable } from "@/components/drills/DrillsTable";
 import { AdminPage } from "@/components/layout/AdminPage";
 
 export default function DrillLibraryPage() {
@@ -23,7 +23,7 @@ export default function DrillLibraryPage() {
       title="Drill Library"
       description="Curate drills and their evaluation criteria for season use."
     >
-      <DrillLibraryManager />
+      <DrillsTable />
     </AdminPage>
   );
 }

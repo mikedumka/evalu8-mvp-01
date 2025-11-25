@@ -102,5 +102,5 @@ export default {
       spacing: spacingScale,
     },
   },
-  plugins: [],
+  plugins: [require("@tailwindcss/typography")],
 };

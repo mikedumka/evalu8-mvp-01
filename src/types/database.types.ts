@@ -1149,6 +1149,10 @@ export type Database = {
         };
       };
       current_association_id: { Args: never; Returns: string };
+      delete_drill: {
+        Args: { p_drill_id: string };
+        Returns: void;
+      };
       remove_session_drill: {
         Args: { p_session_drill_id: string };
         Returns: string;
@@ -1289,7 +1293,7 @@ export type Tables<
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never
+    : never
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
