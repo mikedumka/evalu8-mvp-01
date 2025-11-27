@@ -409,13 +409,18 @@ export type Database = {
       players: {
         Row: {
           association_id: string;
+          birth_date: string | null;
           birth_year: number;
           cohort_id: string | null;
           created_at: string;
+          email_1: string | null;
+          email_2: string | null;
           first_name: string;
+          gender: string | null;
           id: string;
           last_name: string;
           notes: string | null;
+          phone: string | null;
           position_type_id: string;
           previous_level_id: string | null;
           season_id: string;
@@ -425,13 +430,18 @@ export type Database = {
         };
         Insert: {
           association_id: string;
+          birth_date?: string | null;
           birth_year: number;
           cohort_id?: string | null;
           created_at?: string;
+          email_1?: string | null;
+          email_2?: string | null;
           first_name: string;
+          gender?: string | null;
           id?: string;
           last_name: string;
           notes?: string | null;
+          phone?: string | null;
           position_type_id: string;
           previous_level_id?: string | null;
           season_id: string;
@@ -441,13 +451,18 @@ export type Database = {
         };
         Update: {
           association_id?: string;
+          birth_date?: string | null;
           birth_year?: number;
           cohort_id?: string | null;
           created_at?: string;
+          email_1?: string | null;
+          email_2?: string | null;
           first_name?: string;
+          gender?: string | null;
           id?: string;
           last_name?: string;
           notes?: string | null;
+          phone?: string | null;
           position_type_id?: string;
           previous_level_id?: string | null;
           season_id?: string;
@@ -1155,6 +1170,10 @@ export type Database = {
       };
       delete_position_type: {
         Args: { p_position_type_id: string };
+        Returns: void;
+      };
+      delete_player: {
+        Args: { p_player_id: string };
         Returns: void;
       };
       activate_season: {

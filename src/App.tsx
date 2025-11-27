@@ -7,12 +7,14 @@ import { useAuth } from "@/hooks/useAuth";
 import CohortManagementPage from "@/pages/CohortManagementPage";
 import DrillLibraryPage from "@/pages/DrillLibraryPage";
 import LandingPage from "@/pages/LandingPage";
+import PlayerManagementPage from "@/pages/PlayerManagementPage";
 import PreviousLevelsPage from "@/pages/PreviousLevelsPage";
 import PositionTypesPage from "@/pages/PositionTypesPage";
 import SeasonManagementPage from "@/pages/SeasonManagementPage";
 import SessionDrillConfigurationPage from "@/pages/SessionDrillConfigurationPage";
 import SystemAssociationsPage from "@/pages/SystemAssociationsPage";
 import SystemUsersPage from "@/pages/SystemUsersPage";
+import DebugPage from "@/pages/DebugPage";
 
 function App() {
   const { user, loading } = useAuth();
@@ -40,7 +42,14 @@ function App() {
               path="/cohort-management"
               element={<CohortManagementPage />}
             />
-            <Route path="/season-management" element={<SeasonManagementPage />} />
+            <Route
+              path="/player-administration"
+              element={<PlayerManagementPage />}
+            />
+            <Route
+              path="/season-management"
+              element={<SeasonManagementPage />}
+            />
             <Route path="/position-types" element={<PositionTypesPage />} />
             <Route path="/previous-levels" element={<PreviousLevelsPage />} />
             <Route path="/drill-library" element={<DrillLibraryPage />} />
@@ -53,6 +62,7 @@ function App() {
               element={<SystemAssociationsPage />}
             />
             <Route path="/system/users" element={<SystemUsersPage />} />
+            <Route path="/debug" element={<DebugPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </SidebarInset>

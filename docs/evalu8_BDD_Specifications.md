@@ -689,17 +689,18 @@ Scenario: Bulk invite multiple evaluators
 
 ### Feature: Bulk Import Players via CSV
 
-**User Story:** As an Association Administrator, I want to bulk import players via CSV with their details (name, birth year, position) so that registration is efficient for large groups
+**User Story:** As an Association Administrator, I want to bulk import players via CSV with their details (name, birthdate, contact info) so that registration is efficient for large groups
 
 **Business Rules:**
 
-- CSV must contain columns: First Name, Last Name, Birth Year, Position
-- CSV can optionally contain column: Cohort
-- Birth year must be a valid 4-digit year
+- CSV must contain columns in this exact order: First Name, Last Name, Birthdate, Gender, Position, Cohort, Previous Level, Phone, Email 1, Email 2
+- Birthdate must be in valid format (m/d/yyyy)
+- Birth Year is automatically calculated from Birthdate
 - Position must match an active position type in the system
 - Cohort (if provided) must match an active cohort in the system
+- Previous Level (if provided) must match an active previous level in the system
 - Players without a cohort value remain unassigned and can be assigned later
-- Duplicate players (same first name, last name, and birth year) are flagged for review
+- Duplicate players (same first name, last name, and birthdate) are flagged for review
 - Import validates all rows before processing
 - Players are imported in "Active" status by default
 - All imported players must be assigned to the active season
@@ -711,17 +712,17 @@ Scenario: Import players with valid CSV
   And position types "Forward", "Defense", "Goalie" exist and are active
   When I navigate to "Players"
   And I click "Bulk Import"
-  And I upload a CSV file with columns: First Name, Last Name, Birth Year, Position
+  And I upload a CSV file with columns: First Name, Last Name, Birthdate, Gender, Position, Cohort, Previous Level, Phone, Email 1, Email 2
   And the file contains:
-    | First Name | Last Name | Birth Year | Position |
-    | John | Smith | 2010 | Forward |
-    | Sarah | Jones | 2011 | Defense |
-    | Michael | Brown | 2010 | Goalie |
+    | First Name | Last Name | Birthdate | Gender | Position | Cohort | Previous Level | Phone | Email 1 | Email 2 |
+    | John | Smith | 05/15/2010 | Male | Forward | U15 | A | 555-0101 | john.dad@email.com | john.mom@email.com |
+    | Sarah | Jones | 08/22/2011 | Female | Defense | U13 | B | 555-0102 | sarah.parents@email.com | |
+    | Michael | Brown | 01/10/2010 | Male | Goalie | | | 555-0103 | mike.dad@email.com | |
   And I click "Import"
   Then all 3 players are imported successfully
   And they are assigned to season "2025 Fall Evaluations"
   And each player is marked as "Active"
-  And they are not assigned to any cohort
+  And John Smith has birth year 2010 derived from 05/15/2010
   And I see a confirmation message "3 players imported successfully"
 
 Scenario: Import players with cohort assignments
@@ -731,12 +732,12 @@ Scenario: Import players with cohort assignments
   And position types "Forward", "Defense" exist and are active
   When I navigate to "Players"
   And I click "Bulk Import"
-  And I upload a CSV file with columns: First Name, Last Name, Birth Year, Position, Cohort
+  And I upload a CSV file with columns: First Name, Last Name, Birthdate, Gender, Position, Cohort, Previous Level, Phone, Email 1, Email 2
   And the file contains:
-    | First Name | Last Name | Birth Year | Position | Cohort |
-    | John | Smith | 2010 | Forward | U11 |
-    | Sarah | Jones | 2011 | Defense | U13 |
-    | Michael | Brown | 2010 | Forward | |
+    | First Name | Last Name | Birthdate | Gender | Position | Cohort | Previous Level | Phone | Email 1 | Email 2 |
+    | John | Smith | 05/15/2010 | Male | Forward | U11 | | 555-0101 | email@test.com | |
+    | Sarah | Jones | 08/22/2011 | Female | Defense | U13 | | 555-0102 | email@test.com | |
+    | Michael | Brown | 01/10/2010 | Male | Forward | | | 555-0103 | email@test.com | |
   And I click "Import"
   Then all 3 players are imported successfully
   And John Smith is assigned to cohort "U11"
@@ -747,8 +748,8 @@ Scenario: Import players with cohort assignments
 Scenario: Validate CSV format before import
   Given I am logged in as an Association Administrator
   When I upload a CSV file for import
-  And the file is missing the "Birth Year" column
-  Then I see an error message "Invalid CSV format. Required columns: First Name, Last Name, Birth Year, Position. Optional: Cohort"
+  And the file is missing the "Birthdate" column
+  Then I see an error message "Invalid CSV format. Required columns: First Name, Last Name, Birthdate, Gender, Position, Cohort, Previous Level, Phone, Email 1, Email 2"
   And no players are imported
   And I have the option to "Download Template CSV"
 
@@ -756,9 +757,9 @@ Scenario: Detect invalid position types during import
   Given I am logged in as an Association Administrator
   And only position types "Forward", "Defense", "Goalie" exist
   When I upload a CSV file containing:
-    | First Name | Last Name | Birth Year | Position |
-    | John | Smith | 2010 | Forward |
-    | Sarah | Jones | 2011 | Midfielder |
+    | First Name | Last Name | Birthdate | Gender | Position | Cohort | Previous Level | Phone | Email 1 | Email 2 |
+    | John | Smith | 05/15/2010 | Male | Forward | U15 | A | 555-0101 | email@test.com | |
+    | Sarah | Jones | 08/22/2011 | Female | Midfielder | U13 | B | 555-0102 | email@test.com | |
   Then I see a validation error "Row 2: Position 'Midfielder' does not exist"
   And no players are imported
   And I can "Fix Errors and Retry"
@@ -767,33 +768,33 @@ Scenario: Detect invalid cohorts during import
   Given I am logged in as an Association Administrator
   And only cohorts "U11", "U13" exist and are active
   When I upload a CSV file containing:
-    | First Name | Last Name | Birth Year | Position | Cohort |
-    | John | Smith | 2010 | Forward | U11 |
-    | Sarah | Jones | 2011 | Defense | U15 |
+    | First Name | Last Name | Birthdate | Gender | Position | Cohort | Previous Level | Phone | Email 1 | Email 2 |
+    | John | Smith | 05/15/2010 | Male | Forward | U11 | | 555-0101 | email@test.com | |
+    | Sarah | Jones | 08/22/2011 | Female | Defense | U15 | | 555-0102 | email@test.com | |
   Then I see a validation error "Row 2: Cohort 'U15' does not exist or is inactive"
   And no players are imported
   And I can "Fix Errors and Retry"
 
-Scenario: Detect invalid birth years
+Scenario: Detect invalid birth dates
   Given I am logged in as an Association Administrator
   When I upload a CSV file containing:
-    | First Name | Last Name | Birth Year | Position |
-    | John | Smith | 25 | Forward |
-    | Sarah | Jones | 2011 | Defense |
-  Then I see a validation error "Row 1: Birth Year must be a 4-digit year"
+    | First Name | Last Name | Birthdate | Gender | Position | Cohort | Previous Level | Phone | Email 1 | Email 2 |
+    | John | Smith | 2010-05-15 | Male | Forward | U15 | | 555-0101 | email@test.com | |
+    | Sarah | Jones | 08/22/2011 | Female | Defense | U13 | | 555-0102 | email@test.com | |
+  Then I see a validation error "Row 1: Invalid date format. Use m/d/yyyy"
   And no players are imported
 
 Scenario: Flag potential duplicate players
   Given I am logged in as an Association Administrator
-  And player "John Smith" with birth year 2010 already exists
+  And player "John Smith" with birthdate 05/15/2010 already exists
   When I upload a CSV file containing:
-    | First Name | Last Name | Birth Year | Position |
-    | John | Smith | 2010 | Forward |
-    | Sarah | Jones | 2011 | Defense |
+    | First Name | Last Name | Birthdate | Gender | Position | Cohort | Previous Level | Phone | Email 1 | Email 2 |
+    | John | Smith | 05/15/2010 | Male | Forward | U15 | | 555-0101 | email@test.com | |
+    | Sarah | Jones | 08/22/2011 | Female | Defense | U13 | | 555-0102 | email@test.com | |
   Then I see a warning "1 potential duplicate detected"
   And I see a review screen showing:
     | CSV Player | Existing Player | Action |
-    | John Smith (2010) | John Smith (2010, Forward) | Skip / Import Anyway |
+    | John Smith (05/15/2010) | John Smith (05/15/2010, Forward) | Skip / Import Anyway |
   When I select "Skip" for John Smith
   And I click "Continue Import"
   Then only Sarah Jones is imported
@@ -814,9 +815,9 @@ Scenario: Download CSV template
   When I navigate to "Players"
   And I click "Bulk Import"
   And I click "Download Template CSV"
-  Then a CSV file is downloaded with headers: First Name, Last Name, Birth Year, Position, Cohort
+  Then a CSV file is downloaded with headers: First Name, Last Name, Birthdate, Gender, Position, Cohort, Previous Level, Phone, Email 1, Email 2
   And the file contains example data for guidance
-  And Cohort column shows "(Optional)" in the header
+  And Cohort and Previous Level columns show "(Optional)" in the header
 ```
 
 ---
@@ -827,9 +828,9 @@ Scenario: Download CSV template
 
 **Business Rules:**
 
-- Required fields: First Name, Last Name, Birth Year, Position
-- Optional fields: Notes
-- Birth year must be a valid 4-digit year
+- Required fields: First Name, Last Name, Birthdate, Position
+- Optional fields: Notes, Gender, Phone, Email 1, Email 2
+- Birthdate must be a valid date (m/d/yyyy)
 - Position must be an active position type
 - Players are created in "Active" status
 - Players are assigned to the active season
@@ -844,12 +845,15 @@ Scenario: Add first player manually
   And I click "Add Player"
   And I enter "John" as first name
   And I enter "Smith" as last name
-  And I enter "2010" as birth year
+  And I enter "05/15/2010" as birthdate
   And I select "Forward" as position
+  And I enter "555-0101" as phone
+  And I enter "john.dad@email.com" as email 1
   And I click "Save"
   Then player "John Smith" is created successfully
   And he is assigned to season "2025 Fall Evaluations"
   And his status is "Active"
+  And his birth year is calculated as 2010
   And I see a confirmation message "Player added successfully"
 
 Scenario: Add player with optional notes
@@ -871,12 +875,12 @@ Scenario: Prevent adding player with missing required fields
   And the player is not created
   And I remain on the player entry form
 
-Scenario: Validate birth year format
+Scenario: Validate birthdate format
   Given I am logged in as an Association Administrator
   When I add a new player
-  And I enter "25" as birth year
+  And I enter "2010-15-05" as birthdate
   And I click "Save"
-  Then I see an error message "Birth Year must be a 4-digit year (e.g., 2010)"
+  Then I see an error message "Invalid date format"
   And the player is not created
 
 Scenario: Show only active positions in dropdown

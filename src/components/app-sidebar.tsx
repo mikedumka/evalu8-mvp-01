@@ -7,6 +7,7 @@ import {
   ClipboardCheck,
   ChevronsUpDown,
   Building2,
+  Contact,
   History,
   IdCardLanyard,
   LineChart,
@@ -70,6 +71,12 @@ const adminNavItems: NavItem[] = [
     label: "Cohort Management",
     icon: Users,
     to: "/cohort-management",
+  },
+  {
+    id: "player-administration",
+    label: "Player Administration",
+    icon: Contact,
+    to: "/player-administration",
   },
   {
     id: "position-types",
