@@ -191,7 +191,10 @@ export type Database = {
           created_at: string;
           description: string | null;
           id: string;
+          minimum_sessions_per_athlete: number;
           name: string;
+          session_capacity: number;
+          sessions_per_cohort: number;
           status: string;
           updated_at: string;
         };
@@ -200,7 +203,10 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id?: string;
+          minimum_sessions_per_athlete?: number;
           name: string;
+          session_capacity?: number;
+          sessions_per_cohort?: number;
           status?: string;
           updated_at?: string;
         };
@@ -209,7 +215,10 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           id?: string;
+          minimum_sessions_per_athlete?: number;
           name?: string;
+          session_capacity?: number;
+          sessions_per_cohort?: number;
           status?: string;
           updated_at?: string;
         };
@@ -668,10 +677,8 @@ export type Database = {
           created_at: string;
           id: string;
           minimum_evaluators_per_athlete: number;
-          minimum_sessions_per_athlete: number;
           name: string;
           outlier_threshold_percent: number;
-          session_capacity: number;
           status: string;
           updated_at: string;
         };
@@ -682,10 +689,8 @@ export type Database = {
           created_at?: string;
           id?: string;
           minimum_evaluators_per_athlete: number;
-          minimum_sessions_per_athlete: number;
           name: string;
           outlier_threshold_percent: number;
-          session_capacity: number;
           status?: string;
           updated_at?: string;
         };
@@ -696,10 +701,8 @@ export type Database = {
           created_at?: string;
           id?: string;
           minimum_evaluators_per_athlete?: number;
-          minimum_sessions_per_athlete?: number;
           name?: string;
           outlier_threshold_percent?: number;
-          session_capacity?: number;
           status?: string;
           updated_at?: string;
         };
@@ -1164,6 +1167,10 @@ export type Database = {
         };
       };
       current_association_id: { Args: never; Returns: string };
+      delete_cohort: {
+        Args: { p_cohort_id: string };
+        Returns: void;
+      };
       delete_drill: {
         Args: { p_drill_id: string };
         Returns: void;

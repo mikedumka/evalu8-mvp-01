@@ -39,8 +39,6 @@ export function SeasonDialog({
   const [name, setName] = useState("");
   const [outlierThreshold, setOutlierThreshold] = useState(25);
   const [minEvaluators, setMinEvaluators] = useState(3);
-  const [minSessions, setMinSessions] = useState(3);
-  const [sessionCapacity, setSessionCapacity] = useState(20);
 
   useEffect(() => {
     if (open) {
@@ -50,15 +48,11 @@ export function SeasonDialog({
         setName(season.name);
         setOutlierThreshold(season.outlier_threshold_percent);
         setMinEvaluators(season.minimum_evaluators_per_athlete);
-        setMinSessions(season.minimum_sessions_per_athlete);
-        setSessionCapacity(season.session_capacity);
       } else {
         // Defaults for new season
         setName("");
         setOutlierThreshold(25);
         setMinEvaluators(3);
-        setMinSessions(3);
-        setSessionCapacity(20);
       }
     }
   }, [open, season]);
@@ -77,8 +71,6 @@ export function SeasonDialog({
         name: name.trim(),
         outlier_threshold_percent: outlierThreshold,
         minimum_evaluators_per_athlete: minEvaluators,
-        minimum_sessions_per_athlete: minSessions,
-        session_capacity: sessionCapacity,
       };
 
       if (season) {
@@ -184,40 +176,6 @@ export function SeasonDialog({
               />
               <p className="text-[0.8rem] text-muted-foreground">
                 Per athlete (1-10)
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="minSessions">Min Sessions</Label>
-              <Input
-                id="minSessions"
-                type="number"
-                min={1}
-                value={minSessions}
-                onChange={(e) => setMinSessions(Number(e.target.value))}
-                required
-                disabled={submitting || !!isConfigLocked}
-              />
-              <p className="text-[0.8rem] text-muted-foreground">
-                Per athlete (Waves)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="sessionCapacity">Session Capacity</Label>
-              <Input
-                id="sessionCapacity"
-                type="number"
-                min={1}
-                value={sessionCapacity}
-                onChange={(e) => setSessionCapacity(Number(e.target.value))}
-                required
-                disabled={submitting || !!isConfigLocked}
-              />
-              <p className="text-[0.8rem] text-muted-foreground">
-                Max athletes per session
               </p>
             </div>
           </div>

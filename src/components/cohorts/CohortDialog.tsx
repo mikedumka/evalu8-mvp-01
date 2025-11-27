@@ -31,7 +31,10 @@ interface CohortDialogProps {
   onSubmit: (
     name: string,
     description: string | null,
-    status: "active" | "inactive"
+    status: "active" | "inactive",
+    sessionCapacity: number,
+    minSessions: number,
+    sessionsPerCohort: number
   ) => Promise<void>;
   submitting: boolean;
   error: string | null;
@@ -48,18 +51,31 @@ export function CohortDialog({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<"active" | "inactive">("active");
+  const [sessionCapacity, setSessionCapacity] = useState(20);
+  const [minSessions, setMinSessions] = useState(1);
+  const [sessionsPerCohort, setSessionsPerCohort] = useState(1);
 
   useEffect(() => {
     if (open) {
       setName(cohort?.name ?? "");
       setDescription(cohort?.description ?? "");
       setStatus((cohort?.status as "active" | "inactive") ?? "active");
+      setSessionCapacity(cohort?.session_capacity ?? 20);
+      setMinSessions(cohort?.minimum_sessions_per_athlete ?? 1);
+      setSessionsPerCohort(cohort?.sessions_per_cohort ?? 1);
     }
   }, [open, cohort]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(name, description || null, status);
+    await onSubmit(
+      name,
+      description || null,
+      status,
+      sessionCapacity,
+      minSessions,
+      sessionsPerCohort
+    );
   };
 
   return (
@@ -102,6 +118,52 @@ export function CohortDialog({
               placeholder="Optional description"
               disabled={submitting}
             />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="sessionCapacity">Session Cap</Label>
+              <Input
+                id="sessionCapacity"
+                type="number"
+                min={1}
+                value={sessionCapacity}
+                onChange={(e) => setSessionCapacity(Number(e.target.value))}
+                required
+                disabled={submitting}
+              />
+              <p className="text-[0.7rem] text-muted-foreground">
+                Max athletes
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="minSessions">Min Sessions</Label>
+              <Input
+                id="minSessions"
+                type="number"
+                min={1}
+                value={minSessions}
+                onChange={(e) => setMinSessions(Number(e.target.value))}
+                required
+                disabled={submitting}
+              />
+              <p className="text-[0.7rem] text-muted-foreground">Per athlete</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sessionsPerCohort">Total Sessions</Label>
+              <Input
+                id="sessionsPerCohort"
+                type="number"
+                min={1}
+                value={sessionsPerCohort}
+                onChange={(e) => setSessionsPerCohort(Number(e.target.value))}
+                required
+                disabled={submitting}
+              />
+              <p className="text-[0.7rem] text-muted-foreground">For cohort</p>
+            </div>
           </div>
 
           <div className="space-y-2">

@@ -11,6 +11,7 @@ import PlayerManagementPage from "@/pages/PlayerManagementPage";
 import PreviousLevelsPage from "@/pages/PreviousLevelsPage";
 import PositionTypesPage from "@/pages/PositionTypesPage";
 import SeasonManagementPage from "@/pages/SeasonManagementPage";
+import SchedulingPage from "@/pages/SchedulingPage";
 import SessionDrillConfigurationPage from "@/pages/SessionDrillConfigurationPage";
 import SystemAssociationsPage from "@/pages/SystemAssociationsPage";
 import SystemUsersPage from "@/pages/SystemUsersPage";
@@ -53,6 +54,7 @@ function App() {
             <Route path="/position-types" element={<PositionTypesPage />} />
             <Route path="/previous-levels" element={<PreviousLevelsPage />} />
             <Route path="/drill-library" element={<DrillLibraryPage />} />
+            <Route path="/scheduling" element={<SchedulingPage />} />
             <Route
               path="/session-drill-configuration"
               element={<SessionDrillConfigurationPage />}

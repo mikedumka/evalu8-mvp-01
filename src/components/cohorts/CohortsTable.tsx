@@ -3,8 +3,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  MoreHorizontal,
-  Pencil,
+  PencilRuler,
   Plus,
   RefreshCw,
   SlidersHorizontal,
@@ -17,7 +16,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -52,9 +50,11 @@ type CohortWithCounts = CohortRow & {
 
 type ColumnKey =
   | "name"
-  | "description"
   | "status"
+  | "config"
   | "playerCount"
+  | "sessionsRequired"
+  | "sessionsScheduled"
   | "createdAt";
 
 interface ColumnConfig {
@@ -71,16 +71,6 @@ const COHORT_COLUMNS: ColumnConfig[] = [
     label: "Name",
     getDisplayValue: (row) => <span className="font-medium">{row.name}</span>,
     getSortValue: (row) => row.name,
-  },
-  {
-    key: "description",
-    label: "Description",
-    getDisplayValue: (row) => (
-      <span className="text-muted-foreground truncate max-w-[200px] block">
-        {row.description || "-"}
-      </span>
-    ),
-    getSortValue: (row) => row.description,
   },
   {
     key: "status",
@@ -101,10 +91,42 @@ const COHORT_COLUMNS: ColumnConfig[] = [
     getSortValue: (row) => row.status,
   },
   {
+    key: "config",
+    label: "Configuration",
+    getDisplayValue: (row) => (
+      <div className="flex flex-col text-xs text-muted-foreground">
+        <span>Sessions: {row.sessions_per_cohort}</span>
+        <span>Capacity: {row.session_capacity}</span>
+      </div>
+    ),
+    getSortValue: (row) => row.session_capacity,
+  },
+  {
     key: "playerCount",
-    label: "Players (Active Season)",
+    label: "Players",
     align: "left",
     getDisplayValue: (row) => row.playerCount,
+  },
+  {
+    key: "sessionsRequired",
+    label: "Sessions Required",
+    align: "left",
+    getDisplayValue: (row) => {
+      const required =
+        Math.ceil(row.playerCount / row.session_capacity) *
+        row.sessions_per_cohort;
+      return <span>{required}</span>;
+    },
+    getSortValue: (row) =>
+      Math.ceil(row.playerCount / row.session_capacity) *
+      row.sessions_per_cohort,
+  },
+  {
+    key: "sessionsScheduled",
+    label: "Sessions Scheduled",
+    align: "left",
+    getDisplayValue: () => <span className="text-muted-foreground">-</span>,
+    getSortValue: () => 0,
   },
   {
     key: "createdAt",
@@ -162,9 +184,11 @@ export function CohortsTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>([
     "name",
-    "description",
     "status",
+    "config",
     "playerCount",
+    "sessionsRequired",
+    "sessionsScheduled",
     "createdAt",
   ]);
   const [sortState, setSortState] = useState<SortState>({
@@ -333,7 +357,10 @@ export function CohortsTable() {
   const handleCreate = async (
     name: string,
     description: string | null,
-    status: "active" | "inactive"
+    status: "active" | "inactive",
+    sessionCapacity: number,
+    minSessions: number,
+    sessionsPerCohort: number
   ) => {
     if (!currentAssociation) return;
 
@@ -349,6 +376,9 @@ export function CohortsTable() {
         name,
         description,
         status,
+        session_capacity: sessionCapacity,
+        minimum_sessions_per_athlete: minSessions,
+        sessions_per_cohort: sessionsPerCohort,
       });
 
       if (error) {
@@ -380,7 +410,10 @@ export function CohortsTable() {
   const handleUpdate = async (
     name: string,
     description: string | null,
-    status: "active" | "inactive"
+    status: "active" | "inactive",
+    sessionCapacity: number,
+    minSessions: number,
+    sessionsPerCohort: number
   ) => {
     if (!editDialogState.cohort) return;
 
@@ -388,7 +421,14 @@ export function CohortsTable() {
 
     const { error } = await supabase
       .from("cohorts")
-      .update({ name, description, status })
+      .update({
+        name,
+        description,
+        status,
+        session_capacity: sessionCapacity,
+        minimum_sessions_per_athlete: minSessions,
+        sessions_per_cohort: sessionsPerCohort,
+      })
       .eq("id", editDialogState.cohort.id);
 
     if (error) {
@@ -414,15 +454,14 @@ export function CohortsTable() {
     if (!deleteDialogState.cohort) return;
     setDeleteDialogState((prev) => ({ ...prev, submitting: true }));
 
-    const { error } = await supabase
-      .from("cohorts")
-      .delete()
-      .eq("id", deleteDialogState.cohort.id);
+    const { error } = await supabase.rpc("delete_cohort", {
+      p_cohort_id: deleteDialogState.cohort.id,
+    });
 
     if (error) {
       setFeedback({
         type: "error",
-        message: "Failed to delete cohort. It may be in use.",
+        message: error.message,
       });
     } else {
       setFeedback({ type: "success", message: "Cohort deleted successfully." });
@@ -576,7 +615,7 @@ export function CohortsTable() {
                       </button>
                     </th>
                   ))}
-                  <th className="w-14 px-4 py-3 text-right">Actions</th>
+                  <th className="w-24 px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border text-sm">
@@ -603,45 +642,37 @@ export function CohortsTable() {
                       </td>
                     ))}
                     <td className="px-4 py-3 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <MoreHorizontal className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              setEditDialogState({
-                                open: true,
-                                cohort,
-                                submitting: false,
-                                error: null,
-                              })
-                            }
-                          >
-                            <Pencil className="mr-2 size-4" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() =>
-                              setDeleteDialogState({
-                                open: true,
-                                cohort,
-                                submitting: false,
-                              })
-                            }
-                          >
-                            <Trash2 className="mr-2 size-4" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() =>
+                            setEditDialogState({
+                              open: true,
+                              cohort,
+                              submitting: false,
+                              error: null,
+                            })
+                          }
+                        >
+                          <PencilRuler className="size-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() =>
+                            setDeleteDialogState({
+                              open: true,
+                              cohort,
+                              submitting: false,
+                            })
+                          }
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

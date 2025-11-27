@@ -96,13 +96,9 @@ const SEASON_COLUMNS: ColumnConfig[] = [
           QA: {row.outlier_threshold_percent}% /{" "}
           {row.minimum_evaluators_per_athlete} evals
         </span>
-        <span>
-          Sched: {row.minimum_sessions_per_athlete} sessions /{" "}
-          {row.session_capacity} cap
-        </span>
       </div>
     ),
-    getSortValue: (row) => row.session_capacity,
+    getSortValue: (row) => row.minimum_evaluators_per_athlete,
   },
   {
     key: "createdAt",

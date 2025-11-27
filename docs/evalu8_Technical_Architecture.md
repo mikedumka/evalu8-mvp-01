@@ -2,7 +2,7 @@
 
 **Project:** Sports Player Evaluation System  
 **Date:** November 7, 2025  
-**Version:** 1.0  
+**Version:** 1.0
 
 ---
 
@@ -11,20 +11,24 @@
 ### Frontend
 
 **Core Framework:**
+
 - **React** - UI library for building component-based interfaces
 - **Vite** - Fast build tool and development server
 - **TypeScript** - Type-safe JavaScript (recommended for production)
 
 **UI & Styling:**
+
 - **shadcn/ui** - Component library with Violet theme
 - **Tailwind CSS** - Utility-first CSS framework (bundled with shadcn/ui)
 - **Lucide Icons** - Icon library for consistent visual elements
 
 **State Management:**
+
 - **React Context API** - For global state (auth, user, season context)
 - **React Hooks** - For local component state (useState, useEffect, useReducer)
 
 **Routing:**
+
 - **React Router** (v6+) - Client-side routing for multi-page navigation
 
 ---
@@ -32,15 +36,18 @@
 ### Backend
 
 **Platform:**
+
 - **Supabase** - Backend-as-a-Service (BaaS) built on PostgreSQL
 
 **Key Services:**
+
 - **Supabase Database (PostgreSQL)** - Relational database with row-level security
 - **Supabase Auth** - Authentication with Google OAuth integration
 - **Supabase Realtime** - Live updates during evaluation sessions (WebSocket-based)
 - **Supabase Storage** - File storage for CSV imports/exports, reports
 
 **API Layer:**
+
 - **Supabase Client SDK** - JavaScript client for database queries, auth, realtime
 - **Auto-generated REST API** - Provided by Supabase (PostgREST)
 - **Auto-generated GraphQL API** (optional) - Provided by Supabase (pg_graphql)
@@ -50,6 +57,7 @@
 ## Architecture Decisions
 
 ### Why Supabase?
+
 - **PostgreSQL foundation** - Mature, reliable, ACID-compliant relational database
 - **Row-level security (RLS)** - Built-in multi-tenant data isolation at database level
 - **Real-time subscriptions** - Essential for live evaluation scoring
@@ -58,18 +66,21 @@
 - **Developer experience** - Fast setup, excellent documentation, generous free tier
 
 ### Why Vite?
+
 - **Fast HMR (Hot Module Replacement)** - Instant feedback during development
 - **Optimized production builds** - Tree-shaking, code-splitting, minification
 - **Native ESM support** - Modern JavaScript module system
 - **React template** - Pre-configured for React development
 
 ### Why shadcn/ui?
+
 - **Customizable components** - Copy-paste components, not npm packages
 - **Tailwind-based** - Consistent styling with utility classes
 - **Accessible by default** - Built on Radix UI primitives
 - **Violet theme** - Professional, modern color scheme for sports applications
 
 ### Why React Context API?
+
 - **Native React solution** - No external dependencies
 - **Sufficient for MVP** - Simple global state (auth, current season, user role)
 - **Easy to migrate** - Can upgrade to Redux/Zustand later if needed
@@ -79,6 +90,7 @@
 ## Development Environment
 
 ### Required Tools
+
 - **Node.js** (v18+ recommended)
 - **npm** or **pnpm** (package manager)
 - **Git** (version control)
@@ -86,6 +98,7 @@
 - **VS Code** (recommended IDE)
 
 ### VS Code Extensions (Recommended)
+
 - **ESLint** - Code linting
 - **Prettier** - Code formatting
 - **Tailwind CSS IntelliSense** - Tailwind autocomplete
@@ -155,6 +168,7 @@ The database uses **PostgreSQL** with **row-level security (RLS)** for multi-ten
 ### Core Tables
 
 #### 1. **associations**
+
 Multi-tenant container for each sports organization.
 
 ```sql
@@ -175,6 +189,7 @@ CREATE INDEX idx_associations_status ON associations(status);
 ```
 
 #### 2. **sport_types**
+
 System-wide sport definitions (Hockey, Basketball, Soccer, etc.).
 
 ```sql
@@ -187,6 +202,7 @@ CREATE TABLE sport_types (
 ```
 
 #### 3. **users**
+
 Platform users with authentication via Google OAuth.
 
 ```sql
@@ -204,6 +220,7 @@ CREATE INDEX idx_users_email ON users(email);
 ```
 
 #### 4. **association_users**
+
 Junction table for user-association-role relationships (users can belong to multiple associations).
 
 ```sql
@@ -226,6 +243,7 @@ CREATE INDEX idx_association_users_user ON association_users(user_id);
 ```
 
 #### 5. **seasons**
+
 Season definitions with locked QA parameters.
 
 ```sql
@@ -236,8 +254,6 @@ CREATE TABLE seasons (
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'completed')),
   outlier_threshold_percent INTEGER NOT NULL CHECK (outlier_threshold_percent BETWEEN 10 AND 50),
   minimum_evaluators_per_athlete INTEGER NOT NULL CHECK (minimum_evaluators_per_athlete BETWEEN 1 AND 10),
-  minimum_sessions_per_athlete INTEGER NOT NULL CHECK (minimum_sessions_per_athlete >= 1),
-  session_capacity INTEGER NOT NULL CHECK (session_capacity > 0),
   activated_at TIMESTAMPTZ,
   completed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -250,6 +266,7 @@ CREATE INDEX idx_seasons_status ON seasons(status);
 ```
 
 #### 6. **cohorts**
+
 Age groups/divisions (persist across seasons).
 
 ```sql
@@ -259,6 +276,9 @@ CREATE TABLE cohorts (
   name TEXT NOT NULL,
   description TEXT,
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  session_capacity INTEGER NOT NULL DEFAULT 20 CHECK (session_capacity > 0),
+  minimum_sessions_per_athlete INTEGER NOT NULL DEFAULT 1 CHECK (minimum_sessions_per_athlete >= 1),
+  sessions_per_cohort INTEGER NOT NULL DEFAULT 1 CHECK (sessions_per_cohort >= 1),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(association_id, name)
@@ -269,6 +289,7 @@ CREATE INDEX idx_cohorts_status ON cohorts(status);
 ```
 
 #### 7. **position_types**
+
 Sport-specific positions (Forward, Defense, Goalie, etc.).
 
 ```sql
@@ -286,6 +307,7 @@ CREATE INDEX idx_position_types_status ON position_types(status);
 ```
 
 #### 8. **previous_levels**
+
 Previous ranking levels (A, B, C, D or Gold, Silver, Bronze - persist across seasons).
 
 ```sql
@@ -304,6 +326,7 @@ CREATE INDEX idx_previous_levels_rank_order ON previous_levels(association_id, r
 ```
 
 #### 9. **drills**
+
 Reusable evaluation criteria library.
 
 ```sql
@@ -323,6 +346,7 @@ CREATE INDEX idx_drills_status ON drills(status);
 ```
 
 #### 10. **players**
+
 Registered athletes.
 
 ```sql
@@ -355,6 +379,7 @@ CREATE INDEX idx_players_name ON players(association_id, last_name, first_name);
 ### Session Tables
 
 #### 11. **waves**
+
 Evaluation rounds where each athlete participates once.
 
 ```sql
@@ -380,6 +405,7 @@ CREATE INDEX idx_waves_type_number ON waves(wave_type, wave_number);
 ```
 
 #### 12. **sessions**
+
 Individual evaluation sessions.
 
 ```sql
@@ -408,6 +434,7 @@ CREATE INDEX idx_sessions_scheduled ON sessions(scheduled_date, scheduled_time);
 ```
 
 #### 13. **session_drills**
+
 Many-to-many relationship between sessions and drills with weights.
 
 ```sql
@@ -427,6 +454,7 @@ CREATE INDEX idx_session_drills_drill ON session_drills(drill_id);
 ```
 
 #### 14. **session_evaluators**
+
 Evaluators assigned to sessions.
 
 ```sql
@@ -447,6 +475,7 @@ CREATE INDEX idx_session_evaluators_user ON session_evaluators(user_id);
 ```
 
 #### 15. **session_intake_personnel**
+
 Intake personnel assigned to sessions.
 
 ```sql
@@ -464,6 +493,7 @@ CREATE INDEX idx_session_intake_user ON session_intake_personnel(user_id);
 ```
 
 #### 16. **player_sessions**
+
 Players assigned to sessions with team and jersey information.
 
 ```sql
@@ -494,6 +524,7 @@ CREATE INDEX idx_player_sessions_team ON player_sessions(session_id, team_number
 ### Evaluation Tables
 
 #### 17. **evaluations**
+
 Individual drill scores by evaluators.
 
 ```sql
@@ -519,6 +550,7 @@ CREATE INDEX idx_evaluations_outlier ON evaluations(is_outlier);
 ```
 
 #### 18. **reconciliation_decisions**
+
 Administrator decisions on incomplete evaluations.
 
 ```sql
@@ -546,6 +578,7 @@ CREATE INDEX idx_reconciliation_drill ON reconciliation_decisions(drill_id);
 ### Audit & System Tables
 
 #### 19. **audit_logs**
+
 Security and system event tracking.
 
 ```sql
@@ -588,46 +621,46 @@ erDiagram
     associations ||--o{ waves : "has"
     associations ||--o{ sessions : "has"
     associations ||--o{ audit_logs : "logs"
-    
+
     users ||--o{ association_users : "belongs to"
     users ||--o{ session_evaluators : "evaluates"
     users ||--o{ session_intake_personnel : "checks in"
     users ||--o{ evaluations : "scores"
     users ||--o{ reconciliation_decisions : "decides"
-    
+
     %% Season & Player Management
     seasons ||--o{ players : "contains"
     seasons ||--o{ waves : "contains"
     seasons ||--o{ sessions : "contains"
-    
+
     cohorts ||--o{ players : "groups"
     cohorts ||--o{ waves : "evaluates"
     cohorts ||--o{ sessions : "attends"
-    
+
     position_types ||--o{ players : "assigned to"
     previous_levels ||--o{ players : "ranked as"
-    
+
     %% Wave & Session Management
     waves ||--o{ sessions : "contains"
-    
+
     sessions ||--o{ session_drills : "uses"
     sessions ||--o{ session_evaluators : "staffed by"
     sessions ||--o{ session_intake_personnel : "staffed by"
     sessions ||--o{ player_sessions : "includes"
     sessions ||--o{ evaluations : "produces"
     sessions ||--o{ reconciliation_decisions : "may require"
-    
+
     drills ||--o{ session_drills : "assigned to"
     drills ||--o{ evaluations : "scored on"
     drills ||--o{ reconciliation_decisions : "may affect"
-    
+
     %% Player Evaluation Flow
     players ||--o{ player_sessions : "participates in"
     players ||--o{ evaluations : "receives"
     players ||--o{ reconciliation_decisions : "may require"
-    
+
     player_sessions ||--o{ evaluations : "generates"
-    
+
     %% Table Definitions
     sport_types {
         uuid id PK
@@ -635,7 +668,7 @@ erDiagram
         text status
         timestamptz created_at
     }
-    
+
     associations {
         uuid id PK
         text name
@@ -646,7 +679,7 @@ erDiagram
         timestamptz created_at
         timestamptz last_activity_at
     }
-    
+
     users {
         uuid id PK
         text email UK
@@ -656,7 +689,7 @@ erDiagram
         timestamptz created_at
         timestamptz last_login_at
     }
-    
+
     association_users {
         uuid id PK
         uuid association_id FK
@@ -667,7 +700,7 @@ erDiagram
         timestamptz invitation_expires_at
         timestamptz joined_at
     }
-    
+
     seasons {
         uuid id PK
         uuid association_id FK
@@ -675,34 +708,35 @@ erDiagram
         text status
         integer outlier_threshold_percent
         integer minimum_evaluators_per_athlete
-        integer minimum_sessions_per_athlete
-        integer session_capacity
         timestamptz activated_at
         timestamptz completed_at
     }
-    
+
     cohorts {
         uuid id PK
         uuid association_id FK
         text name UK
         text description
         text status
+        integer session_capacity
+        integer minimum_sessions_per_athlete
+        integer sessions_per_cohort
     }
-    
+
     position_types {
         uuid id PK
         uuid association_id FK
         text name UK
         text status
     }
-    
+
     previous_levels {
         uuid id PK
         uuid association_id FK
         text name UK
         integer rank_order UK
     }
-    
+
     drills {
         uuid id PK
         uuid association_id FK
@@ -710,7 +744,7 @@ erDiagram
         text description
         text status
     }
-    
+
     players {
         uuid id PK
         uuid association_id FK
@@ -725,7 +759,7 @@ erDiagram
         text status_reason
         text notes
     }
-    
+
     waves {
         uuid id PK
         uuid association_id FK
@@ -738,7 +772,7 @@ erDiagram
         integer teams_per_session
         text distribution_algorithm
     }
-    
+
     sessions {
         uuid id PK
         uuid association_id FK
@@ -752,7 +786,7 @@ erDiagram
         text status
         boolean drill_config_locked
     }
-    
+
     session_drills {
         uuid id PK
         uuid association_id FK
@@ -761,7 +795,7 @@ erDiagram
         integer weight_percent
         uuid_array applies_to_positions
     }
-    
+
     session_evaluators {
         uuid id PK
         uuid association_id FK
@@ -771,14 +805,14 @@ erDiagram
         boolean finalization_incomplete
         text finalization_reason
     }
-    
+
     session_intake_personnel {
         uuid id PK
         uuid association_id FK
         uuid session_id FK
         uuid user_id FK
     }
-    
+
     player_sessions {
         uuid id PK
         uuid association_id FK
@@ -791,7 +825,7 @@ erDiagram
         timestamptz checked_in_at
         boolean no_show
     }
-    
+
     evaluations {
         uuid id PK
         uuid association_id FK
@@ -803,7 +837,7 @@ erDiagram
         boolean is_outlier
         timestamptz created_at
     }
-    
+
     reconciliation_decisions {
         uuid id PK
         uuid association_id FK
@@ -817,7 +851,7 @@ erDiagram
         timestamptz reversed_at
         uuid reversed_by FK
     }
-    
+
     audit_logs {
         uuid id PK
         uuid association_id FK
@@ -835,6 +869,7 @@ erDiagram
 ```
 
 **ERD Notes:**
+
 - **Multi-tenancy:** All operational tables reference `association_id` for data isolation
 - **Cascading:** Most foreign keys use `ON DELETE CASCADE` to maintain referential integrity
 - **Many-to-Many:** Junction tables (`association_users`, `session_drills`, `session_evaluators`, `session_intake_personnel`, `player_sessions`)
@@ -846,6 +881,7 @@ erDiagram
 ## Additional Considerations
 
 ### Libraries to Add Later
+
 - **React Hook Form** - Form validation and management
 - **Zod** - Schema validation (works with React Hook Form)
 - **React Query** (TanStack Query) - Data fetching and caching (optional, Supabase client handles most of this)
@@ -854,11 +890,13 @@ erDiagram
 - **React Table (TanStack Table)** - Advanced table features (sorting, filtering, pagination)
 
 ### Deployment Options
+
 - **Vercel** - Recommended for Vite + React (automatic deploys from Git)
 - **Netlify** - Alternative hosting with similar features
 - **Supabase Hosting** - Static site hosting included with Supabase
 
 ### Testing Strategy (Future)
+
 - **Vitest** - Unit testing (Vite-native)
 - **React Testing Library** - Component testing
 - **Playwright** or **Cypress** - End-to-end testing
@@ -898,6 +936,7 @@ SELECT set_config('app.current_association_id', '<association_uuid>', false);
 ### Role-Based Access Model
 
 **Roles stored in `association_users.roles` array:**
+
 - `Administrator` - Full access to all association data
 - `Evaluator` - Read sessions/drills/players, write evaluations
 - `Intake Personnel` - Read sessions/players, write check-ins
@@ -905,10 +944,13 @@ SELECT set_config('app.current_association_id', '<association_uuid>', false);
 ### Policy Pattern Categories
 
 #### 1. **System-Wide Tables** (No RLS)
+
 Tables without `association_id` that all users can read:
+
 - `sport_types` - Available to all during association creation
 
 #### 2. **Association-Scoped Tables** (Standard Multi-Tenant)
+
 Most tables use this pattern - users see only their association's data:
 
 ```sql
@@ -924,6 +966,7 @@ CREATE POLICY "Users can view own association data"
 ```
 
 #### 3. **Role-Based Write Access**
+
 Some tables restrict writes to specific roles:
 
 ```sql
@@ -942,6 +985,7 @@ CREATE POLICY "Administrators can manage data"
 ```
 
 #### 4. **Cross-Association Tables**
+
 `association_users` - Users can see their own memberships across multiple associations:
 
 ```sql
@@ -1566,6 +1610,7 @@ Database Change → PostgreSQL WAL → Realtime Server → WebSocket → Client
 ```
 
 **Key Concepts:**
+
 - **Channel:** A subscription topic (e.g., `session:123`)
 - **Event Types:** `INSERT`, `UPDATE`, `DELETE`
 - **Filters:** Narrow subscriptions to specific rows (e.g., `session_id=eq.123`)
@@ -1599,29 +1644,29 @@ Only enable realtime on tables that need live updates to reduce bandwidth and co
 const evaluationsChannel = supabase
   .channel(`session:${sessionId}:evaluations`)
   .on(
-    'postgres_changes',
+    "postgres_changes",
     {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'evaluations',
-      filter: `session_id=eq.${sessionId}`
+      event: "INSERT",
+      schema: "public",
+      table: "evaluations",
+      filter: `session_id=eq.${sessionId}`,
     },
     (payload) => {
-      console.log('New evaluation:', payload.new);
+      console.log("New evaluation:", payload.new);
       // Update UI with new score
       addEvaluationToUI(payload.new);
     }
   )
   .on(
-    'postgres_changes',
+    "postgres_changes",
     {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'evaluations',
-      filter: `session_id=eq.${sessionId}`
+      event: "UPDATE",
+      schema: "public",
+      table: "evaluations",
+      filter: `session_id=eq.${sessionId}`,
     },
     (payload) => {
-      console.log('Updated evaluation:', payload.new);
+      console.log("Updated evaluation:", payload.new);
       // Update existing score in UI
       updateEvaluationInUI(payload.new);
     }
@@ -1635,8 +1680,8 @@ const evaluationsChannel = supabase
 **React Hook Example:**
 
 ```javascript
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export function useSessionEvaluations(sessionId) {
   const [evaluations, setEvaluations] = useState([]);
@@ -1645,9 +1690,9 @@ export function useSessionEvaluations(sessionId) {
     // Initial fetch
     const fetchEvaluations = async () => {
       const { data } = await supabase
-        .from('evaluations')
-        .select('*')
-        .eq('session_id', sessionId);
+        .from("evaluations")
+        .select("*")
+        .eq("session_id", sessionId);
       setEvaluations(data || []);
     };
     fetchEvaluations();
@@ -1656,24 +1701,24 @@ export function useSessionEvaluations(sessionId) {
     const channel = supabase
       .channel(`session:${sessionId}:evaluations`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'evaluations',
-          filter: `session_id=eq.${sessionId}`
+          event: "INSERT",
+          schema: "public",
+          table: "evaluations",
+          filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
           setEvaluations((prev) => [...prev, payload.new]);
         }
       )
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'evaluations',
-          filter: `session_id=eq.${sessionId}`
+          event: "UPDATE",
+          schema: "public",
+          table: "evaluations",
+          filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
           setEvaluations((prev) =>
@@ -1693,6 +1738,7 @@ export function useSessionEvaluations(sessionId) {
 ```
 
 **Performance Considerations:**
+
 - **Filter by session_id:** Prevents receiving updates for all evaluations across all sessions
 - **Unsubscribe on cleanup:** Prevents memory leaks and excessive connections
 - **Batch UI updates:** Debounce rapid updates to avoid excessive re-renders
@@ -1710,25 +1756,28 @@ export function useSessionEvaluations(sessionId) {
 const checkInsChannel = supabase
   .channel(`session:${sessionId}:check-ins`)
   .on(
-    'postgres_changes',
+    "postgres_changes",
     {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'player_sessions',
-      filter: `session_id=eq.${sessionId}`
+      event: "UPDATE",
+      schema: "public",
+      table: "player_sessions",
+      filter: `session_id=eq.${sessionId}`,
     },
     (payload) => {
-      const { checked_in, no_show, jersey_color, jersey_number, team_number } = payload.new;
-      
+      const { checked_in, no_show, jersey_color, jersey_number, team_number } =
+        payload.new;
+
       if (checked_in) {
-        console.log(`Player checked in: Team ${team_number}, ${jersey_color} #${jersey_number}`);
-        updatePlayerStatus(payload.new.player_id, 'checked-in', {
+        console.log(
+          `Player checked in: Team ${team_number}, ${jersey_color} #${jersey_number}`
+        );
+        updatePlayerStatus(payload.new.player_id, "checked-in", {
           team: team_number,
-          jersey: `${jersey_color} #${jersey_number}`
+          jersey: `${jersey_color} #${jersey_number}`,
         });
       } else if (no_show) {
-        console.log('Player marked as no-show:', payload.new.player_id);
-        updatePlayerStatus(payload.new.player_id, 'no-show');
+        console.log("Player marked as no-show:", payload.new.player_id);
+        updatePlayerStatus(payload.new.player_id, "no-show");
       }
     }
   )
@@ -1745,19 +1794,22 @@ export function usePlayerCheckIns(sessionId) {
     // Initial fetch
     const fetchCheckIns = async () => {
       const { data } = await supabase
-        .from('player_sessions')
-        .select('player_id, checked_in, no_show, team_number, jersey_color, jersey_number')
-        .eq('session_id', sessionId);
-      
+        .from("player_sessions")
+        .select(
+          "player_id, checked_in, no_show, team_number, jersey_color, jersey_number"
+        )
+        .eq("session_id", sessionId);
+
       const statusMap = {};
       data?.forEach((ps) => {
         statusMap[ps.player_id] = {
           checkedIn: ps.checked_in,
           noShow: ps.no_show,
           team: ps.team_number,
-          jersey: ps.jersey_color && ps.jersey_number 
-            ? `${ps.jersey_color} #${ps.jersey_number}` 
-            : null
+          jersey:
+            ps.jersey_color && ps.jersey_number
+              ? `${ps.jersey_color} #${ps.jersey_number}`
+              : null,
         };
       });
       setCheckInStatus(statusMap);
@@ -1768,25 +1820,33 @@ export function usePlayerCheckIns(sessionId) {
     const channel = supabase
       .channel(`session:${sessionId}:check-ins`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'player_sessions',
-          filter: `session_id=eq.${sessionId}`
+          event: "UPDATE",
+          schema: "public",
+          table: "player_sessions",
+          filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
-          const { player_id, checked_in, no_show, team_number, jersey_color, jersey_number } = payload.new;
+          const {
+            player_id,
+            checked_in,
+            no_show,
+            team_number,
+            jersey_color,
+            jersey_number,
+          } = payload.new;
           setCheckInStatus((prev) => ({
             ...prev,
             [player_id]: {
               checkedIn: checked_in,
               noShow: no_show,
               team: team_number,
-              jersey: jersey_color && jersey_number 
-                ? `${jersey_color} #${jersey_number}` 
-                : null
-            }
+              jersey:
+                jersey_color && jersey_number
+                  ? `${jersey_color} #${jersey_number}`
+                  : null,
+            },
           }));
         }
       )
@@ -1802,6 +1862,7 @@ export function usePlayerCheckIns(sessionId) {
 ```
 
 **UI Integration:**
+
 ```javascript
 // Example: Player list with live check-in status
 function PlayerList({ sessionId, players }) {
@@ -1812,7 +1873,10 @@ function PlayerList({ sessionId, players }) {
       {players.map((player) => {
         const status = checkInStatus[player.id];
         return (
-          <div key={player.id} className={status?.checkedIn ? 'bg-green-100' : ''}>
+          <div
+            key={player.id}
+            className={status?.checkedIn ? "bg-green-100" : ""}
+          >
             <span>{player.name}</span>
             {status?.checkedIn && (
               <span className="ml-2 text-sm text-green-600">
@@ -1843,23 +1907,24 @@ function PlayerList({ sessionId, players }) {
 const evaluatorStatusChannel = supabase
   .channel(`session:${sessionId}:evaluators`)
   .on(
-    'postgres_changes',
+    "postgres_changes",
     {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'session_evaluators',
-      filter: `session_id=eq.${sessionId}`
+      event: "UPDATE",
+      schema: "public",
+      table: "session_evaluators",
+      filter: `session_id=eq.${sessionId}`,
     },
     (payload) => {
-      const { evaluator_id, is_finalized, finalized_at, incomplete_reason } = payload.new;
-      
+      const { evaluator_id, is_finalized, finalized_at, incomplete_reason } =
+        payload.new;
+
       if (is_finalized) {
         console.log(`Evaluator ${evaluator_id} finalized session`);
         if (incomplete_reason) {
           console.log(`Incomplete finalization: ${incomplete_reason}`);
           flagForReconciliation(sessionId, evaluator_id, incomplete_reason);
         }
-        updateEvaluatorStatus(evaluator_id, 'finalized', finalized_at);
+        updateEvaluatorStatus(evaluator_id, "finalized", finalized_at);
       }
     }
   )
@@ -1876,16 +1941,16 @@ export function useEvaluatorStatus(sessionId) {
     // Initial fetch
     const fetchStatus = async () => {
       const { data } = await supabase
-        .from('session_evaluators')
-        .select('evaluator_id, is_finalized, finalized_at, incomplete_reason')
-        .eq('session_id', sessionId);
-      
+        .from("session_evaluators")
+        .select("evaluator_id, is_finalized, finalized_at, incomplete_reason")
+        .eq("session_id", sessionId);
+
       const statusMap = {};
       data?.forEach((se) => {
         statusMap[se.evaluator_id] = {
           finalized: se.is_finalized,
           finalizedAt: se.finalized_at,
-          incompleteReason: se.incomplete_reason
+          incompleteReason: se.incomplete_reason,
         };
       });
       setEvaluatorStatus(statusMap);
@@ -1896,22 +1961,27 @@ export function useEvaluatorStatus(sessionId) {
     const channel = supabase
       .channel(`session:${sessionId}:evaluators`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'session_evaluators',
-          filter: `session_id=eq.${sessionId}`
+          event: "UPDATE",
+          schema: "public",
+          table: "session_evaluators",
+          filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
-          const { evaluator_id, is_finalized, finalized_at, incomplete_reason } = payload.new;
+          const {
+            evaluator_id,
+            is_finalized,
+            finalized_at,
+            incomplete_reason,
+          } = payload.new;
           setEvaluatorStatus((prev) => ({
             ...prev,
             [evaluator_id]: {
               finalized: is_finalized,
               finalizedAt: finalized_at,
-              incompleteReason: incomplete_reason
-            }
+              incompleteReason: incomplete_reason,
+            },
           }));
         }
       )
@@ -1939,28 +2009,28 @@ export function useEvaluatorStatus(sessionId) {
 const sessionStatusChannel = supabase
   .channel(`session:${sessionId}:status`)
   .on(
-    'postgres_changes',
+    "postgres_changes",
     {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'sessions',
-      filter: `id=eq.${sessionId}`
+      event: "UPDATE",
+      schema: "public",
+      table: "sessions",
+      filter: `id=eq.${sessionId}`,
     },
     (payload) => {
       const { status, started_at, completed_at } = payload.new;
       console.log(`Session status changed to: ${status}`);
-      
+
       switch (status) {
-        case 'ready':
+        case "ready":
           // Session is configured and ready to start
           enableStartSessionButton();
           break;
-        case 'in-progress':
+        case "in-progress":
           // Session has started - enable evaluation interface
           showEvaluationInterface();
           lockDrillConfiguration();
           break;
-        case 'completed':
+        case "completed":
           // Session is finished - show reports
           showSessionReport();
           disableEvaluationInterface();
@@ -1981,9 +2051,9 @@ export function useSessionStatus(sessionId) {
     // Initial fetch
     const fetchSession = async () => {
       const { data } = await supabase
-        .from('sessions')
-        .select('id, status, started_at, completed_at')
-        .eq('id', sessionId)
+        .from("sessions")
+        .select("id, status, started_at, completed_at")
+        .eq("id", sessionId)
         .single();
       setSession(data);
     };
@@ -1993,12 +2063,12 @@ export function useSessionStatus(sessionId) {
     const channel = supabase
       .channel(`session:${sessionId}:status`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'sessions',
-          filter: `id=eq.${sessionId}`
+          event: "UPDATE",
+          schema: "public",
+          table: "sessions",
+          filter: `id=eq.${sessionId}`,
         },
         (payload) => {
           setSession(payload.new);
@@ -2026,20 +2096,20 @@ function SessionInterface({ sessionId }) {
   return (
     <div>
       <h1>Session Status: {session.status}</h1>
-      
-      {session.status === 'draft' && (
+
+      {session.status === "draft" && (
         <div>Configuring session... Please assign drills and evaluators.</div>
       )}
-      
-      {session.status === 'ready' && (
+
+      {session.status === "ready" && (
         <button onClick={startSession}>Start Session</button>
       )}
-      
-      {session.status === 'in-progress' && (
+
+      {session.status === "in-progress" && (
         <EvaluationInterface sessionId={sessionId} />
       )}
-      
-      {session.status === 'completed' && (
+
+      {session.status === "completed" && (
         <SessionReport sessionId={sessionId} />
       )}
     </div>
@@ -2055,10 +2125,11 @@ function SessionInterface({ sessionId }) {
 
 ```javascript
 // Only receive updates for specific session
-filter: `session_id=eq.${sessionId}`
+filter: `session_id=eq.${sessionId}`;
 ```
 
 **Use When:**
+
 - Evaluation scoring interface (only show current session)
 - Check-in interface (only show current session players)
 - Session management dashboard (individual session view)
@@ -2067,10 +2138,11 @@ filter: `session_id=eq.${sessionId}`
 
 ```javascript
 // Receive updates for all sessions in association (use sparingly)
-filter: `association_id=eq.${associationId}`
+filter: `association_id=eq.${associationId}`;
 ```
 
 **Use When:**
+
 - Administrator dashboard (monitoring all active sessions)
 - System-wide alerts or notifications
 - Analytics dashboards
@@ -2081,10 +2153,11 @@ filter: `association_id=eq.${associationId}`
 
 ```javascript
 // Only receive updates related to current user
-filter: `evaluator_id=eq.${userId}`
+filter: `evaluator_id=eq.${userId}`;
 ```
 
 **Use When:**
+
 - "My Sessions" view for evaluators
 - Personal task list
 - User-specific notifications
@@ -2093,10 +2166,11 @@ filter: `evaluator_id=eq.${userId}`
 
 ```javascript
 // Multiple conditions using AND logic
-filter: `session_id=eq.${sessionId},player_id=eq.${playerId}`
+filter: `session_id=eq.${sessionId},player_id=eq.${playerId}`;
 ```
 
 **Use When:**
+
 - Individual player scoring view (one player, one session)
 - Drill-specific updates
 - Highly targeted subscriptions
@@ -2111,30 +2185,43 @@ filter: `session_id=eq.${sessionId},player_id=eq.${playerId}`
 // RECOMMENDED: One channel per view/component, multiple listeners
 const sessionChannel = supabase
   .channel(`session:${sessionId}`)
-  .on('postgres_changes', { 
-    event: 'INSERT', 
-    schema: 'public', 
-    table: 'evaluations',
-    filter: `session_id=eq.${sessionId}`
-  }, handleEvaluationInsert)
-  .on('postgres_changes', { 
-    event: 'UPDATE', 
-    schema: 'public', 
-    table: 'player_sessions',
-    filter: `session_id=eq.${sessionId}`
-  }, handleCheckInUpdate)
-  .on('postgres_changes', { 
-    event: 'UPDATE', 
-    schema: 'public', 
-    table: 'sessions',
-    filter: `id=eq.${sessionId}`
-  }, handleSessionStatusUpdate)
+  .on(
+    "postgres_changes",
+    {
+      event: "INSERT",
+      schema: "public",
+      table: "evaluations",
+      filter: `session_id=eq.${sessionId}`,
+    },
+    handleEvaluationInsert
+  )
+  .on(
+    "postgres_changes",
+    {
+      event: "UPDATE",
+      schema: "public",
+      table: "player_sessions",
+      filter: `session_id=eq.${sessionId}`,
+    },
+    handleCheckInUpdate
+  )
+  .on(
+    "postgres_changes",
+    {
+      event: "UPDATE",
+      schema: "public",
+      table: "sessions",
+      filter: `id=eq.${sessionId}`,
+    },
+    handleSessionStatusUpdate
+  )
   .subscribe();
 
 // One unsubscribe cleans up all listeners
 ```
 
 **Benefits:**
+
 - Reduced connection overhead (1 WebSocket instead of 3)
 - Simpler cleanup
 - Better performance
@@ -2143,8 +2230,8 @@ const sessionChannel = supabase
 
 ```javascript
 // Create a React Context to manage realtime connections
-import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 const RealtimeContext = createContext();
 
@@ -2175,16 +2262,20 @@ export function useRealtimeChannel() {
 // Usage in components:
 function EvaluationScoring() {
   const channel = useRealtimeChannel();
-  
+
   useEffect(() => {
     if (!channel) return;
-    
-    channel.on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'evaluations'
-    }, handleNewEvaluation);
-    
+
+    channel.on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "evaluations",
+      },
+      handleNewEvaluation
+    );
+
     // No unsubscribe needed - handled by provider
   }, [channel]);
 }
@@ -2198,34 +2289,44 @@ function EvaluationScoring() {
 
 ```javascript
 // ❌ BAD: Subscribe to all evaluations across all sessions
-const channel = supabase.channel('all-evaluations')
-  .on('postgres_changes', { 
-    event: '*', 
-    schema: 'public', 
-    table: 'evaluations' 
-  }, handleUpdate)
+const channel = supabase
+  .channel("all-evaluations")
+  .on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "evaluations",
+    },
+    handleUpdate
+  )
   .subscribe();
 
 // ✅ GOOD: Subscribe only to current session
-const channel = supabase.channel(`session:${sessionId}`)
-  .on('postgres_changes', { 
-    event: '*', 
-    schema: 'public', 
-    table: 'evaluations',
-    filter: `session_id=eq.${sessionId}`
-  }, handleUpdate)
+const channel = supabase
+  .channel(`session:${sessionId}`)
+  .on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "evaluations",
+      filter: `session_id=eq.${sessionId}`,
+    },
+    handleUpdate
+  )
   .subscribe();
 ```
 
 #### 2. **Debounce Rapid Updates**
 
 ```javascript
-import { useEffect, useState, useCallback } from 'react';
-import { debounce } from 'lodash';
+import { useEffect, useState, useCallback } from "react";
+import { debounce } from "lodash";
 
 export function useSessionEvaluations(sessionId) {
   const [evaluations, setEvaluations] = useState([]);
-  
+
   // Debounce updates to avoid excessive re-renders
   const debouncedUpdate = useCallback(
     debounce((newEval) => {
@@ -2237,14 +2338,18 @@ export function useSessionEvaluations(sessionId) {
   useEffect(() => {
     const channel = supabase
       .channel(`session:${sessionId}:evaluations`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'evaluations',
-        filter: `session_id=eq.${sessionId}`
-      }, (payload) => {
-        debouncedUpdate(payload.new);
-      })
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "evaluations",
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          debouncedUpdate(payload.new);
+        }
+      )
       .subscribe();
 
     return () => {
@@ -2262,7 +2367,7 @@ export function useSessionEvaluations(sessionId) {
 // Unsubscribe when user navigates away or component unmounts
 useEffect(() => {
   const channel = /* ... */;
-  
+
   return () => {
     console.log('Cleaning up realtime subscription');
     channel.unsubscribe();
@@ -2273,6 +2378,7 @@ useEffect(() => {
 #### 4. **Connection Pooling**
 
 Supabase automatically manages connection pooling, but you can optimize by:
+
 - Reusing channels across components (Context pattern above)
 - Avoiding duplicate subscriptions to same table/filter
 - Unsubscribing from inactive sessions
@@ -2286,18 +2392,24 @@ Supabase automatically manages connection pooling, but you can optimize by:
 ```javascript
 const channel = supabase
   .channel(`session:${sessionId}`)
-  .on('postgres_changes', { /* ... */ }, handleUpdate)
+  .on(
+    "postgres_changes",
+    {
+      /* ... */
+    },
+    handleUpdate
+  )
   .subscribe((status, error) => {
-    if (status === 'SUBSCRIBED') {
-      console.log('Connected to realtime');
-    } else if (status === 'CHANNEL_ERROR') {
-      console.error('Realtime connection error:', error);
+    if (status === "SUBSCRIBED") {
+      console.log("Connected to realtime");
+    } else if (status === "CHANNEL_ERROR") {
+      console.error("Realtime connection error:", error);
       // Retry connection or show user notification
-    } else if (status === 'TIMED_OUT') {
-      console.error('Realtime connection timed out');
+    } else if (status === "TIMED_OUT") {
+      console.error("Realtime connection timed out");
       // Attempt reconnection
-    } else if (status === 'CLOSED') {
-      console.log('Realtime connection closed');
+    } else if (status === "CLOSED") {
+      console.log("Realtime connection closed");
     }
   });
 ```
@@ -2307,28 +2419,28 @@ const channel = supabase
 ```javascript
 function useRealtimeWithRetry(sessionId, maxRetries = 3) {
   const [retryCount, setRetryCount] = useState(0);
-  
+
   useEffect(() => {
     let channel;
-    
+
     const connect = () => {
       channel = supabase
         .channel(`session:${sessionId}`)
         .on(/* ... */)
         .subscribe((status) => {
-          if (status === 'CHANNEL_ERROR' && retryCount < maxRetries) {
+          if (status === "CHANNEL_ERROR" && retryCount < maxRetries) {
             console.log(`Retry ${retryCount + 1}/${maxRetries}`);
             setTimeout(() => {
               setRetryCount((prev) => prev + 1);
             }, 1000 * Math.pow(2, retryCount)); // Exponential backoff
-          } else if (status === 'SUBSCRIBED') {
+          } else if (status === "SUBSCRIBED") {
             setRetryCount(0); // Reset on successful connection
           }
         });
     };
-    
+
     connect();
-    
+
     return () => {
       if (channel) channel.unsubscribe();
     };
@@ -2347,12 +2459,16 @@ Realtime subscriptions **respect Row-Level Security policies**. Users only recei
 ```javascript
 // User subscribed to all evaluations, but RLS filters to their association
 const channel = supabase
-  .channel('evaluations')
-  .on('postgres_changes', {
-    event: '*',
-    schema: 'public',
-    table: 'evaluations'
-  }, handleUpdate)
+  .channel("evaluations")
+  .on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "evaluations",
+    },
+    handleUpdate
+  )
   .subscribe();
 
 // User only receives updates for evaluations in their association
@@ -2366,19 +2482,19 @@ Even though RLS filters data, always validate realtime updates in your applicati
 ```javascript
 const handleEvaluationUpdate = (payload) => {
   const evaluation = payload.new;
-  
+
   // Validate data structure
   if (!evaluation.session_id || !evaluation.score) {
-    console.error('Invalid evaluation data received:', evaluation);
+    console.error("Invalid evaluation data received:", evaluation);
     return;
   }
-  
+
   // Validate business rules
   if (evaluation.score < 1 || evaluation.score > 10) {
-    console.error('Invalid score:', evaluation.score);
+    console.error("Invalid score:", evaluation.score);
     return;
   }
-  
+
   // Update UI
   updateEvaluationInUI(evaluation);
 };
@@ -2408,12 +2524,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations_public;
 ```javascript
 // Open two browser windows with different users
 // Window 1: Evaluator A enters score
-await supabase.from('evaluations').insert({
-  session_id: 'abc-123',
-  player_id: 'player-1',
-  drill_id: 'drill-1',
-  evaluator_id: 'evaluator-a',
-  score: 8
+await supabase.from("evaluations").insert({
+  session_id: "abc-123",
+  player_id: "player-1",
+  drill_id: "drill-1",
+  evaluator_id: "evaluator-a",
+  score: 8,
 });
 
 // Window 2: Evaluator B should see score appear instantly
@@ -2423,25 +2539,29 @@ await supabase.from('evaluations').insert({
 #### 2. **Automated Testing with Vitest**
 
 ```javascript
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { supabase } from '@/lib/supabase';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { supabase } from "@/lib/supabase";
 
-describe('Realtime Evaluations', () => {
+describe("Realtime Evaluations", () => {
   let channel;
   let receivedUpdates = [];
 
   beforeEach(() => {
     receivedUpdates = [];
     channel = supabase
-      .channel('test-evaluations')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'evaluations',
-        filter: 'session_id=eq.test-session'
-      }, (payload) => {
-        receivedUpdates.push(payload.new);
-      })
+      .channel("test-evaluations")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "evaluations",
+          filter: "session_id=eq.test-session",
+        },
+        (payload) => {
+          receivedUpdates.push(payload.new);
+        }
+      )
       .subscribe();
   });
 
@@ -2449,14 +2569,14 @@ describe('Realtime Evaluations', () => {
     channel.unsubscribe();
   });
 
-  it('should receive new evaluation in realtime', async () => {
+  it("should receive new evaluation in realtime", async () => {
     // Insert evaluation
-    await supabase.from('evaluations').insert({
-      session_id: 'test-session',
-      player_id: 'test-player',
-      drill_id: 'test-drill',
-      evaluator_id: 'test-evaluator',
-      score: 7
+    await supabase.from("evaluations").insert({
+      session_id: "test-session",
+      player_id: "test-player",
+      drill_id: "test-drill",
+      evaluator_id: "test-evaluator",
+      score: 7,
     });
 
     // Wait for realtime event
@@ -2534,7 +2654,7 @@ VALUES ('<session_uuid>', '<player_uuid>', '<drill_uuid>', '<evaluator_uuid>', 8
 -- Verify policies work correctly with JOINs
 -- User should only see their association's data even in complex queries
 
-SELECT 
+SELECT
   s.name AS session_name,
   p.first_name || ' ' || p.last_name AS player_name,
   e.score
@@ -2599,18 +2719,22 @@ CREATE POLICY "Evaluators can access assigned sessions"
 ### Troubleshooting Common Issues
 
 #### Issue: "Row-level security policy violation"
+
 **Cause:** User doesn't have permission via RLS policies  
 **Solution:** Check `app.current_association_id` is set, verify user has correct role
 
 #### Issue: Policies not enforcing on some queries
+
 **Cause:** RLS not enabled on table  
 **Solution:** `ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;`
 
 #### Issue: Performance degradation after adding policies
+
 **Cause:** Policy subqueries not using indexes  
 **Solution:** Add indexes on `association_id`, foreign keys used in policies
 
 #### Issue: User sees no data after login
+
 **Cause:** `app.current_association_id` not set or set incorrectly  
 **Solution:** Verify application sets config after authentication
 
@@ -2632,8 +2756,8 @@ Evalu8 uses **Supabase Client** for all database operations, which provides:
 
 ```typescript
 // src/lib/supabase.ts
-import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/types/database';
+import { createClient } from "@supabase/supabase-js";
+import { Database } from "@/types/database";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -2642,18 +2766,18 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
+    detectSessionInUrl: true,
+  },
 });
 
 // Set association context after login
 export async function setAssociationContext(associationId: string) {
-  const { error } = await supabase.rpc('set_association_context', {
-    association_id: associationId
+  const { error } = await supabase.rpc("set_association_context", {
+    association_id: associationId,
   });
-  
+
   if (error) {
-    console.error('Failed to set association context:', error);
+    console.error("Failed to set association context:", error);
     throw error;
   }
 }
@@ -2689,13 +2813,16 @@ export type Database = {
           first_name: string;
           last_name: string;
           date_of_birth: string;
-          status: 'active' | 'withdrawn' | 'other';
+          status: "active" | "withdrawn" | "other";
           status_reason: string | null;
           created_at: string;
           updated_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['players']['Row'], 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Database['public']['Tables']['players']['Insert']>;
+        Insert: Omit<
+          Database["public"]["Tables"]["players"]["Row"],
+          "id" | "created_at" | "updated_at"
+        >;
+        Update: Partial<Database["public"]["Tables"]["players"]["Insert"]>;
       };
       // ... other tables
     };
@@ -2723,11 +2850,11 @@ export async function createSeason(data: {
   const associationId = session?.session?.user?.user_metadata?.association_id;
 
   const { data: season, error } = await supabase
-    .from('seasons')
+    .from("seasons")
     .insert({
       ...data,
       association_id: associationId,
-      status: 'draft'
+      status: "draft",
     })
     .select()
     .single();
@@ -2739,24 +2866,24 @@ export async function createSeason(data: {
 // Get active season
 export async function getActiveSeason() {
   const { data, error } = await supabase
-    .from('seasons')
-    .select('*')
-    .eq('status', 'active')
+    .from("seasons")
+    .select("*")
+    .eq("status", "active")
     .single();
 
-  if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows
+  if (error && error.code !== "PGRST116") throw error; // PGRST116 = no rows
   return data;
 }
 
 // Activate season (locks QA parameters)
 export async function activateSeason(seasonId: string) {
   const { data, error } = await supabase
-    .from('seasons')
+    .from("seasons")
     .update({
-      status: 'active',
-      activated_at: new Date().toISOString()
+      status: "active",
+      activated_at: new Date().toISOString(),
     })
-    .eq('id', seasonId)
+    .eq("id", seasonId)
     .select()
     .single();
 
@@ -2767,9 +2894,9 @@ export async function activateSeason(seasonId: string) {
 // Get all seasons for association
 export async function getSeasons() {
   const { data, error } = await supabase
-    .from('seasons')
-    .select('*')
-    .order('year', { ascending: false });
+    .from("seasons")
+    .select("*")
+    .order("year", { ascending: false });
 
   if (error) throw error;
   return data;
@@ -2790,11 +2917,11 @@ export async function createCohort(data: {
   const associationId = session?.session?.user?.user_metadata?.association_id;
 
   const { data: cohort, error } = await supabase
-    .from('cohorts')
+    .from("cohorts")
     .insert({
       ...data,
       association_id: associationId,
-      status: 'active'
+      status: "active",
     })
     .select()
     .single();
@@ -2806,10 +2933,10 @@ export async function createCohort(data: {
 // Get all cohorts
 export async function getCohorts() {
   const { data, error } = await supabase
-    .from('cohorts')
-    .select('*')
-    .eq('status', 'active')
-    .order('birth_year_start', { ascending: false });
+    .from("cohorts")
+    .select("*")
+    .eq("status", "active")
+    .order("birth_year_start", { ascending: false });
 
   if (error) throw error;
   return data;
@@ -2829,11 +2956,11 @@ export async function createPositionType(data: {
   const associationId = session?.session?.user?.user_metadata?.association_id;
 
   const { data: position, error } = await supabase
-    .from('position_types')
+    .from("position_types")
     .insert({
       ...data,
       association_id: associationId,
-      status: 'active'
+      status: "active",
     })
     .select()
     .single();
@@ -2845,10 +2972,10 @@ export async function createPositionType(data: {
 // Get all positions
 export async function getPositionTypes() {
   const { data, error } = await supabase
-    .from('position_types')
-    .select('*')
-    .eq('status', 'active')
-    .order('name');
+    .from("position_types")
+    .select("*")
+    .eq("status", "active")
+    .order("name");
 
   if (error) throw error;
   return data;
@@ -2868,11 +2995,11 @@ export async function createDrill(data: {
   const associationId = session?.session?.user?.user_metadata?.association_id;
 
   const { data: drill, error } = await supabase
-    .from('drills')
+    .from("drills")
     .insert({
       ...data,
       association_id: associationId,
-      status: 'active'
+      status: "active",
     })
     .select()
     .single();
@@ -2884,10 +3011,10 @@ export async function createDrill(data: {
 // Get all drills
 export async function getDrills() {
   const { data, error } = await supabase
-    .from('drills')
-    .select('*')
-    .eq('status', 'active')
-    .order('name');
+    .from("drills")
+    .select("*")
+    .eq("status", "active")
+    .order("name");
 
   if (error) throw error;
   return data;
@@ -2914,11 +3041,11 @@ export async function createPlayer(data: {
   const associationId = session?.session?.user?.user_metadata?.association_id;
 
   const { data: player, error } = await supabase
-    .from('players')
+    .from("players")
     .insert({
       ...data,
       association_id: associationId,
-      status: 'active'
+      status: "active",
     })
     .select()
     .single();
@@ -2930,16 +3057,18 @@ export async function createPlayer(data: {
 // Get players for cohort
 export async function getPlayersByCohort(cohortId: string) {
   const { data, error } = await supabase
-    .from('players')
-    .select(`
+    .from("players")
+    .select(
+      `
       *,
       cohort:cohorts(name),
       position:position_types(name),
       previous_level:previous_levels(name)
-    `)
-    .eq('cohort_id', cohortId)
-    .eq('status', 'active')
-    .order('last_name');
+    `
+    )
+    .eq("cohort_id", cohortId)
+    .eq("status", "active")
+    .order("last_name");
 
   if (error) throw error;
   return data;
@@ -2948,17 +3077,17 @@ export async function getPlayersByCohort(cohortId: string) {
 // Update player status
 export async function updatePlayerStatus(
   playerId: string,
-  status: 'active' | 'withdrawn' | 'other',
+  status: "active" | "withdrawn" | "other",
   reason?: string
 ) {
   const { data, error } = await supabase
-    .from('players')
+    .from("players")
     .update({
       status,
       status_reason: reason || null,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
-    .eq('id', playerId)
+    .eq("id", playerId)
     .select()
     .single();
 
@@ -2967,29 +3096,31 @@ export async function updatePlayerStatus(
 }
 
 // Bulk import players
-export async function bulkImportPlayers(players: Array<{
-  season_id: string;
-  cohort_id: string;
-  position_id: string;
-  previous_level_id?: string;
-  first_name: string;
-  last_name: string;
-  date_of_birth: string;
-  guardian_name?: string;
-  guardian_email?: string;
-  guardian_phone?: string;
-}>) {
+export async function bulkImportPlayers(
+  players: Array<{
+    season_id: string;
+    cohort_id: string;
+    position_id: string;
+    previous_level_id?: string;
+    first_name: string;
+    last_name: string;
+    date_of_birth: string;
+    guardian_name?: string;
+    guardian_email?: string;
+    guardian_phone?: string;
+  }>
+) {
   const { data: session } = await supabase.auth.getSession();
   const associationId = session?.session?.user?.user_metadata?.association_id;
 
   const playersWithAssociation = players.map((p) => ({
     ...p,
     association_id: associationId,
-    status: 'active' as const
+    status: "active" as const,
   }));
 
   const { data, error } = await supabase
-    .from('players')
+    .from("players")
     .insert(playersWithAssociation)
     .select();
 
@@ -3015,12 +3146,12 @@ export async function createStandardWave(data: {
   const associationId = session?.session?.user?.user_metadata?.association_id;
 
   const { data: wave, error } = await supabase
-    .from('waves')
+    .from("waves")
     .insert({
       ...data,
       association_id: associationId,
-      wave_type: 'standard',
-      status: 'not-started'
+      wave_type: "standard",
+      status: "not-started",
     })
     .select()
     .single();
@@ -3040,12 +3171,12 @@ export async function createCustomWave(data: {
   const associationId = session?.session?.user?.user_metadata?.association_id;
 
   const { data: wave, error } = await supabase
-    .from('waves')
+    .from("waves")
     .insert({
       ...data,
       association_id: associationId,
-      wave_type: 'custom',
-      status: 'not-started'
+      wave_type: "custom",
+      status: "not-started",
     })
     .select()
     .single();
@@ -3057,14 +3188,16 @@ export async function createCustomWave(data: {
 // Get waves for cohort
 export async function getWavesByCohort(cohortId: string) {
   const { data, error } = await supabase
-    .from('waves')
-    .select(`
+    .from("waves")
+    .select(
+      `
       *,
       cohort:cohorts(name),
       sessions:sessions(count)
-    `)
-    .eq('cohort_id', cohortId)
-    .order('wave_number', { ascending: true });
+    `
+    )
+    .eq("cohort_id", cohortId)
+    .order("wave_number", { ascending: true });
 
   if (error) throw error;
   return data;
@@ -3073,12 +3206,12 @@ export async function getWavesByCohort(cohortId: string) {
 // Update wave status
 export async function updateWaveStatus(
   waveId: string,
-  status: 'not-started' | 'ready' | 'in-progress' | 'completed'
+  status: "not-started" | "ready" | "in-progress" | "completed"
 ) {
   const { data, error } = await supabase
-    .from('waves')
+    .from("waves")
     .update({ status })
-    .eq('id', waveId)
+    .eq("id", waveId)
     .select()
     .single();
 
@@ -3102,11 +3235,11 @@ export async function createSession(data: {
   const associationId = session?.session?.user?.user_metadata?.association_id;
 
   const { data: newSession, error } = await supabase
-    .from('sessions')
+    .from("sessions")
     .insert({
       ...data,
       association_id: associationId,
-      status: 'draft'
+      status: "draft",
     })
     .select()
     .single();
@@ -3118,8 +3251,9 @@ export async function createSession(data: {
 // Get session with full details
 export async function getSessionDetails(sessionId: string) {
   const { data, error } = await supabase
-    .from('sessions')
-    .select(`
+    .from("sessions")
+    .select(
+      `
       *,
       wave:waves(wave_number, wave_type, wave_name),
       cohort:cohorts(name),
@@ -3146,8 +3280,9 @@ export async function getSessionDetails(sessionId: string) {
         checked_in,
         no_show
       )
-    `)
-    .eq('id', sessionId)
+    `
+    )
+    .eq("id", sessionId)
     .single();
 
   if (error) throw error;
@@ -3157,20 +3292,20 @@ export async function getSessionDetails(sessionId: string) {
 // Update session status
 export async function updateSessionStatus(
   sessionId: string,
-  status: 'draft' | 'ready' | 'in-progress' | 'completed'
+  status: "draft" | "ready" | "in-progress" | "completed"
 ) {
   const updates: any = { status };
-  
-  if (status === 'in-progress') {
+
+  if (status === "in-progress") {
     updates.started_at = new Date().toISOString();
-  } else if (status === 'completed') {
+  } else if (status === "completed") {
     updates.completed_at = new Date().toISOString();
   }
 
   const { data, error } = await supabase
-    .from('sessions')
+    .from("sessions")
     .update(updates)
-    .eq('id', sessionId)
+    .eq("id", sessionId)
     .select()
     .single();
 
@@ -3179,24 +3314,26 @@ export async function updateSessionStatus(
 }
 
 // Bulk import sessions
-export async function bulkImportSessions(sessions: Array<{
-  wave_id: string;
-  cohort_id: string;
-  session_date: string;
-  session_time: string;
-  location?: string;
-}>) {
+export async function bulkImportSessions(
+  sessions: Array<{
+    wave_id: string;
+    cohort_id: string;
+    session_date: string;
+    session_time: string;
+    location?: string;
+  }>
+) {
   const { data: session } = await supabase.auth.getSession();
   const associationId = session?.session?.user?.user_metadata?.association_id;
 
   const sessionsWithAssociation = sessions.map((s) => ({
     ...s,
     association_id: associationId,
-    status: 'draft' as const
+    status: "draft" as const,
   }));
 
   const { data, error } = await supabase
-    .from('sessions')
+    .from("sessions")
     .insert(sessionsWithAssociation)
     .select();
 
@@ -3216,12 +3353,14 @@ export async function assignDrillToSession(data: {
   applies_to_positions: string[];
 }) {
   const { data: sessionDrill, error } = await supabase
-    .from('session_drills')
+    .from("session_drills")
     .insert(data)
-    .select(`
+    .select(
+      `
       *,
       drill:drills(name, description)
-    `)
+    `
+    )
     .single();
 
   if (error) throw error;
@@ -3234,9 +3373,9 @@ export async function updateDrillWeight(
   weightPercent: number
 ) {
   const { data, error } = await supabase
-    .from('session_drills')
+    .from("session_drills")
     .update({ weight_percent: weightPercent })
-    .eq('id', sessionDrillId)
+    .eq("id", sessionDrillId)
     .select()
     .single();
 
@@ -3251,9 +3390,9 @@ export async function cloneDrillConfiguration(
 ) {
   // Get source session drills
   const { data: sourceDrills, error: fetchError } = await supabase
-    .from('session_drills')
-    .select('drill_id, weight_percent, applies_to_positions')
-    .eq('session_id', sourceSessionId);
+    .from("session_drills")
+    .select("drill_id, weight_percent, applies_to_positions")
+    .eq("session_id", sourceSessionId);
 
   if (fetchError) throw fetchError;
 
@@ -3261,26 +3400,24 @@ export async function cloneDrillConfiguration(
   const clonePromises = targetSessionIds.map(async (targetSessionId) => {
     // Delete existing drills for target session
     await supabase
-      .from('session_drills')
+      .from("session_drills")
       .delete()
-      .eq('session_id', targetSessionId);
+      .eq("session_id", targetSessionId);
 
     // Insert cloned drills
     const drillsToInsert = sourceDrills.map((drill) => ({
       session_id: targetSessionId,
       drill_id: drill.drill_id,
       weight_percent: drill.weight_percent,
-      applies_to_positions: drill.applies_to_positions
+      applies_to_positions: drill.applies_to_positions,
     }));
 
-    return supabase
-      .from('session_drills')
-      .insert(drillsToInsert);
+    return supabase.from("session_drills").insert(drillsToInsert);
   });
 
   const results = await Promise.all(clonePromises);
   const errors = results.filter((r) => r.error);
-  
+
   if (errors.length > 0) throw errors[0].error;
   return results;
 }
@@ -3288,38 +3425,45 @@ export async function cloneDrillConfiguration(
 // Validate drill configuration totals 100% per position
 export async function validateDrillConfiguration(sessionId: string) {
   const { data: sessionDrills, error } = await supabase
-    .from('session_drills')
-    .select('drill_id, weight_percent, applies_to_positions')
-    .eq('session_id', sessionId);
+    .from("session_drills")
+    .select("drill_id, weight_percent, applies_to_positions")
+    .eq("session_id", sessionId);
 
   if (error) throw error;
 
   // Get all positions for session's cohort
   const { data: session } = await supabase
-    .from('sessions')
-    .select('cohort:cohorts(id)')
-    .eq('id', sessionId)
+    .from("sessions")
+    .select("cohort:cohorts(id)")
+    .eq("id", sessionId)
     .single();
 
   const { data: positions } = await supabase
-    .from('position_types')
-    .select('id, name')
-    .eq('status', 'active');
+    .from("position_types")
+    .select("id, name")
+    .eq("status", "active");
 
   // Check each position totals 100%
-  const validation: Record<string, { total: number; drills: number; valid: boolean }> = {};
-  
-  positions?.forEach((position) => {
-    const positionDrills = sessionDrills?.filter((sd) =>
-      sd.applies_to_positions.includes(position.id)
-    ) || [];
+  const validation: Record<
+    string,
+    { total: number; drills: number; valid: boolean }
+  > = {};
 
-    const total = positionDrills.reduce((sum, sd) => sum + sd.weight_percent, 0);
-    
+  positions?.forEach((position) => {
+    const positionDrills =
+      sessionDrills?.filter((sd) =>
+        sd.applies_to_positions.includes(position.id)
+      ) || [];
+
+    const total = positionDrills.reduce(
+      (sum, sd) => sum + sd.weight_percent,
+      0
+    );
+
     validation[position.name] = {
       total,
       drills: positionDrills.length,
-      valid: total === 100 && positionDrills.length <= 4
+      valid: total === 100 && positionDrills.length <= 4,
     };
   });
 
@@ -3336,15 +3480,17 @@ export async function assignEvaluatorToSession(
   evaluatorId: string
 ) {
   const { data, error } = await supabase
-    .from('session_evaluators')
+    .from("session_evaluators")
     .insert({
       session_id: sessionId,
-      evaluator_id: evaluatorId
+      evaluator_id: evaluatorId,
     })
-    .select(`
+    .select(
+      `
       *,
       evaluator:users(first_name, last_name, email)
-    `)
+    `
+    )
     .single();
 
   if (error) throw error;
@@ -3360,14 +3506,14 @@ export async function finalizeEvaluatorSession(
   const evaluatorId = session?.session?.user?.id;
 
   const { data, error } = await supabase
-    .from('session_evaluators')
+    .from("session_evaluators")
     .update({
       is_finalized: true,
       finalized_at: new Date().toISOString(),
-      incomplete_reason: incompleteReason || null
+      incomplete_reason: incompleteReason || null,
     })
-    .eq('session_id', sessionId)
-    .eq('evaluator_id', evaluatorId)
+    .eq("session_id", sessionId)
+    .eq("evaluator_id", evaluatorId)
     .select()
     .single();
 
@@ -3378,12 +3524,14 @@ export async function finalizeEvaluatorSession(
 // Get evaluators for session
 export async function getSessionEvaluators(sessionId: string) {
   const { data, error } = await supabase
-    .from('session_evaluators')
-    .select(`
+    .from("session_evaluators")
+    .select(
+      `
       *,
       evaluator:users(id, first_name, last_name, email)
-    `)
-    .eq('session_id', sessionId);
+    `
+    )
+    .eq("session_id", sessionId);
 
   if (error) throw error;
   return data;
@@ -3394,13 +3542,15 @@ export async function getSessionEvaluators(sessionId: string) {
 
 ```typescript
 // Assign players to session (distribution)
-export async function assignPlayersToSession(assignments: Array<{
-  session_id: string;
-  player_id: string;
-  team_number: number;
-}>) {
+export async function assignPlayersToSession(
+  assignments: Array<{
+    session_id: string;
+    player_id: string;
+    team_number: number;
+  }>
+) {
   const { data, error } = await supabase
-    .from('player_sessions')
+    .from("player_sessions")
     .insert(assignments)
     .select();
 
@@ -3416,14 +3566,14 @@ export async function checkInPlayer(
   jerseyNumber: number
 ) {
   const { data, error } = await supabase
-    .from('player_sessions')
+    .from("player_sessions")
     .update({
       checked_in: true,
       jersey_color: jerseyColor,
-      jersey_number: jerseyNumber
+      jersey_number: jerseyNumber,
     })
-    .eq('session_id', sessionId)
-    .eq('player_id', playerId)
+    .eq("session_id", sessionId)
+    .eq("player_id", playerId)
     .select()
     .single();
 
@@ -3434,10 +3584,10 @@ export async function checkInPlayer(
 // Mark player as no-show
 export async function markPlayerNoShow(sessionId: string, playerId: string) {
   const { data, error } = await supabase
-    .from('player_sessions')
+    .from("player_sessions")
     .update({ no_show: true })
-    .eq('session_id', sessionId)
-    .eq('player_id', playerId)
+    .eq("session_id", sessionId)
+    .eq("player_id", playerId)
     .select()
     .single();
 
@@ -3448,8 +3598,9 @@ export async function markPlayerNoShow(sessionId: string, playerId: string) {
 // Get player assignments for session
 export async function getSessionPlayers(sessionId: string) {
   const { data, error } = await supabase
-    .from('player_sessions')
-    .select(`
+    .from("player_sessions")
+    .select(
+      `
       *,
       player:players(
         id,
@@ -3458,10 +3609,11 @@ export async function getSessionPlayers(sessionId: string) {
         position:position_types(name),
         previous_level:previous_levels(name)
       )
-    `)
-    .eq('session_id', sessionId)
-    .order('team_number')
-    .order('player.last_name');
+    `
+    )
+    .eq("session_id", sessionId)
+    .order("team_number")
+    .order("player.last_name");
 
   if (error) throw error;
   return data;
@@ -3486,10 +3638,10 @@ export async function createEvaluation(data: {
   const evaluatorId = session?.session?.user?.id;
 
   const { data: evaluation, error } = await supabase
-    .from('evaluations')
+    .from("evaluations")
     .insert({
       ...data,
-      evaluator_id: evaluatorId
+      evaluator_id: evaluatorId,
     })
     .select()
     .single();
@@ -3499,14 +3651,11 @@ export async function createEvaluation(data: {
 }
 
 // Update evaluation score
-export async function updateEvaluation(
-  evaluationId: string,
-  score: number
-) {
+export async function updateEvaluation(evaluationId: string, score: number) {
   const { data, error } = await supabase
-    .from('evaluations')
+    .from("evaluations")
     .update({ score })
-    .eq('id', evaluationId)
+    .eq("id", evaluationId)
     .select()
     .single();
 
@@ -3520,14 +3669,16 @@ export async function getPlayerEvaluations(
   playerId: string
 ) {
   const { data, error } = await supabase
-    .from('evaluations')
-    .select(`
+    .from("evaluations")
+    .select(
+      `
       *,
       drill:drills(name),
       evaluator:users(first_name, last_name)
-    `)
-    .eq('session_id', sessionId)
-    .eq('player_id', playerId);
+    `
+    )
+    .eq("session_id", sessionId)
+    .eq("player_id", playerId);
 
   if (error) throw error;
   return data;
@@ -3536,36 +3687,40 @@ export async function getPlayerEvaluations(
 // Get all evaluations for session
 export async function getSessionEvaluations(sessionId: string) {
   const { data, error } = await supabase
-    .from('evaluations')
-    .select(`
+    .from("evaluations")
+    .select(
+      `
       *,
       player:players(first_name, last_name),
       drill:drills(name),
       evaluator:users(first_name, last_name)
-    `)
-    .eq('session_id', sessionId);
+    `
+    )
+    .eq("session_id", sessionId);
 
   if (error) throw error;
   return data;
 }
 
 // Bulk create evaluations
-export async function bulkCreateEvaluations(evaluations: Array<{
-  session_id: string;
-  player_id: string;
-  drill_id: string;
-  score: number;
-}>) {
+export async function bulkCreateEvaluations(
+  evaluations: Array<{
+    session_id: string;
+    player_id: string;
+    drill_id: string;
+    score: number;
+  }>
+) {
   const { data: session } = await supabase.auth.getSession();
   const evaluatorId = session?.session?.user?.id;
 
   const evaluationsWithEvaluator = evaluations.map((e) => ({
     ...e,
-    evaluator_id: evaluatorId
+    evaluator_id: evaluatorId,
   }));
 
   const { data, error } = await supabase
-    .from('evaluations')
+    .from("evaluations")
     .insert(evaluationsWithEvaluator)
     .select();
 
@@ -3582,7 +3737,7 @@ export async function createReconciliationDecision(data: {
   session_id: string;
   player_id: string;
   drill_id: string;
-  decision_type: 'partial_averaging' | 'mark_drill_invalid' | 'exclude_athlete';
+  decision_type: "partial_averaging" | "mark_drill_invalid" | "exclude_athlete";
   reason: string;
   notes?: string;
 }) {
@@ -3590,10 +3745,10 @@ export async function createReconciliationDecision(data: {
   const administratorId = session?.session?.user?.id;
 
   const { data: decision, error } = await supabase
-    .from('reconciliation_decisions')
+    .from("reconciliation_decisions")
     .insert({
       ...data,
-      decided_by: administratorId
+      decided_by: administratorId,
     })
     .select()
     .single();
@@ -3605,14 +3760,16 @@ export async function createReconciliationDecision(data: {
 // Get reconciliation decisions for session
 export async function getReconciliationDecisions(sessionId: string) {
   const { data, error } = await supabase
-    .from('reconciliation_decisions')
-    .select(`
+    .from("reconciliation_decisions")
+    .select(
+      `
       *,
       player:players(first_name, last_name),
       drill:drills(name),
       administrator:users(first_name, last_name)
-    `)
-    .eq('session_id', sessionId);
+    `
+    )
+    .eq("session_id", sessionId);
 
   if (error) throw error;
   return data;
@@ -3629,8 +3786,9 @@ export async function getReconciliationDecisions(sessionId: string) {
 export async function getCompleteSession(sessionId: string) {
   // Fetch session with all related data
   const { data: session, error: sessionError } = await supabase
-    .from('sessions')
-    .select(`
+    .from("sessions")
+    .select(
+      `
       *,
       wave:waves(
         wave_number,
@@ -3691,21 +3849,22 @@ export async function getCompleteSession(sessionId: string) {
           previous_level:previous_levels(name)
         )
       )
-    `)
-    .eq('id', sessionId)
+    `
+    )
+    .eq("id", sessionId)
     .single();
 
   if (sessionError) throw sessionError;
 
   // Fetch evaluation counts per player
   const { data: evaluationCounts } = await supabase
-    .from('evaluations')
-    .select('player_id, drill_id, count')
-    .eq('session_id', sessionId);
+    .from("evaluations")
+    .select("player_id, drill_id, count")
+    .eq("session_id", sessionId);
 
   return {
     ...session,
-    evaluation_counts: evaluationCounts
+    evaluation_counts: evaluationCounts,
   };
 }
 ```
@@ -3715,10 +3874,9 @@ export async function getCompleteSession(sessionId: string) {
 ```typescript
 export async function getPlayerRankings(cohortId: string) {
   // Call database function that calculates rankings
-  const { data, error } = await supabase
-    .rpc('calculate_player_rankings', {
-      p_cohort_id: cohortId
-    });
+  const { data, error } = await supabase.rpc("calculate_player_rankings", {
+    p_cohort_id: cohortId,
+  });
 
   if (error) throw error;
   return data;
@@ -3774,10 +3932,9 @@ $$ LANGUAGE plpgsql;
 ```typescript
 export async function detectOutliers(sessionId: string) {
   // Call database function that applies outlier threshold
-  const { data, error } = await supabase
-    .rpc('detect_outliers', {
-      p_session_id: sessionId
-    });
+  const { data, error } = await supabase.rpc("detect_outliers", {
+    p_session_id: sessionId,
+  });
 
   if (error) throw error;
   return data;
@@ -3835,12 +3992,12 @@ $$ LANGUAGE plpgsql;
 // Update outlier flags
 export async function updateOutlierFlags(sessionId: string) {
   const outliers = await detectOutliers(sessionId);
-  
-  const updates = outliers?.map((outlier) => 
+
+  const updates = outliers?.map((outlier) =>
     supabase
-      .from('evaluations')
+      .from("evaluations")
       .update({ is_outlier: outlier.is_outlier })
-      .eq('id', outlier.evaluation_id)
+      .eq("id", outlier.evaluation_id)
   );
 
   await Promise.all(updates || []);
@@ -3853,54 +4010,56 @@ export async function updateOutlierFlags(sessionId: string) {
 export async function getSessionProgress(sessionId: string) {
   // Get session details
   const { data: session } = await supabase
-    .from('sessions')
-    .select(`
+    .from("sessions")
+    .select(
+      `
       *,
       cohort:cohorts(name),
       wave:waves(wave_number)
-    `)
-    .eq('id', sessionId)
+    `
+    )
+    .eq("id", sessionId)
     .single();
 
   // Get total players
   const { count: totalPlayers } = await supabase
-    .from('player_sessions')
-    .select('*', { count: 'exact', head: true })
-    .eq('session_id', sessionId);
+    .from("player_sessions")
+    .select("*", { count: "exact", head: true })
+    .eq("session_id", sessionId);
 
   // Get checked-in players
   const { count: checkedInPlayers } = await supabase
-    .from('player_sessions')
-    .select('*', { count: 'exact', head: true })
-    .eq('session_id', sessionId)
-    .eq('checked_in', true);
+    .from("player_sessions")
+    .select("*", { count: "exact", head: true })
+    .eq("session_id", sessionId)
+    .eq("checked_in", true);
 
   // Get total evaluations expected
   const { data: drills } = await supabase
-    .from('session_drills')
-    .select('drill_id')
-    .eq('session_id', sessionId);
+    .from("session_drills")
+    .select("drill_id")
+    .eq("session_id", sessionId);
 
   const { data: evaluators } = await supabase
-    .from('session_evaluators')
-    .select('evaluator_id')
-    .eq('session_id', sessionId);
+    .from("session_evaluators")
+    .select("evaluator_id")
+    .eq("session_id", sessionId);
 
-  const expectedEvaluations = 
+  const expectedEvaluations =
     (totalPlayers || 0) * (drills?.length || 0) * (evaluators?.length || 0);
 
   // Get actual evaluations
   const { count: actualEvaluations } = await supabase
-    .from('evaluations')
-    .select('*', { count: 'exact', head: true })
-    .eq('session_id', sessionId);
+    .from("evaluations")
+    .select("*", { count: "exact", head: true })
+    .eq("session_id", sessionId);
 
   // Get finalized evaluators
   const { count: finalizedEvaluators } = await supabase
-    .from('session_evaluators')
-    .select('*', { count: 'exact', head: true })
-    .eq('session_id', sessionId)
-    .eq('is_finalized', true);
+    .from("session_evaluators")
+    .select("*", { count: "exact", head: true })
+    .eq("session_id", sessionId)
+    .eq("is_finalized", true);
 
   return {
     session,
@@ -3910,9 +4069,10 @@ export async function getSessionProgress(sessionId: string) {
     finalizedEvaluators: finalizedEvaluators || 0,
     expectedEvaluations,
     actualEvaluations: actualEvaluations || 0,
-    completionPercent: expectedEvaluations > 0 
-      ? Math.round((actualEvaluations || 0) / expectedEvaluations * 100)
-      : 0
+    completionPercent:
+      expectedEvaluations > 0
+        ? Math.round(((actualEvaluations || 0) / expectedEvaluations) * 100)
+        : 0,
   };
 }
 ```
@@ -3945,7 +4105,7 @@ BEGIN
   -- Get cohort and capacity
   SELECT w.cohort_id INTO v_cohort_id
   FROM waves w WHERE w.id = p_wave_id;
-  
+
   SELECT s.session_capacity INTO v_session_capacity
   FROM waves w
   JOIN seasons se ON w.association_id = se.association_id
@@ -3963,13 +4123,13 @@ BEGIN
     session_id := p_session_ids[v_current_session_idx];
     player_id := player_record.id;
     team_number := v_current_team;
-    
+
     RETURN NEXT;
-    
+
     -- Increment counters
     v_players_in_session := v_players_in_session + 1;
     v_current_team := v_current_team + 1;
-    
+
     -- Move to next session if capacity reached
     IF v_players_in_session >= v_session_capacity THEN
       v_current_session_idx := v_current_session_idx + 1;
@@ -4008,7 +4168,7 @@ BEGIN
   -- Get cohort
   SELECT w.cohort_id INTO v_cohort_id
   FROM waves w WHERE w.id = p_wave_id;
-  
+
   v_session_count := array_length(p_session_ids, 1);
 
   -- For each previous level, distribute evenly across sessions
@@ -4019,7 +4179,7 @@ BEGIN
   LOOP
     v_session_idx := 1;
     v_team_num := 1;
-    
+
     -- Distribute players of this level
     FOR player_record IN
       SELECT p.id
@@ -4032,9 +4192,9 @@ BEGIN
       session_id := p_session_ids[v_session_idx];
       player_id := player_record.id;
       team_number := v_team_num;
-      
+
       RETURN NEXT;
-      
+
       -- Snake draft pattern across sessions
       v_session_idx := v_session_idx + 1;
       IF v_session_idx > v_session_count THEN
@@ -4057,7 +4217,7 @@ $$ LANGUAGE plpgsql;
 #### **CSV Import**
 
 ```typescript
-import { parse } from 'papaparse';
+import { parse } from "papaparse";
 
 // Import players from CSV
 export async function importPlayersFromCSV(
@@ -4081,7 +4241,7 @@ export async function importPlayersFromCSV(
             date_of_birth: row.date_of_birth,
             guardian_name: row.guardian_name || null,
             guardian_email: row.guardian_email || null,
-            guardian_phone: row.guardian_phone || null
+            guardian_phone: row.guardian_phone || null,
           }));
 
           // Bulk import
@@ -4093,7 +4253,7 @@ export async function importPlayersFromCSV(
       },
       error: (error) => {
         reject(error);
-      }
+      },
     });
   });
 }
@@ -4114,7 +4274,7 @@ export async function importSessionsFromCSV(
             cohort_id: cohortId,
             session_date: row.session_date,
             session_time: row.session_time,
-            location: row.location || null
+            location: row.location || null,
           }));
 
           const imported = await bulkImportSessions(sessions);
@@ -4125,7 +4285,7 @@ export async function importSessionsFromCSV(
       },
       error: (error) => {
         reject(error);
-      }
+      },
     });
   });
 }
@@ -4134,28 +4294,30 @@ export async function importSessionsFromCSV(
 #### **CSV Export**
 
 ```typescript
-import { unparse } from 'papaparse';
+import { unparse } from "papaparse";
 
 // Export players to CSV
 export async function exportPlayersToCSV(cohortId: string) {
   const players = await getPlayersByCohort(cohortId);
 
-  const csv = unparse(players.map((p) => ({
-    first_name: p.first_name,
-    last_name: p.last_name,
-    date_of_birth: p.date_of_birth,
-    position: p.position.name,
-    previous_level: p.previous_level?.name || '',
-    guardian_name: p.guardian_name || '',
-    guardian_email: p.guardian_email || '',
-    guardian_phone: p.guardian_phone || '',
-    status: p.status
-  })));
+  const csv = unparse(
+    players.map((p) => ({
+      first_name: p.first_name,
+      last_name: p.last_name,
+      date_of_birth: p.date_of_birth,
+      position: p.position.name,
+      previous_level: p.previous_level?.name || "",
+      guardian_name: p.guardian_name || "",
+      guardian_email: p.guardian_email || "",
+      guardian_phone: p.guardian_phone || "",
+      status: p.status,
+    }))
+  );
 
   // Download file
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const blob = new Blob([csv], { type: "text/csv" });
   const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
   link.download = `players-cohort-${cohortId}.csv`;
   link.click();
@@ -4166,17 +4328,19 @@ export async function exportPlayersToCSV(cohortId: string) {
 export async function exportRankingsToCSV(cohortId: string) {
   const rankings = await getPlayerRankings(cohortId);
 
-  const csv = unparse(rankings.map((r: any) => ({
-    rank: r.rank,
-    player_name: r.player_name,
-    position: r.position_name,
-    average_score: r.average_score,
-    evaluation_count: r.evaluation_count
-  })));
+  const csv = unparse(
+    rankings.map((r: any) => ({
+      rank: r.rank,
+      player_name: r.player_name,
+      position: r.position_name,
+      average_score: r.average_score,
+      evaluation_count: r.evaluation_count,
+    }))
+  );
 
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const blob = new Blob([csv], { type: "text/csv" });
   const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
   link.download = `rankings-cohort-${cohortId}.csv`;
   link.click();
@@ -4187,8 +4351,8 @@ export async function exportRankingsToCSV(cohortId: string) {
 #### **Report Generation (PDF)**
 
 ```typescript
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 // Generate session report PDF
 export async function generateSessionReportPDF(sessionId: string) {
@@ -4200,19 +4364,35 @@ export async function generateSessionReportPDF(sessionId: string) {
   // Title
   doc.setFontSize(18);
   doc.text(`Session Report: ${progress.session.cohort.name}`, 14, 20);
-  
+
   // Session details
   doc.setFontSize(12);
   doc.text(`Wave ${progress.session.wave.wave_number}`, 14, 30);
-  doc.text(`Date: ${progress.session.session_date} ${progress.session.session_time}`, 14, 37);
-  doc.text(`Location: ${progress.session.location || 'N/A'}`, 14, 44);
+  doc.text(
+    `Date: ${progress.session.session_date} ${progress.session.session_time}`,
+    14,
+    37
+  );
+  doc.text(`Location: ${progress.session.location || "N/A"}`, 14, 44);
 
   // Progress summary
-  doc.text('Progress Summary:', 14, 55);
+  doc.text("Progress Summary:", 14, 55);
   doc.setFontSize(10);
-  doc.text(`Players: ${progress.checkedInPlayers}/${progress.totalPlayers} checked in`, 20, 62);
-  doc.text(`Evaluators: ${progress.finalizedEvaluators}/${progress.totalEvaluators} finalized`, 20, 69);
-  doc.text(`Evaluations: ${progress.actualEvaluations}/${progress.expectedEvaluations} (${progress.completionPercent}%)`, 20, 76);
+  doc.text(
+    `Players: ${progress.checkedInPlayers}/${progress.totalPlayers} checked in`,
+    20,
+    62
+  );
+  doc.text(
+    `Evaluators: ${progress.finalizedEvaluators}/${progress.totalEvaluators} finalized`,
+    20,
+    69
+  );
+  doc.text(
+    `Evaluations: ${progress.actualEvaluations}/${progress.expectedEvaluations} (${progress.completionPercent}%)`,
+    20,
+    76
+  );
 
   // Evaluations table
   const tableData = evaluations?.map((e) => [
@@ -4220,13 +4400,13 @@ export async function generateSessionReportPDF(sessionId: string) {
     e.drill.name,
     `${e.evaluator.first_name} ${e.evaluator.last_name}`,
     e.score.toString(),
-    e.is_outlier ? 'Yes' : 'No'
+    e.is_outlier ? "Yes" : "No",
   ]);
 
   autoTable(doc, {
     startY: 85,
-    head: [['Player', 'Drill', 'Evaluator', 'Score', 'Outlier']],
-    body: tableData || []
+    head: [["Player", "Drill", "Evaluator", "Score", "Outlier"]],
+    body: tableData || [],
   });
 
   // Save PDF
@@ -4247,24 +4427,26 @@ export async function safeQuery<T>(
 
   if (error) {
     // Log error
-    console.error('Database error:', error);
+    console.error("Database error:", error);
 
     // Check for specific error types
-    if (error.code === 'PGRST116') {
-      throw new Error('No data found');
-    } else if (error.code === '23505') {
-      throw new Error('Duplicate entry - this record already exists');
-    } else if (error.code === '23503') {
-      throw new Error('Invalid reference - related record not found');
-    } else if (error.message.includes('row-level security')) {
-      throw new Error('Permission denied - you do not have access to this data');
+    if (error.code === "PGRST116") {
+      throw new Error("No data found");
+    } else if (error.code === "23505") {
+      throw new Error("Duplicate entry - this record already exists");
+    } else if (error.code === "23503") {
+      throw new Error("Invalid reference - related record not found");
+    } else if (error.message.includes("row-level security")) {
+      throw new Error(
+        "Permission denied - you do not have access to this data"
+      );
     } else {
-      throw new Error(error.message || 'An unexpected error occurred');
+      throw new Error(error.message || "An unexpected error occurred");
     }
   }
 
   if (!data) {
-    throw new Error('No data returned from query');
+    throw new Error("No data returned from query");
   }
 
   return data;
@@ -4272,12 +4454,8 @@ export async function safeQuery<T>(
 
 // Usage
 export async function getSeasonSafe(seasonId: string) {
-  return safeQuery(() => 
-    supabase
-      .from('seasons')
-      .select('*')
-      .eq('id', seasonId)
-      .single()
+  return safeQuery(() =>
+    supabase.from("seasons").select("*").eq("id", seasonId).single()
   );
 }
 ```
@@ -4316,11 +4494,13 @@ Evalu8 uses **Supabase Auth with Google OAuth** for user authentication. This pr
 #### 1. **Set Up Google OAuth Credentials**
 
 In Google Cloud Console:
+
 1. Create OAuth 2.0 credentials
 2. Add authorized redirect URI: `https://<your-project>.supabase.co/auth/v1/callback`
 3. Note Client ID and Client Secret
 
 In Supabase Dashboard:
+
 1. Navigate to Authentication → Providers
 2. Enable Google provider
 3. Enter Client ID and Client Secret
@@ -4409,11 +4589,11 @@ enable_signup = false # Disable email/password signup
 
 ```typescript
 // src/pages/Login.tsx
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Chrome } from 'lucide-react';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Chrome } from "lucide-react";
 
 export function Login() {
   const navigate = useNavigate();
@@ -4421,9 +4601,11 @@ export function Login() {
   useEffect(() => {
     // Check if user is already logged in
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session) {
-        navigate('/select-association');
+        navigate("/select-association");
       }
     };
     checkSession();
@@ -4431,19 +4613,19 @@ export function Login() {
 
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
         queryParams: {
-          access_type: 'offline',
-          prompt: 'consent'
-        }
-      }
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
     });
 
     if (error) {
-      console.error('Login error:', error);
-      alert('Failed to sign in with Google');
+      console.error("Login error:", error);
+      alert("Failed to sign in with Google");
     }
   };
 
@@ -4457,11 +4639,7 @@ export function Login() {
           </p>
         </div>
 
-        <Button
-          onClick={handleGoogleLogin}
-          className="w-full"
-          size="lg"
-        >
+        <Button onClick={handleGoogleLogin} className="w-full" size="lg">
           <Chrome className="mr-2 h-5 w-5" />
           Sign in with Google
         </Button>
@@ -4479,9 +4657,9 @@ export function Login() {
 
 ```typescript
 // src/pages/AuthCallback.tsx
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 
 export function AuthCallback() {
   const navigate = useNavigate();
@@ -4490,42 +4668,47 @@ export function AuthCallback() {
     const handleCallback = async () => {
       // Supabase automatically handles the OAuth callback
       // Check if session exists
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
       if (error) {
-        console.error('Auth callback error:', error);
-        navigate('/login?error=auth_failed');
+        console.error("Auth callback error:", error);
+        navigate("/login?error=auth_failed");
         return;
       }
 
       if (!session) {
-        navigate('/login?error=no_session');
+        navigate("/login?error=no_session");
         return;
       }
 
       // Check if user has association memberships
       const { data: memberships, error: membershipError } = await supabase
-        .from('association_users')
-        .select('association_id, roles')
-        .eq('user_id', session.user.id);
+        .from("association_users")
+        .select("association_id, roles")
+        .eq("user_id", session.user.id);
 
       if (membershipError) {
-        console.error('Failed to fetch memberships:', membershipError);
-        navigate('/login?error=membership_check_failed');
+        console.error("Failed to fetch memberships:", membershipError);
+        navigate("/login?error=membership_check_failed");
         return;
       }
 
       if (!memberships || memberships.length === 0) {
         // New user - show onboarding/invitation screen
-        navigate('/onboarding');
+        navigate("/onboarding");
       } else if (memberships.length === 1) {
         // Single association - auto-select and redirect
         const associationId = memberships[0].association_id;
-        await supabase.rpc('set_association_context', { association_id: associationId });
-        navigate('/dashboard');
+        await supabase.rpc("set_association_context", {
+          association_id: associationId,
+        });
+        navigate("/dashboard");
       } else {
         // Multiple associations - show selector
-        navigate('/select-association');
+        navigate("/select-association");
       }
     };
 
@@ -4547,11 +4730,11 @@ export function AuthCallback() {
 
 ```typescript
 // src/pages/SelectAssociation.tsx
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 interface Association {
   id: string;
@@ -4567,15 +4750,18 @@ export function SelectAssociation() {
 
   useEffect(() => {
     const fetchAssociations = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
-        navigate('/login');
+        navigate("/login");
         return;
       }
 
       const { data, error } = await supabase
-        .from('association_users')
-        .select(`
+        .from("association_users")
+        .select(
+          `
           association_id,
           roles,
           association:associations(
@@ -4583,11 +4769,12 @@ export function SelectAssociation() {
             name,
             sport_type:sport_types(name)
           )
-        `)
-        .eq('user_id', session.user.id);
+        `
+        )
+        .eq("user_id", session.user.id);
 
       if (error) {
-        console.error('Failed to fetch associations:', error);
+        console.error("Failed to fetch associations:", error);
         setLoading(false);
         return;
       }
@@ -4596,7 +4783,7 @@ export function SelectAssociation() {
         id: item.association.id,
         name: item.association.name,
         sport_type: item.association.sport_type,
-        roles: item.roles
+        roles: item.roles,
       }));
 
       setAssociations(mapped);
@@ -4608,21 +4795,21 @@ export function SelectAssociation() {
 
   const selectAssociation = async (associationId: string) => {
     // Set association context
-    const { error } = await supabase.rpc('set_association_context', {
-      association_id: associationId
+    const { error } = await supabase.rpc("set_association_context", {
+      association_id: associationId,
     });
 
     if (error) {
-      console.error('Failed to set association context:', error);
-      alert('Failed to switch association');
+      console.error("Failed to set association context:", error);
+      alert("Failed to switch association");
       return;
     }
 
     // Store selected association in localStorage for persistence
-    localStorage.setItem('selected_association_id', associationId);
+    localStorage.setItem("selected_association_id", associationId);
 
     // Redirect to dashboard
-    navigate('/dashboard');
+    navigate("/dashboard");
   };
 
   if (loading) {
@@ -4640,7 +4827,9 @@ export function SelectAssociation() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-50 to-violet-100">
       <div className="w-full max-w-2xl space-y-8 p-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-violet-900">Select Association</h1>
+          <h1 className="text-3xl font-bold text-violet-900">
+            Select Association
+          </h1>
           <p className="mt-2 text-sm text-gray-600">
             Choose which association you'd like to access
           </p>
@@ -4653,8 +4842,12 @@ export function SelectAssociation() {
               className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
               onClick={() => selectAssociation(assoc.id)}
             >
-              <h3 className="text-xl font-semibold text-gray-900">{assoc.name}</h3>
-              <p className="text-sm text-gray-600 mt-1">{assoc.sport_type.name}</p>
+              <h3 className="text-xl font-semibold text-gray-900">
+                {assoc.name}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {assoc.sport_type.name}
+              </p>
               <div className="mt-3 flex gap-2">
                 {assoc.roles.map((role) => (
                   <span
@@ -4678,10 +4871,10 @@ export function SelectAssociation() {
 
 ```typescript
 // src/contexts/AuthContext.tsx
-import { createContext, useContext, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import type { User, Session } from '@supabase/supabase-js';
+import { createContext, useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import type { User, Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
@@ -4700,20 +4893,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentAssociationId, setCurrentAssociationId] = useState<string | null>(null);
+  const [currentAssociationId, setCurrentAssociationId] = useState<
+    string | null
+  >(null);
   const [roles, setRoles] = useState<string[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Get initial session
     const initSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
 
       // Restore association context from localStorage
       if (session) {
-        const savedAssociationId = localStorage.getItem('selected_association_id');
+        const savedAssociationId = localStorage.getItem(
+          "selected_association_id"
+        );
         if (savedAssociationId) {
           await loadAssociationContext(savedAssociationId);
         }
@@ -4725,22 +4924,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initSession();
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event);
-        setSession(session);
-        setUser(session?.user ?? null);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event);
+      setSession(session);
+      setUser(session?.user ?? null);
 
-        if (event === 'SIGNED_OUT') {
-          setCurrentAssociationId(null);
-          setRoles([]);
-          localStorage.removeItem('selected_association_id');
-          navigate('/login');
-        } else if (event === 'TOKEN_REFRESHED') {
-          console.log('Token refreshed successfully');
-        }
+      if (event === "SIGNED_OUT") {
+        setCurrentAssociationId(null);
+        setRoles([]);
+        localStorage.removeItem("selected_association_id");
+        navigate("/login");
+      } else if (event === "TOKEN_REFRESHED") {
+        console.log("Token refreshed successfully");
       }
-    );
+    });
 
     return () => {
       subscription.unsubscribe();
@@ -4749,31 +4948,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadAssociationContext = async (associationId: string) => {
     // Set association context in database
-    await supabase.rpc('set_association_context', { association_id: associationId });
+    await supabase.rpc("set_association_context", {
+      association_id: associationId,
+    });
 
     // Load user's roles for this association
     const { data } = await supabase
-      .from('association_users')
-      .select('roles')
-      .eq('user_id', user?.id)
-      .eq('association_id', associationId)
+      .from("association_users")
+      .select("roles")
+      .eq("user_id", user?.id)
+      .eq("association_id", associationId)
       .single();
 
     setCurrentAssociationId(associationId);
     setRoles(data?.roles || []);
-    localStorage.setItem('selected_association_id', associationId);
+    localStorage.setItem("selected_association_id", associationId);
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
     setCurrentAssociationId(null);
     setRoles([]);
-    localStorage.removeItem('selected_association_id');
+    localStorage.removeItem("selected_association_id");
   };
 
   const switchAssociation = async (associationId: string) => {
     await loadAssociationContext(associationId);
-    navigate('/dashboard');
+    navigate("/dashboard");
   };
 
   const hasRole = (role: string) => {
@@ -4790,7 +4991,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         roles,
         signOut,
         switchAssociation,
-        hasRole
+        hasRole,
       }}
     >
       {children}
@@ -4801,7 +5002,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
@@ -4811,8 +5012,8 @@ export function useAuth() {
 
 ```typescript
 // src/components/ProtectedRoute.tsx
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -4865,16 +5066,16 @@ export function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
 
 ```typescript
 // src/App.tsx
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { Login } from '@/pages/Login';
-import { AuthCallback } from '@/pages/AuthCallback';
-import { SelectAssociation } from '@/pages/SelectAssociation';
-import { Dashboard } from '@/pages/Dashboard';
-import { Players } from '@/pages/Players';
-import { Sessions } from '@/pages/Sessions';
-import { EvaluationInterface } from '@/pages/EvaluationInterface';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { Login } from "@/pages/Login";
+import { AuthCallback } from "@/pages/AuthCallback";
+import { SelectAssociation } from "@/pages/SelectAssociation";
+import { Dashboard } from "@/pages/Dashboard";
+import { Players } from "@/pages/Players";
+import { Sessions } from "@/pages/Sessions";
+import { EvaluationInterface } from "@/pages/EvaluationInterface";
 
 export function App() {
   return (
@@ -4993,10 +5194,10 @@ Supabase automatically refreshes tokens before expiration:
 // Automatic refresh configured in supabase client
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,      // Store session in localStorage
-    autoRefreshToken: true,     // Auto-refresh before expiration
-    detectSessionInUrl: true    // Handle OAuth callback
-  }
+    persistSession: true, // Store session in localStorage
+    autoRefreshToken: true, // Auto-refresh before expiration
+    detectSessionInUrl: true, // Handle OAuth callback
+  },
 });
 ```
 
@@ -5005,14 +5206,17 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 ```typescript
 // Check if session is valid
 async function checkSession() {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
   if (error || !session) {
     // Session expired or invalid - redirect to login
-    navigate('/login');
+    navigate("/login");
     return false;
   }
-  
+
   return true;
 }
 ```
@@ -5022,13 +5226,13 @@ async function checkSession() {
 ```typescript
 // Listen for session expiry
 supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_OUT') {
+  if (event === "SIGNED_OUT") {
     // Clear local state
-    localStorage.removeItem('selected_association_id');
+    localStorage.removeItem("selected_association_id");
     // Redirect to login
-    navigate('/login');
-  } else if (event === 'TOKEN_REFRESHED') {
-    console.log('Session refreshed successfully');
+    navigate("/login");
+  } else if (event === "TOKEN_REFRESHED") {
+    console.log("Session refreshed successfully");
   }
 });
 ```
@@ -5041,7 +5245,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 ```typescript
 // src/components/RoleGate.tsx
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from "@/contexts/AuthContext";
 
 interface RoleGateProps {
   children: React.ReactNode;
@@ -5049,7 +5253,11 @@ interface RoleGateProps {
   fallback?: React.ReactNode;
 }
 
-export function RoleGate({ children, requireRole, fallback = null }: RoleGateProps) {
+export function RoleGate({
+  children,
+  requireRole,
+  fallback = null,
+}: RoleGateProps) {
   const { hasRole } = useAuth();
 
   if (!hasRole(requireRole)) {
@@ -5064,7 +5272,7 @@ function PlayerManagement() {
   return (
     <div>
       <h1>Players</h1>
-      
+
       {/* Only Administrators see Add Player button */}
       <RoleGate requireRole="Administrator">
         <Button onClick={handleAddPlayer}>Add Player</Button>
@@ -5081,18 +5289,18 @@ function PlayerManagement() {
 
 ```typescript
 // src/hooks/usePermissions.ts
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from "@/contexts/AuthContext";
 
 export function usePermissions() {
   const { hasRole } = useAuth();
 
   return {
-    canManagePlayers: hasRole('Administrator'),
-    canEvaluate: hasRole('Evaluator') || hasRole('Administrator'),
-    canCheckIn: hasRole('Intake Personnel') || hasRole('Administrator'),
-    canViewReports: hasRole('Administrator'),
-    canManageSessions: hasRole('Administrator'),
-    isAdmin: hasRole('Administrator')
+    canManagePlayers: hasRole("Administrator"),
+    canEvaluate: hasRole("Evaluator") || hasRole("Administrator"),
+    canCheckIn: hasRole("Intake Personnel") || hasRole("Administrator"),
+    canViewReports: hasRole("Administrator"),
+    canManageSessions: hasRole("Administrator"),
+    isAdmin: hasRole("Administrator"),
   };
 }
 
@@ -5107,10 +5315,8 @@ function EvaluationInterface() {
   return (
     <div>
       <EvaluationForm />
-      
-      {isAdmin && (
-        <AdminControls />
-      )}
+
+      {isAdmin && <AdminControls />}
     </div>
   );
 }
@@ -5125,15 +5331,15 @@ function EvaluationInterface() {
 
 // Example: Non-admin trying to update season
 const { error } = await supabase
-  .from('seasons')
-  .update({ name: 'Modified' })
-  .eq('id', seasonId);
+  .from("seasons")
+  .update({ name: "Modified" })
+  .eq("id", seasonId);
 
 // Error will be returned if user is not Administrator
 // RLS policy: "Administrators can manage seasons"
 if (error) {
-  if (error.message.includes('row-level security')) {
-    alert('You do not have permission to modify seasons');
+  if (error.message.includes("row-level security")) {
+    alert("You do not have permission to modify seasons");
   }
 }
 ```
@@ -5144,15 +5350,15 @@ if (error) {
 
 ```typescript
 // src/components/layout/Header.tsx
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 export function Header() {
   const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
-    const confirmed = window.confirm('Are you sure you want to sign out?');
+    const confirmed = window.confirm("Are you sure you want to sign out?");
     if (!confirmed) return;
 
     await signOut();
@@ -5162,17 +5368,13 @@ export function Header() {
     <header className="border-b bg-white">
       <div className="container mx-auto flex items-center justify-between px-4 py-4">
         <h1 className="text-2xl font-bold text-violet-900">Evalu8</h1>
-        
+
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-600">
             {user?.user_metadata?.full_name || user?.email}
           </span>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSignOut}
-          >
+
+          <Button variant="outline" size="sm" onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
           </Button>
@@ -5189,17 +5391,17 @@ export function Header() {
 
 ```typescript
 // src/components/layout/AssociationSwitcher.tsx
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { ChevronDown } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface Association {
   id: string;
@@ -5209,22 +5411,27 @@ interface Association {
 export function AssociationSwitcher() {
   const { currentAssociationId, switchAssociation } = useAuth();
   const [associations, setAssociations] = useState<Association[]>([]);
-  const [currentAssociation, setCurrentAssociation] = useState<Association | null>(null);
+  const [currentAssociation, setCurrentAssociation] =
+    useState<Association | null>(null);
 
   useEffect(() => {
     const fetchAssociations = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       const { data } = await supabase
-        .from('association_users')
-        .select('association:associations(id, name)')
-        .eq('user_id', session.user.id);
+        .from("association_users")
+        .select("association:associations(id, name)")
+        .eq("user_id", session.user.id);
 
       const mapped = data?.map((item: any) => item.association) || [];
       setAssociations(mapped);
 
-      const current = mapped.find((a: Association) => a.id === currentAssociationId);
+      const current = mapped.find(
+        (a: Association) => a.id === currentAssociationId
+      );
       setCurrentAssociation(current || null);
     };
 
@@ -5240,7 +5447,7 @@ export function AssociationSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline">
-          {currentAssociation?.name || 'Select Association'}
+          {currentAssociation?.name || "Select Association"}
           <ChevronDown className="ml-2 h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -5249,7 +5456,7 @@ export function AssociationSwitcher() {
           <DropdownMenuItem
             key={assoc.id}
             onClick={() => switchAssociation(assoc.id)}
-            className={currentAssociationId === assoc.id ? 'bg-violet-50' : ''}
+            className={currentAssociationId === assoc.id ? "bg-violet-50" : ""}
           >
             {assoc.name}
           </DropdownMenuItem>
@@ -5296,45 +5503,45 @@ export function AssociationSwitcher() {
 
 ```typescript
 // tests/auth.spec.ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Authentication', () => {
-  test('should login with Google OAuth', async ({ page }) => {
-    await page.goto('/login');
-    
+test.describe("Authentication", () => {
+  test("should login with Google OAuth", async ({ page }) => {
+    await page.goto("/login");
+
     // Click "Sign in with Google" button
     await page.click('button:has-text("Sign in with Google")');
-    
+
     // Google OAuth flow (mocked in test environment)
-    await page.waitForURL('/auth/callback');
-    
+    await page.waitForURL("/auth/callback");
+
     // Should redirect to dashboard or association selector
     await page.waitForURL(/\/(dashboard|select-association)/);
   });
 
-  test('should protect routes requiring authentication', async ({ page }) => {
-    await page.goto('/dashboard');
-    
+  test("should protect routes requiring authentication", async ({ page }) => {
+    await page.goto("/dashboard");
+
     // Should redirect to login
-    await page.waitForURL('/login');
+    await page.waitForURL("/login");
   });
 
-  test('should handle logout', async ({ page, context }) => {
+  test("should handle logout", async ({ page, context }) => {
     // Assume user is logged in
-    await page.goto('/dashboard');
-    
+    await page.goto("/dashboard");
+
     // Click logout button
     await page.click('button:has-text("Sign Out")');
-    
+
     // Confirm logout
     await page.click('button:has-text("OK")');
-    
+
     // Should redirect to login
-    await page.waitForURL('/login');
-    
+    await page.waitForURL("/login");
+
     // Session should be cleared
     const cookies = await context.cookies();
-    expect(cookies.find(c => c.name.includes('supabase'))).toBeUndefined();
+    expect(cookies.find((c) => c.name.includes("supabase"))).toBeUndefined();
   });
 });
 ```
@@ -5428,18 +5635,18 @@ EvaluationInterface
 
 ```typescript
 // src/components/features/evaluation/EvaluationInterface.tsx
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { useSessionEvaluations } from '@/hooks/useSessionEvaluations';
-import { usePlayerCheckIns } from '@/hooks/usePlayerCheckIns';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { PlayerScoreCard } from './PlayerScoreCard';
-import { FinalizeModal } from './FinalizeModal';
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSessionEvaluations } from "@/hooks/useSessionEvaluations";
+import { usePlayerCheckIns } from "@/hooks/usePlayerCheckIns";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { PlayerScoreCard } from "./PlayerScoreCard";
+import { FinalizeModal } from "./FinalizeModal";
 
 interface Player {
   id: string;
@@ -5470,15 +5677,15 @@ interface Evaluation {
 export function EvaluationInterface() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const { user } = useAuth();
-  
+
   const [session, setSession] = useState<any>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [drills, setDrills] = useState<Drill[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDrill, setSelectedDrill] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
-  
+
   // Real-time hooks
   const evaluations = useSessionEvaluations(sessionId!);
   const checkInStatus = usePlayerCheckIns(sessionId!);
@@ -5492,8 +5699,9 @@ export function EvaluationInterface() {
 
     // Fetch session with players and drills
     const { data: sessionData, error: sessionError } = await supabase
-      .from('sessions')
-      .select(`
+      .from("sessions")
+      .select(
+        `
         *,
         cohort:cohorts(name),
         session_drills(
@@ -5514,23 +5722,24 @@ export function EvaluationInterface() {
           jersey_number,
           checked_in
         )
-      `)
-      .eq('id', sessionId)
+      `
+      )
+      .eq("id", sessionId)
       .single();
 
     if (sessionError) {
-      console.error('Failed to fetch session:', sessionError);
+      console.error("Failed to fetch session:", sessionError);
       return;
     }
 
     setSession(sessionData);
-    
+
     // Map drills
     const drillsData = sessionData.session_drills.map((sd: any) => ({
       id: sd.drill.id,
       name: sd.drill.name,
       weight_percent: sd.weight_percent,
-      applies_to_positions: sd.applies_to_positions
+      applies_to_positions: sd.applies_to_positions,
     }));
     setDrills(drillsData);
 
@@ -5543,75 +5752,78 @@ export function EvaluationInterface() {
       team_number: ps.team_number,
       jersey_color: ps.jersey_color,
       jersey_number: ps.jersey_number,
-      checked_in: ps.checked_in
+      checked_in: ps.checked_in,
     }));
     setPlayers(playersData);
 
     setLoading(false);
   };
 
-  const handleScoreEntry = async (playerId: string, drillId: string, score: number) => {
+  const handleScoreEntry = async (
+    playerId: string,
+    drillId: string,
+    score: number
+  ) => {
     // Check if evaluation exists
     const existing = evaluations.find(
-      (e) => e.player_id === playerId && 
-             e.drill_id === drillId && 
-             e.evaluator_id === user?.id
+      (e) =>
+        e.player_id === playerId &&
+        e.drill_id === drillId &&
+        e.evaluator_id === user?.id
     );
 
     if (existing) {
       // Update existing evaluation
       const { error } = await supabase
-        .from('evaluations')
+        .from("evaluations")
         .update({ score })
-        .eq('id', existing.id);
+        .eq("id", existing.id);
 
       if (error) {
-        console.error('Failed to update evaluation:', error);
-        alert('Failed to update score');
+        console.error("Failed to update evaluation:", error);
+        alert("Failed to update score");
       }
     } else {
       // Create new evaluation
-      const { error } = await supabase
-        .from('evaluations')
-        .insert({
-          session_id: sessionId,
-          player_id: playerId,
-          drill_id: drillId,
-          evaluator_id: user?.id,
-          score
-        });
+      const { error } = await supabase.from("evaluations").insert({
+        session_id: sessionId,
+        player_id: playerId,
+        drill_id: drillId,
+        evaluator_id: user?.id,
+        score,
+      });
 
       if (error) {
-        console.error('Failed to create evaluation:', error);
-        alert('Failed to save score');
+        console.error("Failed to create evaluation:", error);
+        alert("Failed to save score");
       }
     }
   };
 
   const handleFinalize = async (incompleteReason?: string) => {
     const { error } = await supabase
-      .from('session_evaluators')
+      .from("session_evaluators")
       .update({
         is_finalized: true,
         finalized_at: new Date().toISOString(),
-        incomplete_reason: incompleteReason || null
+        incomplete_reason: incompleteReason || null,
       })
-      .eq('session_id', sessionId)
-      .eq('evaluator_id', user?.id);
+      .eq("session_id", sessionId)
+      .eq("evaluator_id", user?.id);
 
     if (error) {
-      console.error('Failed to finalize session:', error);
-      alert('Failed to finalize session');
+      console.error("Failed to finalize session:", error);
+      alert("Failed to finalize session");
       return;
     }
 
-    alert('Session finalized successfully!');
+    alert("Session finalized successfully!");
     setShowFinalizeModal(false);
   };
 
   // Filter players
   const filteredPlayers = players.filter((player) => {
-    const matchesSearch = 
+    const matchesSearch =
       player.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       player.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       player.jersey_number.toString().includes(searchQuery);
@@ -5625,9 +5837,10 @@ export function EvaluationInterface() {
   const completedEvaluations = evaluations.filter(
     (e) => e.evaluator_id === user?.id
   ).length;
-  const completionPercent = totalEvaluations > 0 
-    ? Math.round((completedEvaluations / totalEvaluations) * 100)
-    : 0;
+  const completionPercent =
+    totalEvaluations > 0
+      ? Math.round((completedEvaluations / totalEvaluations) * 100)
+      : 0;
 
   if (loading) {
     return (
@@ -5651,10 +5864,11 @@ export function EvaluationInterface() {
                 Evaluation Session
               </h1>
               <p className="text-sm text-gray-600">
-                {session?.cohort?.name} • {session?.session_date} {session?.session_time}
+                {session?.cohort?.name} • {session?.session_date}{" "}
+                {session?.session_time}
               </p>
             </div>
-            
+
             <div className="flex items-center gap-4">
               {/* Completion indicator */}
               <div className="text-right">
@@ -5669,7 +5883,7 @@ export function EvaluationInterface() {
               {/* Finalize button */}
               <Button
                 onClick={() => setShowFinalizeModal(true)}
-                variant={completionPercent === 100 ? 'default' : 'outline'}
+                variant={completionPercent === 100 ? "default" : "outline"}
               >
                 Finalize Session
               </Button>
@@ -5694,7 +5908,7 @@ export function EvaluationInterface() {
             {/* Drill filter */}
             <div className="flex gap-2">
               <Button
-                variant={selectedDrill === null ? 'default' : 'outline'}
+                variant={selectedDrill === null ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedDrill(null)}
               >
@@ -5703,7 +5917,7 @@ export function EvaluationInterface() {
               {drills.map((drill) => (
                 <Button
                   key={drill.id}
-                  variant={selectedDrill === drill.id ? 'default' : 'outline'}
+                  variant={selectedDrill === drill.id ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedDrill(drill.id)}
                 >
@@ -5733,7 +5947,8 @@ export function EvaluationInterface() {
                   (d) => !selectedDrill || d.id === selectedDrill
                 )}
                 evaluations={evaluations.filter(
-                  (e) => e.player_id === player.id && e.evaluator_id === user?.id
+                  (e) =>
+                    e.player_id === player.id && e.evaluator_id === user?.id
                 )}
                 onScoreEntry={handleScoreEntry}
               />
@@ -5759,12 +5974,12 @@ export function EvaluationInterface() {
 
 ```typescript
 // src/components/features/evaluation/PlayerScoreCard.tsx
-import { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { CheckCircle, Circle } from 'lucide-react';
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, Circle } from "lucide-react";
 
 interface PlayerScoreCardProps {
   player: {
@@ -5792,7 +6007,7 @@ export function PlayerScoreCard({
   player,
   drills,
   evaluations,
-  onScoreEntry
+  onScoreEntry,
 }: PlayerScoreCardProps) {
   const [scores, setScores] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
@@ -5808,23 +6023,23 @@ export function PlayerScoreCard({
 
   const handleScoreSubmit = (drillId: string) => {
     const score = parseInt(scores[drillId], 10);
-    
+
     if (isNaN(score) || score < 1 || score > 10) {
-      alert('Score must be between 1 and 10');
+      alert("Score must be between 1 and 10");
       return;
     }
 
     onScoreEntry(player.id, drillId, score);
   };
 
-  const completedDrills = drills.filter((d) => 
+  const completedDrills = drills.filter((d) =>
     evaluations.some((e) => e.drill_id === d.id)
   ).length;
 
   const isComplete = completedDrills === drills.length;
 
   return (
-    <Card className={`p-4 ${isComplete ? 'border-green-500 border-2' : ''}`}>
+    <Card className={`p-4 ${isComplete ? "border-green-500 border-2" : ""}`}>
       {/* Player header */}
       <div className="mb-4 border-b pb-3">
         <div className="flex items-start justify-between">
@@ -5834,18 +6049,14 @@ export function PlayerScoreCard({
             </h3>
             <p className="text-sm text-gray-600">{player.position.name}</p>
           </div>
-          
-          {isComplete && (
-            <CheckCircle className="h-6 w-6 text-green-600" />
-          )}
+
+          {isComplete && <CheckCircle className="h-6 w-6 text-green-600" />}
         </div>
 
         {/* Team and jersey */}
         <div className="mt-2 flex gap-2">
-          <Badge variant="outline">
-            Team {player.team_number}
-          </Badge>
-          <Badge 
+          <Badge variant="outline">Team {player.team_number}</Badge>
+          <Badge
             variant="outline"
             className={`bg-${player.jersey_color.toLowerCase()}-100`}
           >
@@ -5863,7 +6074,7 @@ export function PlayerScoreCard({
       <div className="space-y-3">
         {drills.map((drill) => {
           const hasScore = evaluations.some((e) => e.drill_id === drill.id);
-          const currentScore = scores[drill.id] || '';
+          const currentScore = scores[drill.id] || "";
 
           return (
             <div key={drill.id} className="flex items-center gap-2">
@@ -5894,7 +6105,7 @@ export function PlayerScoreCard({
                   placeholder="1-10"
                   className="w-16 text-center"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       handleScoreSubmit(drill.id);
                     }
                   }}
@@ -5920,19 +6131,19 @@ export function PlayerScoreCard({
 
 ```typescript
 // src/components/features/evaluation/FinalizeModal.tsx
-import { useState } from 'react';
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface FinalizeModalProps {
   completionPercent: number;
@@ -5943,14 +6154,14 @@ interface FinalizeModalProps {
 export function FinalizeModal({
   completionPercent,
   onFinalize,
-  onCancel
+  onCancel,
 }: FinalizeModalProps) {
-  const [incompleteReason, setIncompleteReason] = useState('');
+  const [incompleteReason, setIncompleteReason] = useState("");
   const isComplete = completionPercent === 100;
 
   const handleFinalize = () => {
     if (!isComplete && !incompleteReason.trim()) {
-      alert('Please provide a reason for incomplete session');
+      alert("Please provide a reason for incomplete session");
       return;
     }
 
@@ -5964,7 +6175,7 @@ export function FinalizeModal({
           <DialogTitle>Finalize Session</DialogTitle>
           <DialogDescription>
             {isComplete
-              ? 'You have completed all evaluations for this session.'
+              ? "You have completed all evaluations for this session."
               : `You have completed ${completionPercent}% of evaluations.`}
           </DialogDescription>
         </DialogHeader>
@@ -5974,7 +6185,8 @@ export function FinalizeModal({
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Some evaluations are incomplete. Please provide a reason before finalizing.
+                Some evaluations are incomplete. Please provide a reason before
+                finalizing.
               </AlertDescription>
             </Alert>
 
@@ -5992,7 +6204,7 @@ export function FinalizeModal({
             Cancel
           </Button>
           <Button onClick={handleFinalize}>
-            {isComplete ? 'Finalize' : 'Finalize with Reason'}
+            {isComplete ? "Finalize" : "Finalize with Reason"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -6032,35 +6244,39 @@ DistributionInterface
 
 ```typescript
 // src/components/features/distribution/DistributionInterface.tsx
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
-} from '@/components/ui/table';
+  TableRow,
+} from "@/components/ui/table";
 
-type Algorithm = 'alphabetical' | 'random' | 'previous_level' | 'current_ranking';
+type Algorithm =
+  | "alphabetical"
+  | "random"
+  | "previous_level"
+  | "current_ranking";
 
 interface Wave {
   id: string;
   wave_number: number;
-  wave_type: 'standard' | 'custom';
+  wave_type: "standard" | "custom";
   wave_name?: string;
   status: string;
   sessions: Array<{ id: string }>;
@@ -6084,10 +6300,10 @@ interface Distribution {
 
 export function DistributionInterface() {
   const { cohortId } = useParams<{ cohortId: string }>();
-  
+
   const [waves, setWaves] = useState<Wave[]>([]);
   const [selectedWave, setSelectedWave] = useState<Wave | null>(null);
-  const [algorithm, setAlgorithm] = useState<Algorithm>('alphabetical');
+  const [algorithm, setAlgorithm] = useState<Algorithm>("alphabetical");
   const [teamsPerSession, setTeamsPerSession] = useState(2);
   const [preview, setPreview] = useState<Distribution[]>([]);
   const [loading, setLoading] = useState(false);
@@ -6098,17 +6314,19 @@ export function DistributionInterface() {
 
   const fetchWaves = async () => {
     const { data, error } = await supabase
-      .from('waves')
-      .select(`
+      .from("waves")
+      .select(
+        `
         *,
         sessions:sessions(id)
-      `)
-      .eq('cohort_id', cohortId)
-      .eq('status', 'not-started')
-      .order('wave_number');
+      `
+      )
+      .eq("cohort_id", cohortId)
+      .eq("status", "not-started")
+      .order("wave_number");
 
     if (error) {
-      console.error('Failed to fetch waves:', error);
+      console.error("Failed to fetch waves:", error);
       return;
     }
 
@@ -6121,15 +6339,15 @@ export function DistributionInterface() {
     setLoading(true);
 
     // Call database function to generate distribution
-    const { data, error } = await supabase.rpc('preview_distribution', {
+    const { data, error } = await supabase.rpc("preview_distribution", {
       p_wave_id: selectedWave.id,
       p_algorithm: algorithm,
-      p_teams_per_session: teamsPerSession
+      p_teams_per_session: teamsPerSession,
     });
 
     if (error) {
-      console.error('Failed to generate preview:', error);
-      alert('Failed to generate distribution preview');
+      console.error("Failed to generate preview:", error);
+      alert("Failed to generate distribution preview");
       setLoading(false);
       return;
     }
@@ -6153,31 +6371,31 @@ export function DistributionInterface() {
     const assignments = preview.map((p) => ({
       session_id: p.session_id,
       player_id: p.player_id,
-      team_number: p.team_number
+      team_number: p.team_number,
     }));
 
     const { error: insertError } = await supabase
-      .from('player_sessions')
+      .from("player_sessions")
       .insert(assignments);
 
     if (insertError) {
-      console.error('Failed to apply distribution:', insertError);
-      alert('Failed to apply distribution');
+      console.error("Failed to apply distribution:", insertError);
+      alert("Failed to apply distribution");
       setLoading(false);
       return;
     }
 
     // Update wave status to 'ready'
     const { error: updateError } = await supabase
-      .from('waves')
-      .update({ status: 'ready' })
-      .eq('id', selectedWave.id);
+      .from("waves")
+      .update({ status: "ready" })
+      .eq("id", selectedWave.id);
 
     if (updateError) {
-      console.error('Failed to update wave status:', updateError);
+      console.error("Failed to update wave status:", updateError);
     }
 
-    alert('Distribution applied successfully!');
+    alert("Distribution applied successfully!");
     setPreview([]);
     fetchWaves();
     setLoading(false);
@@ -6187,23 +6405,25 @@ export function DistributionInterface() {
     <div className="space-y-6">
       {/* Wave selector */}
       <Card className="p-6">
-        <h2 className="text-lg font-semibold mb-4">Select Wave to Distribute</h2>
-        
+        <h2 className="text-lg font-semibold mb-4">
+          Select Wave to Distribute
+        </h2>
+
         <div className="grid gap-4">
           {waves.map((wave) => (
             <div
               key={wave.id}
               className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                 selectedWave?.id === wave.id
-                  ? 'border-violet-500 bg-violet-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? "border-violet-500 bg-violet-50"
+                  : "border-gray-200 hover:border-gray-300"
               }`}
               onClick={() => setSelectedWave(wave)}
             >
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium">
-                    {wave.wave_type === 'standard'
+                    {wave.wave_type === "standard"
                       ? `Wave ${wave.wave_number}`
                       : wave.wave_name}
                   </h3>
@@ -6227,7 +6447,9 @@ export function DistributionInterface() {
       {/* Algorithm configuration */}
       {selectedWave && (
         <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Distribution Configuration</h2>
+          <h2 className="text-lg font-semibold mb-4">
+            Distribution Configuration
+          </h2>
 
           <div className="grid gap-4 md:grid-cols-2">
             {/* Algorithm selector */}
@@ -6246,9 +6468,7 @@ export function DistributionInterface() {
                   <SelectItem value="alphabetical">
                     Alphabetical (Last Name)
                   </SelectItem>
-                  <SelectItem value="random">
-                    Random
-                  </SelectItem>
+                  <SelectItem value="random">Random</SelectItem>
                   <SelectItem value="previous_level">
                     Previous Level (Balanced)
                   </SelectItem>
@@ -6258,10 +6478,14 @@ export function DistributionInterface() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-gray-500 mt-1">
-                {algorithm === 'alphabetical' && 'Players sorted by last name, distributed evenly'}
-                {algorithm === 'random' && 'Players randomly assigned to sessions'}
-                {algorithm === 'previous_level' && 'Balances A/B/C/D levels across sessions and teams'}
-                {algorithm === 'current_ranking' && 'Uses in-progress scores for balanced distribution'}
+                {algorithm === "alphabetical" &&
+                  "Players sorted by last name, distributed evenly"}
+                {algorithm === "random" &&
+                  "Players randomly assigned to sessions"}
+                {algorithm === "previous_level" &&
+                  "Balances A/B/C/D levels across sessions and teams"}
+                {algorithm === "current_ranking" &&
+                  "Uses in-progress scores for balanced distribution"}
               </p>
             </div>
 
@@ -6275,17 +6499,20 @@ export function DistributionInterface() {
                 min="1"
                 max="6"
                 value={teamsPerSession}
-                onChange={(e) => setTeamsPerSession(parseInt(e.target.value, 10))}
+                onChange={(e) =>
+                  setTeamsPerSession(parseInt(e.target.value, 10))
+                }
               />
               <p className="text-xs text-gray-500 mt-1">
-                Players will be distributed across {teamsPerSession} team(s) within each session
+                Players will be distributed across {teamsPerSession} team(s)
+                within each session
               </p>
             </div>
           </div>
 
           <div className="mt-4 flex gap-2">
             <Button onClick={generatePreview} disabled={loading}>
-              {loading ? 'Generating...' : 'Generate Preview'}
+              {loading ? "Generating..." : "Generate Preview"}
             </Button>
 
             {preview.length > 0 && (
@@ -6326,7 +6553,7 @@ export function DistributionInterface() {
           </div>
 
           <p className="text-sm text-gray-600 mt-4">
-            {preview.length} players will be distributed across{' '}
+            {preview.length} players will be distributed across{" "}
             {selectedWave?.sessions.length} sessions
           </p>
         </Card>
@@ -6355,27 +6582,27 @@ The **Wave Management Component** displays all waves for a cohort and allows cre
 
 ```typescript
 // src/components/features/distribution/WaveManagement.tsx
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Plus, Calendar, Users } from 'lucide-react';
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Calendar, Users } from "lucide-react";
 
 interface Wave {
   id: string;
   wave_number: number | null;
-  wave_type: 'standard' | 'custom';
+  wave_type: "standard" | "custom";
   wave_name?: string;
   description?: string;
   status: string;
@@ -6385,11 +6612,11 @@ interface Wave {
 
 export function WaveManagement() {
   const { cohortId } = useParams<{ cohortId: string }>();
-  
+
   const [waves, setWaves] = useState<Wave[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newWaveName, setNewWaveName] = useState('');
-  const [newWaveDescription, setNewWaveDescription] = useState('');
+  const [newWaveName, setNewWaveName] = useState("");
+  const [newWaveDescription, setNewWaveDescription] = useState("");
   const [newWaveSessionCount, setNewWaveSessionCount] = useState(1);
 
   useEffect(() => {
@@ -6398,17 +6625,19 @@ export function WaveManagement() {
 
   const fetchWaves = async () => {
     const { data, error } = await supabase
-      .from('waves')
-      .select(`
+      .from("waves")
+      .select(
+        `
         *,
         sessions:sessions(count),
         player_sessions:player_sessions(count)
-      `)
-      .eq('cohort_id', cohortId)
-      .order('wave_number');
+      `
+      )
+      .eq("cohort_id", cohortId)
+      .order("wave_number");
 
     if (error) {
-      console.error('Failed to fetch waves:', error);
+      console.error("Failed to fetch waves:", error);
       return;
     }
 
@@ -6420,7 +6649,7 @@ export function WaveManagement() {
       description: wave.description,
       status: wave.status,
       session_count: wave.sessions[0]?.count || 0,
-      player_count: wave.player_sessions[0]?.count || 0
+      player_count: wave.player_sessions[0]?.count || 0,
     }));
 
     setWaves(mapped);
@@ -6428,45 +6657,45 @@ export function WaveManagement() {
 
   const handleCreateCustomWave = async () => {
     if (!newWaveName.trim()) {
-      alert('Wave name is required');
+      alert("Wave name is required");
       return;
     }
 
-    const { error } = await supabase.from('waves').insert({
+    const { error } = await supabase.from("waves").insert({
       cohort_id: cohortId,
-      wave_type: 'custom',
+      wave_type: "custom",
       wave_name: newWaveName,
       description: newWaveDescription || null,
       session_count: newWaveSessionCount,
-      status: 'not-started'
+      status: "not-started",
     });
 
     if (error) {
-      console.error('Failed to create custom wave:', error);
-      alert('Failed to create wave');
+      console.error("Failed to create custom wave:", error);
+      alert("Failed to create wave");
       return;
     }
 
-    alert('Custom wave created successfully!');
+    alert("Custom wave created successfully!");
     setShowCreateModal(false);
-    setNewWaveName('');
-    setNewWaveDescription('');
+    setNewWaveName("");
+    setNewWaveDescription("");
     setNewWaveSessionCount(1);
     fetchWaves();
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'not-started':
-        return 'bg-gray-100 text-gray-800';
-      case 'ready':
-        return 'bg-blue-100 text-blue-800';
-      case 'in-progress':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
+      case "not-started":
+        return "bg-gray-100 text-gray-800";
+      case "ready":
+        return "bg-blue-100 text-blue-800";
+      case "in-progress":
+        return "bg-yellow-100 text-yellow-800";
+      case "completed":
+        return "bg-green-100 text-green-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -6526,7 +6755,9 @@ export function WaveManagement() {
                   type="number"
                   min="1"
                   value={newWaveSessionCount}
-                  onChange={(e) => setNewWaveSessionCount(parseInt(e.target.value, 10))}
+                  onChange={(e) =>
+                    setNewWaveSessionCount(parseInt(e.target.value, 10))
+                  }
                 />
               </div>
 
@@ -6545,7 +6776,7 @@ export function WaveManagement() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">
-                  {wave.wave_type === 'standard'
+                  {wave.wave_type === "standard"
                     ? `Wave ${wave.wave_number}`
                     : wave.wave_name}
                 </h3>
@@ -6555,21 +6786,21 @@ export function WaveManagement() {
                   </p>
                 )}
               </div>
-              
+
               <Badge className={getStatusColor(wave.status)}>
-                {wave.status.replace('-', ' ')}
+                {wave.status.replace("-", " ")}
               </Badge>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center text-sm text-gray-600">
                 <Calendar className="mr-2 h-4 w-4" />
-                {wave.session_count} session{wave.session_count !== 1 ? 's' : ''}
+                {wave.session_count} session{wave.session_count !== 1 ? "s" : ""}
               </div>
-              
+
               <div className="flex items-center text-sm text-gray-600">
                 <Users className="mr-2 h-4 w-4" />
-                {wave.player_count} player{wave.player_count !== 1 ? 's' : ''} assigned
+                {wave.player_count} player{wave.player_count !== 1 ? "s" : ""} assigned
               </div>
             </div>
 
@@ -6577,7 +6808,9 @@ export function WaveManagement() {
               variant="outline"
               size="sm"
               className="w-full mt-4"
-              onClick={() => {/* Navigate to wave detail */}}
+              onClick={() => {
+                /* Navigate to wave detail */
+              }}
             >
               View Details
             </Button>
@@ -6588,8 +6821,8 @@ export function WaveManagement() {
       {waves.length === 0 && (
         <Card className="p-8 text-center">
           <p className="text-gray-600">
-            No waves found. Waves are created automatically during session import,
-            or you can create custom waves manually.
+            No waves found. Waves are created automatically during session
+            import, or you can create custom waves manually.
           </p>
         </Card>
       )}
@@ -6618,22 +6851,22 @@ The **Player Check-In Interface** allows intake personnel to check in players as
 
 ```typescript
 // src/components/features/intake/CheckInInterface.tsx
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { usePlayerCheckIns } from '@/hooks/usePlayerCheckIns';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { usePlayerCheckIns } from "@/hooks/usePlayerCheckIns";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { CheckCircle, XCircle, Search } from 'lucide-react';
+  SelectValue,
+} from "@/components/ui/select";
+import { CheckCircle, XCircle, Search } from "lucide-react";
 
 interface Player {
   id: string;
@@ -6648,21 +6881,29 @@ interface Player {
 }
 
 const JERSEY_COLORS = [
-  'Red', 'Blue', 'Green', 'Yellow', 'Orange', 
-  'Purple', 'Black', 'White', 'Pink', 'Gray'
+  "Red",
+  "Blue",
+  "Green",
+  "Yellow",
+  "Orange",
+  "Purple",
+  "Black",
+  "White",
+  "Pink",
+  "Gray",
 ];
 
 export function CheckInInterface() {
   const { sessionId } = useParams<{ sessionId: string }>();
-  
+
   const [players, setPlayers] = useState<Player[]>([]);
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-  const [jerseyColor, setJerseyColor] = useState('');
-  const [jerseyNumber, setJerseyNumber] = useState('');
+  const [jerseyColor, setJerseyColor] = useState("");
+  const [jerseyNumber, setJerseyNumber] = useState("");
   const [loading, setLoading] = useState(true);
-  
+
   // Real-time check-in updates
   const checkInStatus = usePlayerCheckIns(sessionId!);
 
@@ -6677,26 +6918,31 @@ export function CheckInInterface() {
         ...p,
         checked_in: checkInStatus[p.id]?.checkedIn || false,
         no_show: checkInStatus[p.id]?.noShow || false,
-        jersey_color: checkInStatus[p.id]?.jersey?.split(' #')[0],
-        jersey_number: parseInt(checkInStatus[p.id]?.jersey?.split('#')[1] || '0', 10)
+        jersey_color: checkInStatus[p.id]?.jersey?.split(" #")[0],
+        jersey_number: parseInt(
+          checkInStatus[p.id]?.jersey?.split("#")[1] || "0",
+          10
+        ),
       }))
     );
   }, [checkInStatus]);
 
   useEffect(() => {
     // Filter players based on search
-    const filtered = players.filter((p) =>
-      p.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.jersey_number && p.jersey_number.toString().includes(searchQuery))
+    const filtered = players.filter(
+      (p) =>
+        p.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.jersey_number && p.jersey_number.toString().includes(searchQuery))
     );
     setFilteredPlayers(filtered);
   }, [searchQuery, players]);
 
   const fetchPlayers = async () => {
     const { data, error } = await supabase
-      .from('player_sessions')
-      .select(`
+      .from("player_sessions")
+      .select(
+        `
         player:players(
           id,
           first_name,
@@ -6708,11 +6954,12 @@ export function CheckInInterface() {
         no_show,
         jersey_color,
         jersey_number
-      `)
-      .eq('session_id', sessionId);
+      `
+      )
+      .eq("session_id", sessionId);
 
     if (error) {
-      console.error('Failed to fetch players:', error);
+      console.error("Failed to fetch players:", error);
       setLoading(false);
       return;
     }
@@ -6726,7 +6973,7 @@ export function CheckInInterface() {
       checked_in: ps.checked_in,
       no_show: ps.no_show,
       jersey_color: ps.jersey_color,
-      jersey_number: ps.jersey_number
+      jersey_number: ps.jersey_number,
     }));
 
     setPlayers(mapped);
@@ -6739,13 +6986,13 @@ export function CheckInInterface() {
 
     // Validate jersey color and number
     if (!jerseyColor) {
-      alert('Please select a jersey color');
+      alert("Please select a jersey color");
       return;
     }
 
     const jerseyNum = parseInt(jerseyNumber, 10);
     if (isNaN(jerseyNum) || jerseyNum < 0 || jerseyNum > 999) {
-      alert('Jersey number must be between 0 and 999');
+      alert("Jersey number must be between 0 and 999");
       return;
     }
 
@@ -6760,7 +7007,7 @@ export function CheckInInterface() {
     if (colorUsedByTeam) {
       const proceed = window.confirm(
         `Jersey color ${jerseyColor} is already used by Team ${colorUsedByTeam.team_number}. ` +
-        `This is allowed, but teams typically use one primary color. Continue?`
+          `This is allowed, but teams typically use one primary color. Continue?`
       );
       if (!proceed) return;
     }
@@ -6783,26 +7030,26 @@ export function CheckInInterface() {
 
     // Check in player
     const { error } = await supabase
-      .from('player_sessions')
+      .from("player_sessions")
       .update({
         checked_in: true,
         jersey_color: jerseyColor,
-        jersey_number: jerseyNum
+        jersey_number: jerseyNum,
       })
-      .eq('session_id', sessionId)
-      .eq('player_id', selectedPlayer.id);
+      .eq("session_id", sessionId)
+      .eq("player_id", selectedPlayer.id);
 
     if (error) {
-      console.error('Failed to check in player:', error);
-      alert('Failed to check in player');
+      console.error("Failed to check in player:", error);
+      alert("Failed to check in player");
       return;
     }
 
     // Clear selection
     setSelectedPlayer(null);
-    setJerseyColor('');
-    setJerseyNumber('');
-    setSearchQuery('');
+    setJerseyColor("");
+    setJerseyNumber("");
+    setSearchQuery("");
   };
 
   const handleNoShow = async (player: Player) => {
@@ -6813,14 +7060,14 @@ export function CheckInInterface() {
     if (!confirmed) return;
 
     const { error } = await supabase
-      .from('player_sessions')
+      .from("player_sessions")
       .update({ no_show: true })
-      .eq('session_id', sessionId)
-      .eq('player_id', player.id);
+      .eq("session_id", sessionId)
+      .eq("player_id", player.id);
 
     if (error) {
-      console.error('Failed to mark no-show:', error);
-      alert('Failed to mark player as no-show');
+      console.error("Failed to mark no-show:", error);
+      alert("Failed to mark player as no-show");
     }
   };
 
@@ -6828,7 +7075,7 @@ export function CheckInInterface() {
     total: players.length,
     checkedIn: players.filter((p) => p.checked_in).length,
     noShows: players.filter((p) => p.no_show).length,
-    pending: players.filter((p) => !p.checked_in && !p.no_show).length
+    pending: players.filter((p) => !p.checked_in && !p.no_show).length,
   };
 
   if (loading) {
@@ -6853,22 +7100,30 @@ export function CheckInInterface() {
 
           <div className="grid grid-cols-4 gap-4">
             <Card className="p-4">
-              <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats.total}
+              </div>
               <div className="text-sm text-gray-600">Total Players</div>
             </Card>
-            
+
             <Card className="p-4 border-green-500">
-              <div className="text-2xl font-bold text-green-600">{stats.checkedIn}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {stats.checkedIn}
+              </div>
               <div className="text-sm text-gray-600">Checked In</div>
             </Card>
-            
+
             <Card className="p-4 border-yellow-500">
-              <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+              <div className="text-2xl font-bold text-yellow-600">
+                {stats.pending}
+              </div>
               <div className="text-sm text-gray-600">Pending</div>
             </Card>
-            
+
             <Card className="p-4 border-red-500">
-              <div className="text-2xl font-bold text-red-600">{stats.noShows}</div>
+              <div className="text-2xl font-bold text-red-600">
+                {stats.noShows}
+              </div>
               <div className="text-sm text-gray-600">No Shows</div>
             </Card>
           </div>
@@ -6900,8 +7155,8 @@ export function CheckInInterface() {
                     key={player.id}
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                       selectedPlayer?.id === player.id
-                        ? 'border-violet-500 bg-violet-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? "border-violet-500 bg-violet-50"
+                        : "border-gray-200 hover:border-gray-300"
                     }`}
                     onClick={() => setSelectedPlayer(player)}
                   >
@@ -6918,9 +7173,10 @@ export function CheckInInterface() {
                   </div>
                 ))}
 
-              {filteredPlayers.filter((p) => !p.checked_in && !p.no_show).length === 0 && (
+              {filteredPlayers.filter((p) => !p.checked_in && !p.no_show)
+                .length === 0 && (
                 <p className="text-gray-600 text-center py-4">
-                  {searchQuery ? 'No players found' : 'All players checked in'}
+                  {searchQuery ? "No players found" : "All players checked in"}
                 </p>
               )}
             </div>
@@ -6937,7 +7193,8 @@ export function CheckInInterface() {
                     {selectedPlayer.first_name} {selectedPlayer.last_name}
                   </div>
                   <div className="text-sm text-gray-600">
-                    {selectedPlayer.position} • Team {selectedPlayer.team_number}
+                    {selectedPlayer.position} • Team{" "}
+                    {selectedPlayer.team_number}
                   </div>
                 </div>
 
@@ -6978,13 +7235,13 @@ export function CheckInInterface() {
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Check In
                   </Button>
-                  
+
                   <Button
                     variant="outline"
                     onClick={() => {
                       setSelectedPlayer(null);
-                      setJerseyColor('');
-                      setJerseyNumber('');
+                      setJerseyColor("");
+                      setJerseyNumber("");
                     }}
                   >
                     Cancel
@@ -7085,21 +7342,24 @@ export function CheckInInterface() {
 
 ```typescript
 // Use React.memo for expensive components
-import { memo } from 'react';
+import { memo } from "react";
 
-export const PlayerScoreCard = memo(function PlayerScoreCard(props) {
-  // Component implementation
-}, (prevProps, nextProps) => {
-  // Custom comparison
-  return prevProps.player.id === nextProps.player.id &&
-         prevProps.evaluations.length === nextProps.evaluations.length;
-});
+export const PlayerScoreCard = memo(
+  function PlayerScoreCard(props) {
+    // Component implementation
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison
+    return (
+      prevProps.player.id === nextProps.player.id &&
+      prevProps.evaluations.length === nextProps.evaluations.length
+    );
+  }
+);
 
 // Use useMemo for expensive calculations
 const sortedPlayers = useMemo(() => {
-  return players.sort((a, b) => 
-    a.last_name.localeCompare(b.last_name)
-  );
+  return players.sort((a, b) => a.last_name.localeCompare(b.last_name));
 }, [players]);
 
 // Use useCallback for event handlers passed to children
@@ -7112,10 +7372,10 @@ const handleScoreEntry = useCallback((playerId, drillId, score) => {
 
 ```typescript
 // src/components/shared/ErrorBoundary.tsx
-import React from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { AlertCircle } from 'lucide-react';
+import React from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 
 interface Props {
   children: React.ReactNode;
@@ -7137,7 +7397,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught error:', error, errorInfo);
+    console.error("ErrorBoundary caught error:", error, errorInfo);
   }
 
   render() {
@@ -7151,7 +7411,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
                 Something went wrong
               </h1>
             </div>
-            
+
             <p className="text-gray-600 mb-4">
               An unexpected error occurred. Please try refreshing the page.
             </p>
@@ -7179,16 +7439,16 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
 ```typescript
 // src/components/shared/LoadingSpinner.tsx
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from "lucide-react";
 
 interface LoadingSpinnerProps {
   message?: string;
   fullScreen?: boolean;
 }
 
-export function LoadingSpinner({ 
-  message = 'Loading...', 
-  fullScreen = false 
+export function LoadingSpinner({
+  message = "Loading...",
+  fullScreen = false,
 }: LoadingSpinnerProps) {
   const content = (
     <div className="text-center">
@@ -7219,10 +7479,10 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { ChevronUp, ChevronDown } from "lucide-react";
 
 interface Column<T> {
   key: string;
@@ -7237,16 +7497,20 @@ interface DataTableProps<T> {
   keyExtractor: (item: T) => string;
 }
 
-export function DataTable<T>({ data, columns, keyExtractor }: DataTableProps<T>) {
+export function DataTable<T>({
+  data,
+  columns,
+  keyExtractor,
+}: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortKey(key);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
@@ -7257,8 +7521,8 @@ export function DataTable<T>({ data, columns, keyExtractor }: DataTableProps<T>)
       const aVal = (a as any)[sortKey];
       const bVal = (b as any)[sortKey];
 
-      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
   }, [data, sortKey, sortDirection]);
@@ -7278,13 +7542,12 @@ export function DataTable<T>({ data, columns, keyExtractor }: DataTableProps<T>)
                     className="font-semibold"
                   >
                     {column.label}
-                    {sortKey === column.key && (
-                      sortDirection === 'asc' ? (
+                    {sortKey === column.key &&
+                      (sortDirection === "asc" ? (
                         <ChevronUp className="ml-2 h-4 w-4" />
                       ) : (
                         <ChevronDown className="ml-2 h-4 w-4" />
-                      )
-                    )}
+                      ))}
                   </Button>
                 ) : (
                   <span className="font-semibold">{column.label}</span>
@@ -7298,10 +7561,9 @@ export function DataTable<T>({ data, columns, keyExtractor }: DataTableProps<T>)
             <TableRow key={keyExtractor(item)}>
               {columns.map((column) => (
                 <TableCell key={column.key}>
-                  {column.render 
-                    ? column.render(item) 
-                    : (item as any)[column.key]
-                  }
+                  {column.render
+                    ? column.render(item)
+                    : (item as any)[column.key]}
                 </TableCell>
               ))}
             </TableRow>
@@ -7317,23 +7579,27 @@ export function DataTable<T>({ data, columns, keyExtractor }: DataTableProps<T>)
 
 ```typescript
 // Using React Hook Form + Zod (recommended for production)
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 const playerSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
-  position_id: z.string().uuid('Select a position'),
-  cohort_id: z.string().uuid('Select a cohort')
+  first_name: z.string().min(1, "First name is required"),
+  last_name: z.string().min(1, "Last name is required"),
+  date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+  position_id: z.string().uuid("Select a position"),
+  cohort_id: z.string().uuid("Select a cohort"),
 });
 
 type PlayerFormData = z.infer<typeof playerSchema>;
 
 export function PlayerForm() {
-  const { register, handleSubmit, formState: { errors } } = useForm<PlayerFormData>({
-    resolver: zodResolver(playerSchema)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<PlayerFormData>({
+    resolver: zodResolver(playerSchema),
   });
 
   const onSubmit = (data: PlayerFormData) => {
@@ -7342,7 +7608,7 @@ export function PlayerForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <Input {...register('first_name')} />
+      <Input {...register("first_name")} />
       {errors.first_name && (
         <p className="text-red-600 text-sm">{errors.first_name.message}</p>
       )}
@@ -7383,7 +7649,7 @@ export function PlayerForm() {
   tabIndex={0}
   onClick={handleClick}
   onKeyDown={(e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === "Enter" || e.key === " ") {
       handleClick();
     }
   }}
@@ -7396,7 +7662,7 @@ export function PlayerForm() {
 
 ```typescript
 // Manage focus for modals and dialogs
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 export function Modal({ isOpen, onClose, children }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -7441,27 +7707,27 @@ export function Modal({ isOpen, onClose, children }) {
 
 ```typescript
 // src/components/features/evaluation/PlayerScoreCard.test.tsx
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { PlayerScoreCard } from './PlayerScoreCard';
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { PlayerScoreCard } from "./PlayerScoreCard";
 
-describe('PlayerScoreCard', () => {
+describe("PlayerScoreCard", () => {
   const mockPlayer = {
-    id: '123',
-    first_name: 'John',
-    last_name: 'Doe',
-    position: { name: 'Forward' },
+    id: "123",
+    first_name: "John",
+    last_name: "Doe",
+    position: { name: "Forward" },
     team_number: 1,
-    jersey_color: 'Red',
-    jersey_number: 7
+    jersey_color: "Red",
+    jersey_number: 7,
   };
 
   const mockDrills = [
-    { id: 'd1', name: 'Skating', weight_percent: 40 },
-    { id: 'd2', name: 'Shooting', weight_percent: 60 }
+    { id: "d1", name: "Skating", weight_percent: 40 },
+    { id: "d2", name: "Shooting", weight_percent: 60 },
   ];
 
-  it('renders player information', () => {
+  it("renders player information", () => {
     render(
       <PlayerScoreCard
         player={mockPlayer}
@@ -7471,14 +7737,14 @@ describe('PlayerScoreCard', () => {
       />
     );
 
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('Forward')).toBeInTheDocument();
-    expect(screen.getByText('Team 1')).toBeInTheDocument();
+    expect(screen.getByText("John Doe")).toBeInTheDocument();
+    expect(screen.getByText("Forward")).toBeInTheDocument();
+    expect(screen.getByText("Team 1")).toBeInTheDocument();
   });
 
-  it('calls onScoreEntry when score is saved', () => {
+  it("calls onScoreEntry when score is saved", () => {
     const onScoreEntry = vi.fn();
-    
+
     render(
       <PlayerScoreCard
         player={mockPlayer}
@@ -7488,19 +7754,19 @@ describe('PlayerScoreCard', () => {
       />
     );
 
-    const scoreInput = screen.getAllByPlaceholderText('1-10')[0];
-    const saveButton = screen.getAllByText('Save')[0];
+    const scoreInput = screen.getAllByPlaceholderText("1-10")[0];
+    const saveButton = screen.getAllByText("Save")[0];
 
-    fireEvent.change(scoreInput, { target: { value: '8' } });
+    fireEvent.change(scoreInput, { target: { value: "8" } });
     fireEvent.click(saveButton);
 
-    expect(onScoreEntry).toHaveBeenCalledWith('123', 'd1', 8);
+    expect(onScoreEntry).toHaveBeenCalledWith("123", "d1", 8);
   });
 
-  it('shows completion indicator when all drills scored', () => {
+  it("shows completion indicator when all drills scored", () => {
     const evaluations = [
-      { drill_id: 'd1', score: 8 },
-      { drill_id: 'd2', score: 9 }
+      { drill_id: "d1", score: 8 },
+      { drill_id: "d2", score: 9 },
     ];
 
     render(
@@ -7512,7 +7778,7 @@ describe('PlayerScoreCard', () => {
       />
     );
 
-    expect(screen.getByText('2/2 drills completed')).toBeInTheDocument();
+    expect(screen.getByText("2/2 drills completed")).toBeInTheDocument();
   });
 });
 ```
@@ -7536,31 +7802,31 @@ The **Session Configuration** component allows administrators to configure drill
 
 ```typescript
 // src/components/features/sessions/SessionConfiguration.tsx
-import { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useState, useEffect, useMemo } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
-import { CheckCircle, AlertTriangle, Copy, Plus, Trash2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CheckCircle, AlertTriangle, Copy, Plus, Trash2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Drill {
   id: string;
@@ -7603,8 +7869,8 @@ export function SessionConfiguration() {
   const [loading, setLoading] = useState(true);
 
   const [showAddDrill, setShowAddDrill] = useState(false);
-  const [selectedDrillId, setSelectedDrillId] = useState('');
-  const [drillWeight, setDrillWeight] = useState('');
+  const [selectedDrillId, setSelectedDrillId] = useState("");
+  const [drillWeight, setDrillWeight] = useState("");
   const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
 
   const [showCloneDialog, setShowCloneDialog] = useState(false);
@@ -7620,8 +7886,9 @@ export function SessionConfiguration() {
 
   const fetchSessionData = async () => {
     const { data, error } = await supabase
-      .from('sessions')
-      .select(`
+      .from("sessions")
+      .select(
+        `
         id,
         wave_id,
         status,
@@ -7629,12 +7896,13 @@ export function SessionConfiguration() {
           cohort_id,
           wave_number
         )
-      `)
-      .eq('id', sessionId)
+      `
+      )
+      .eq("id", sessionId)
       .single();
 
     if (error) {
-      console.error('Failed to fetch session:', error);
+      console.error("Failed to fetch session:", error);
       return;
     }
 
@@ -7645,8 +7913,9 @@ export function SessionConfiguration() {
 
   const fetchSessionDrills = async () => {
     const { data, error } = await supabase
-      .from('session_drills')
-      .select(`
+      .from("session_drills")
+      .select(
+        `
         id,
         drill_id,
         weight_percent,
@@ -7657,11 +7926,12 @@ export function SessionConfiguration() {
           description,
           criteria
         )
-      `)
-      .eq('session_id', sessionId);
+      `
+      )
+      .eq("session_id", sessionId);
 
     if (error) {
-      console.error('Failed to fetch session drills:', error);
+      console.error("Failed to fetch session drills:", error);
       setLoading(false);
       return;
     }
@@ -7672,13 +7942,13 @@ export function SessionConfiguration() {
 
   const fetchAvailableDrills = async () => {
     const { data, error } = await supabase
-      .from('drills')
-      .select('*')
-      .eq('is_active', true)
-      .order('name');
+      .from("drills")
+      .select("*")
+      .eq("is_active", true)
+      .order("name");
 
     if (error) {
-      console.error('Failed to fetch drills:', error);
+      console.error("Failed to fetch drills:", error);
       return;
     }
 
@@ -7687,13 +7957,13 @@ export function SessionConfiguration() {
 
   const fetchPositions = async () => {
     const { data, error } = await supabase
-      .from('position_types')
-      .select('id, name')
-      .eq('is_active', true)
-      .order('name');
+      .from("position_types")
+      .select("id, name")
+      .eq("is_active", true)
+      .order("name");
 
     if (error) {
-      console.error('Failed to fetch positions:', error);
+      console.error("Failed to fetch positions:", error);
       return;
     }
 
@@ -7702,14 +7972,14 @@ export function SessionConfiguration() {
 
   const fetchWaveSessions = async (waveId: string) => {
     const { data, error } = await supabase
-      .from('sessions')
-      .select('id, date_time, status')
-      .eq('wave_id', waveId)
-      .neq('id', sessionId)
-      .order('date_time');
+      .from("sessions")
+      .select("id, date_time, status")
+      .eq("wave_id", waveId)
+      .neq("id", sessionId)
+      .order("date_time");
 
     if (error) {
-      console.error('Failed to fetch wave sessions:', error);
+      console.error("Failed to fetch wave sessions:", error);
       return;
     }
 
@@ -7719,13 +7989,13 @@ export function SessionConfiguration() {
   const checkIfLocked = async () => {
     // Session is locked if any evaluation scores have been entered
     const { data, error } = await supabase
-      .from('evaluations')
-      .select('id')
-      .eq('session_id', sessionId)
+      .from("evaluations")
+      .select("id")
+      .eq("session_id", sessionId)
       .limit(1);
 
     if (error) {
-      console.error('Failed to check lock status:', error);
+      console.error("Failed to check lock status:", error);
       return;
     }
 
@@ -7734,25 +8004,25 @@ export function SessionConfiguration() {
 
   const handleAddDrill = async () => {
     if (!selectedDrillId || !drillWeight) {
-      alert('Please select a drill and enter weight');
+      alert("Please select a drill and enter weight");
       return;
     }
 
     const weight = parseInt(drillWeight, 10);
     if (isNaN(weight) || weight <= 0 || weight > 100) {
-      alert('Weight must be between 1 and 100');
+      alert("Weight must be between 1 and 100");
       return;
     }
 
     if (selectedPositions.length === 0) {
-      alert('Please select at least one position');
+      alert("Please select at least one position");
       return;
     }
 
     // Check if drill already exists
     const exists = sessionDrills.some((sd) => sd.drill_id === selectedDrillId);
     if (exists) {
-      alert('This drill is already assigned to this session');
+      alert("This drill is already assigned to this session");
       return;
     }
 
@@ -7769,16 +8039,16 @@ export function SessionConfiguration() {
       }
     }
 
-    const { error } = await supabase.from('session_drills').insert({
+    const { error } = await supabase.from("session_drills").insert({
       session_id: sessionId,
       drill_id: selectedDrillId,
       weight_percent: weight,
-      applies_to_positions: selectedPositions
+      applies_to_positions: selectedPositions,
     });
 
     if (error) {
-      console.error('Failed to add drill:', error);
-      alert('Failed to add drill');
+      console.error("Failed to add drill:", error);
+      alert("Failed to add drill");
       return;
     }
 
@@ -7787,25 +8057,28 @@ export function SessionConfiguration() {
 
     // Reset form
     setShowAddDrill(false);
-    setSelectedDrillId('');
-    setDrillWeight('');
+    setSelectedDrillId("");
+    setDrillWeight("");
     setSelectedPositions([]);
   };
 
-  const handleUpdateWeight = async (sessionDrillId: string, newWeight: number) => {
+  const handleUpdateWeight = async (
+    sessionDrillId: string,
+    newWeight: number
+  ) => {
     if (newWeight <= 0 || newWeight > 100) {
-      alert('Weight must be between 1 and 100');
+      alert("Weight must be between 1 and 100");
       return;
     }
 
     const { error } = await supabase
-      .from('session_drills')
+      .from("session_drills")
       .update({ weight_percent: newWeight })
-      .eq('id', sessionDrillId);
+      .eq("id", sessionDrillId);
 
     if (error) {
-      console.error('Failed to update weight:', error);
-      alert('Failed to update weight');
+      console.error("Failed to update weight:", error);
+      alert("Failed to update weight");
       return;
     }
 
@@ -7813,17 +8086,17 @@ export function SessionConfiguration() {
   };
 
   const handleRemoveDrill = async (sessionDrillId: string) => {
-    const confirmed = window.confirm('Remove this drill from the session?');
+    const confirmed = window.confirm("Remove this drill from the session?");
     if (!confirmed) return;
 
     const { error } = await supabase
-      .from('session_drills')
+      .from("session_drills")
       .delete()
-      .eq('id', sessionDrillId);
+      .eq("id", sessionDrillId);
 
     if (error) {
-      console.error('Failed to remove drill:', error);
-      alert('Failed to remove drill');
+      console.error("Failed to remove drill:", error);
+      alert("Failed to remove drill");
       return;
     }
 
@@ -7832,13 +8105,13 @@ export function SessionConfiguration() {
 
   const handleCloneConfiguration = async () => {
     if (targetSessions.length === 0) {
-      alert('Please select at least one target session');
+      alert("Please select at least one target session");
       return;
     }
 
     const confirmed = window.confirm(
       `Clone drill configuration to ${targetSessions.length} session(s)? ` +
-      `This will overwrite existing drill configurations.`
+        `This will overwrite existing drill configurations.`
     );
 
     if (!confirmed) return;
@@ -7848,50 +8121,56 @@ export function SessionConfiguration() {
       for (const targetSessionId of targetSessions) {
         // Delete existing
         await supabase
-          .from('session_drills')
+          .from("session_drills")
           .delete()
-          .eq('session_id', targetSessionId);
+          .eq("session_id", targetSessionId);
 
         // Insert cloned drills
         const drillsToInsert = sessionDrills.map((sd) => ({
           session_id: targetSessionId,
           drill_id: sd.drill_id,
           weight_percent: sd.weight_percent,
-          applies_to_positions: sd.applies_to_positions
+          applies_to_positions: sd.applies_to_positions,
         }));
 
         const { error } = await supabase
-          .from('session_drills')
+          .from("session_drills")
           .insert(drillsToInsert);
 
         if (error) throw error;
       }
 
-      alert('Configuration cloned successfully');
+      alert("Configuration cloned successfully");
       setShowCloneDialog(false);
       setTargetSessions([]);
     } catch (error) {
-      console.error('Failed to clone configuration:', error);
-      alert('Failed to clone configuration');
+      console.error("Failed to clone configuration:", error);
+      alert("Failed to clone configuration");
     }
   };
 
   // Calculate validation for each position
   const positionValidation = useMemo(() => {
-    const validation: Record<string, { total: number; count: number; isValid: boolean }> = {};
+    const validation: Record<
+      string,
+      { total: number; count: number; isValid: boolean }
+    > = {};
 
     positions.forEach((position) => {
       const drillsForPosition = sessionDrills.filter((sd) =>
         sd.applies_to_positions.includes(position.id)
       );
 
-      const total = drillsForPosition.reduce((sum, sd) => sum + sd.weight_percent, 0);
+      const total = drillsForPosition.reduce(
+        (sum, sd) => sum + sd.weight_percent,
+        0
+      );
       const count = drillsForPosition.length;
 
       validation[position.id] = {
         total,
         count,
-        isValid: total === 100 && count > 0 && count <= 4
+        isValid: total === 100 && count > 0 && count <= 4,
       };
     });
 
@@ -7930,7 +8209,10 @@ export function SessionConfiguration() {
 
             <div className="flex gap-2">
               {!isLocked && allPositionsValid && (
-                <Button variant="outline" onClick={() => setShowCloneDialog(true)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCloneDialog(true)}
+                >
                   <Copy className="mr-2 h-4 w-4" />
                   Clone to Other Sessions
                 </Button>
@@ -7949,7 +8231,8 @@ export function SessionConfiguration() {
             <Alert className="mt-4 border-yellow-500">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Drill configuration is locked because evaluations have been entered for this session
+                Drill configuration is locked because evaluations have been
+                entered for this session
               </AlertDescription>
             </Alert>
           )}
@@ -7963,15 +8246,19 @@ export function SessionConfiguration() {
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {positions.map((position) => {
-              const validation = positionValidation[position.id] || { total: 0, count: 0, isValid: false };
+              const validation = positionValidation[position.id] || {
+                total: 0,
+                count: 0,
+                isValid: false,
+              };
 
               return (
                 <div
                   key={position.id}
                   className={`p-4 border rounded-lg ${
                     validation.isValid
-                      ? 'border-green-500 bg-green-50'
-                      : 'border-yellow-500 bg-yellow-50'
+                      ? "border-green-500 bg-green-50"
+                      : "border-yellow-500 bg-yellow-50"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -7984,10 +8271,22 @@ export function SessionConfiguration() {
                   </div>
 
                   <div className="text-sm">
-                    <div className={validation.total === 100 ? 'text-green-600' : 'text-yellow-600'}>
+                    <div
+                      className={
+                        validation.total === 100
+                          ? "text-green-600"
+                          : "text-yellow-600"
+                      }
+                    >
                       Weight: {validation.total}% / 100%
                     </div>
-                    <div className={validation.count > 0 && validation.count <= 4 ? 'text-green-600' : 'text-yellow-600'}>
+                    <div
+                      className={
+                        validation.count > 0 && validation.count <= 4
+                          ? "text-green-600"
+                          : "text-yellow-600"
+                      }
+                    >
                       Drills: {validation.count} / 4 max
                     </div>
                   </div>
@@ -8008,10 +8307,7 @@ export function SessionConfiguration() {
           ) : (
             <div className="space-y-4">
               {sessionDrills.map((sessionDrill) => (
-                <div
-                  key={sessionDrill.id}
-                  className="p-4 border rounded-lg"
-                >
+                <div key={sessionDrill.id} className="p-4 border rounded-lg">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">
@@ -8037,7 +8333,9 @@ export function SessionConfiguration() {
                     <div className="flex items-center gap-2">
                       <label className="text-sm font-medium">Weight:</label>
                       {isLocked ? (
-                        <span className="text-lg font-bold">{sessionDrill.weight_percent}%</span>
+                        <span className="text-lg font-bold">
+                          {sessionDrill.weight_percent}%
+                        </span>
                       ) : (
                         <div className="flex items-center gap-2">
                           <Input
@@ -8087,14 +8385,18 @@ export function SessionConfiguration() {
           <DialogHeader>
             <DialogTitle>Add Drill to Session</DialogTitle>
             <DialogDescription>
-              Select a drill, set weight percentage, and choose which positions it applies to
+              Select a drill, set weight percentage, and choose which positions
+              it applies to
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">Drill</label>
-              <Select value={selectedDrillId} onValueChange={setSelectedDrillId}>
+              <Select
+                value={selectedDrillId}
+                onValueChange={setSelectedDrillId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select drill" />
                 </SelectTrigger>
@@ -8134,7 +8436,10 @@ export function SessionConfiguration() {
                       checked={selectedPositions.includes(position.id)}
                       onCheckedChange={(checked) => {
                         if (checked) {
-                          setSelectedPositions([...selectedPositions, position.id]);
+                          setSelectedPositions([
+                            ...selectedPositions,
+                            position.id,
+                          ]);
                         } else {
                           setSelectedPositions(
                             selectedPositions.filter((id) => id !== position.id)
@@ -8142,7 +8447,10 @@ export function SessionConfiguration() {
                         }
                       }}
                     />
-                    <label htmlFor={`position-${position.id}`} className="cursor-pointer">
+                    <label
+                      htmlFor={`position-${position.id}`}
+                      className="cursor-pointer"
+                    >
                       {position.name}
                     </label>
                   </div>
@@ -8166,14 +8474,18 @@ export function SessionConfiguration() {
           <DialogHeader>
             <DialogTitle>Clone Drill Configuration</DialogTitle>
             <DialogDescription>
-              Select sessions in this wave to copy the current drill configuration to.
-              This will overwrite any existing drill assignments.
+              Select sessions in this wave to copy the current drill
+              configuration to. This will overwrite any existing drill
+              assignments.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {waveSessions.map((ws) => (
-              <div key={ws.id} className="flex items-center gap-2 p-3 border rounded">
+              <div
+                key={ws.id}
+                className="flex items-center gap-2 p-3 border rounded"
+              >
                 <Checkbox
                   id={`session-${ws.id}`}
                   checked={targetSessions.includes(ws.id)}
@@ -8181,15 +8493,22 @@ export function SessionConfiguration() {
                     if (checked) {
                       setTargetSessions([...targetSessions, ws.id]);
                     } else {
-                      setTargetSessions(targetSessions.filter((id) => id !== ws.id));
+                      setTargetSessions(
+                        targetSessions.filter((id) => id !== ws.id)
+                      );
                     }
                   }}
                 />
-                <label htmlFor={`session-${ws.id}`} className="flex-1 cursor-pointer">
+                <label
+                  htmlFor={`session-${ws.id}`}
+                  className="flex-1 cursor-pointer"
+                >
                   <div className="font-medium">
                     {new Date(ws.date_time).toLocaleString()}
                   </div>
-                  <div className="text-sm text-gray-600">Status: {ws.status}</div>
+                  <div className="text-sm text-gray-600">
+                    Status: {ws.status}
+                  </div>
                 </label>
               </div>
             ))}
@@ -8229,31 +8548,31 @@ The **Reporting Dashboard** displays final rankings, outlier scores, session pro
 
 ```typescript
 // src/components/features/reports/ReportingDashboard.tsx
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
-} from '@/components/ui/table';
-import { Download, FileText, AlertTriangle, TrendingUp } from 'lucide-react';
+  TableRow,
+} from "@/components/ui/table";
+import { Download, FileText, AlertTriangle, TrendingUp } from "lucide-react";
 import {
   exportRankingsToCSV,
-  generateSessionReportPDF
-} from '@/lib/fileOperations';
+  generateSessionReportPDF,
+} from "@/lib/fileOperations";
 
 interface Ranking {
   player_id: string;
@@ -8286,8 +8605,8 @@ interface SessionProgress {
 export function ReportingDashboard() {
   const [cohorts, setCohorts] = useState<any[]>([]);
   const [positions, setPositions] = useState<any[]>([]);
-  const [selectedCohort, setSelectedCohort] = useState('');
-  const [selectedPosition, setSelectedPosition] = useState('all');
+  const [selectedCohort, setSelectedCohort] = useState("");
+  const [selectedPosition, setSelectedPosition] = useState("all");
 
   const [rankings, setRankings] = useState<Ranking[]>([]);
   const [outliers, setOutliers] = useState<OutlierScore[]>([]);
@@ -8310,13 +8629,13 @@ export function ReportingDashboard() {
 
   const fetchCohorts = async () => {
     const { data, error } = await supabase
-      .from('cohorts')
-      .select('id, name, birth_year')
-      .eq('is_active', true)
-      .order('birth_year', { ascending: false });
+      .from("cohorts")
+      .select("id, name, birth_year")
+      .eq("is_active", true)
+      .order("birth_year", { ascending: false });
 
     if (error) {
-      console.error('Failed to fetch cohorts:', error);
+      console.error("Failed to fetch cohorts:", error);
       return;
     }
 
@@ -8329,13 +8648,13 @@ export function ReportingDashboard() {
 
   const fetchPositions = async () => {
     const { data, error } = await supabase
-      .from('position_types')
-      .select('id, name')
-      .eq('is_active', true)
-      .order('name');
+      .from("position_types")
+      .select("id, name")
+      .eq("is_active", true)
+      .order("name");
 
     if (error) {
-      console.error('Failed to fetch positions:', error);
+      console.error("Failed to fetch positions:", error);
       return;
     }
 
@@ -8343,17 +8662,17 @@ export function ReportingDashboard() {
   };
 
   const fetchRankings = async () => {
-    const { data, error } = await supabase.rpc('calculate_player_rankings', {
-      p_cohort_id: selectedCohort
+    const { data, error } = await supabase.rpc("calculate_player_rankings", {
+      p_cohort_id: selectedCohort,
     });
 
     if (error) {
-      console.error('Failed to fetch rankings:', error);
+      console.error("Failed to fetch rankings:", error);
       return;
     }
 
     let filtered = data;
-    if (selectedPosition !== 'all') {
+    if (selectedPosition !== "all") {
       filtered = data.filter((r: Ranking) => r.position === selectedPosition);
     }
 
@@ -8361,12 +8680,12 @@ export function ReportingDashboard() {
   };
 
   const fetchOutliers = async () => {
-    const { data, error } = await supabase.rpc('detect_outliers', {
-      p_cohort_id: selectedCohort
+    const { data, error } = await supabase.rpc("detect_outliers", {
+      p_cohort_id: selectedCohort,
     });
 
     if (error) {
-      console.error('Failed to fetch outliers:', error);
+      console.error("Failed to fetch outliers:", error);
       return;
     }
 
@@ -8376,17 +8695,19 @@ export function ReportingDashboard() {
   const fetchSessionProgress = async () => {
     // Fetch all sessions for cohort
     const { data: sessions, error: sessionsError } = await supabase
-      .from('sessions')
-      .select(`
+      .from("sessions")
+      .select(
+        `
         id,
         date_time,
         wave:waves!inner(cohort_id)
-      `)
-      .eq('wave.cohort_id', selectedCohort)
-      .order('date_time', { ascending: false });
+      `
+      )
+      .eq("wave.cohort_id", selectedCohort)
+      .order("date_time", { ascending: false });
 
     if (sessionsError) {
-      console.error('Failed to fetch sessions:', error);
+      console.error("Failed to fetch sessions:", error);
       return;
     }
 
@@ -8395,19 +8716,19 @@ export function ReportingDashboard() {
 
     for (const session of sessions) {
       const { data: progress, error: progressError } = await supabase.rpc(
-        'get_session_progress',
+        "get_session_progress",
         { p_session_id: session.id }
       );
 
       if (progressError) {
-        console.error('Failed to fetch session progress:', progressError);
+        console.error("Failed to fetch session progress:", progressError);
         continue;
       }
 
       progressData.push({
         session_id: session.id,
         date_time: session.date_time,
-        ...progress[0]
+        ...progress[0],
       });
     }
 
@@ -8416,21 +8737,28 @@ export function ReportingDashboard() {
 
   const handleExportRankings = () => {
     const cohort = cohorts.find((c) => c.id === selectedCohort);
-    const filename = `rankings_${cohort?.name}_${new Date().toISOString().split('T')[0]}.csv`;
+    const filename = `rankings_${cohort?.name}_${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
 
     exportRankingsToCSV(rankings, filename);
   };
 
   const handleGeneratePDF = async () => {
     const cohort = cohorts.find((c) => c.id === selectedCohort);
-    const filename = `report_${cohort?.name}_${new Date().toISOString().split('T')[0]}.pdf`;
+    const filename = `report_${cohort?.name}_${
+      new Date().toISOString().split("T")[0]
+    }.pdf`;
 
     await generateSessionReportPDF(
       {
-        cohortName: cohort?.name || '',
+        cohortName: cohort?.name || "",
         totalPlayers: rankings.length,
-        totalEvaluations: rankings.reduce((sum, r) => sum + r.evaluation_count, 0),
-        outlierCount: outliers.length
+        totalEvaluations: rankings.reduce(
+          (sum, r) => sum + r.evaluation_count,
+          0
+        ),
+        outlierCount: outliers.length,
       },
       rankings,
       filename
@@ -8490,7 +8818,10 @@ export function ReportingDashboard() {
 
             <div className="flex-1">
               <label className="block text-sm font-medium mb-2">Position</label>
-              <Select value={selectedPosition} onValueChange={setSelectedPosition}>
+              <Select
+                value={selectedPosition}
+                onValueChange={setSelectedPosition}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All positions" />
                 </SelectTrigger>
@@ -8576,7 +8907,10 @@ export function ReportingDashboard() {
                     <TableCell>{ranking.evaluation_count}</TableCell>
                     <TableCell>
                       {ranking.has_outliers && (
-                        <Badge variant="outline" className="border-yellow-500 text-yellow-600">
+                        <Badge
+                          variant="outline"
+                          className="border-yellow-500 text-yellow-600"
+                        >
                           <AlertTriangle className="mr-1 h-3 w-3" />
                           Has Outliers
                         </Badge>
@@ -8616,12 +8950,13 @@ export function ReportingDashboard() {
                       <TableCell>
                         <span className="font-semibold">{outlier.score}</span>
                       </TableCell>
+                      <TableCell>{outlier.drill_average.toFixed(1)}</TableCell>
                       <TableCell>
-                        {outlier.drill_average.toFixed(1)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="border-yellow-500 text-yellow-600">
-                          {outlier.deviation_percent > 0 ? '+' : ''}
+                        <Badge
+                          variant="outline"
+                          className="border-yellow-500 text-yellow-600"
+                        >
+                          {outlier.deviation_percent > 0 ? "+" : ""}
                           {outlier.deviation_percent.toFixed(1)}%
                         </Badge>
                       </TableCell>
@@ -8645,7 +8980,11 @@ export function ReportingDashboard() {
                     {new Date(session.date_time).toLocaleString()}
                   </span>
                   <Badge
-                    variant={session.completion_percent === 100 ? 'default' : 'secondary'}
+                    variant={
+                      session.completion_percent === 100
+                        ? "default"
+                        : "secondary"
+                    }
                   >
                     {session.completion_percent.toFixed(0)}% Complete
                   </Badge>
@@ -8662,7 +9001,8 @@ export function ReportingDashboard() {
                   <div>
                     <span className="text-gray-600">Evaluations:</span>
                     <span className="ml-2 font-medium">
-                      {session.completed_evaluations} / {session.total_evaluations}
+                      {session.completed_evaluations} /{" "}
+                      {session.total_evaluations}
                     </span>
                   </div>
                 </div>
@@ -8690,6 +9030,7 @@ export function ReportingDashboard() {
 ## Next Steps
 
 ### Phase 1: Setup & Configuration
+
 - [ ] Initialize Vite + React project
 - [ ] Install and configure shadcn/ui (Violet theme)
 - [ ] Install Lucide Icons
@@ -8700,6 +9041,7 @@ export function ReportingDashboard() {
 - [ ] Set up React Router
 
 ### Phase 2: Database Design
+
 - [ ] Define database schema (ERD)
 - [ ] Create migration files
 - [ ] Implement row-level security policies
@@ -8707,6 +9049,7 @@ export function ReportingDashboard() {
 - [ ] Configure storage buckets
 
 ### Phase 3: Core Development
+
 - [ ] Authentication flow (Google OAuth)
 - [ ] User role management
 - [ ] Season management

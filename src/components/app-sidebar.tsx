@@ -16,6 +16,7 @@ import {
   Users,
   UserCog,
   Shirt,
+  Calendar,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -59,7 +60,25 @@ interface NavItem {
   disabled?: boolean;
 }
 
-const adminNavItems: NavItem[] = [
+const setupNavItems: NavItem[] = [
+  {
+    id: "season-management",
+    label: "Seasons",
+    icon: Settings2,
+    to: "/season-management",
+  },
+  {
+    id: "cohort-management",
+    label: "Cohorts",
+    icon: Users,
+    to: "/cohort-management",
+  },
+  {
+    id: "position-types",
+    label: "Positions",
+    icon: Shirt,
+    to: "/position-types",
+  },
   {
     id: "previous-levels",
     label: "Previous Levels",
@@ -67,22 +86,10 @@ const adminNavItems: NavItem[] = [
     to: "/previous-levels",
   },
   {
-    id: "cohort-management",
-    label: "Cohort Management",
-    icon: Users,
-    to: "/cohort-management",
-  },
-  {
     id: "player-administration",
-    label: "Player Administration",
+    label: "Players",
     icon: Contact,
     to: "/player-administration",
-  },
-  {
-    id: "position-types",
-    label: "Position Types",
-    icon: Shirt,
-    to: "/position-types",
   },
   {
     id: "drill-library",
@@ -91,8 +98,14 @@ const adminNavItems: NavItem[] = [
     to: "/drill-library",
   },
   {
+    id: "scheduling",
+    label: "Scheduling",
+    icon: Calendar,
+    to: "/scheduling",
+  },
+  {
     id: "session-drill-configuration",
-    label: "Session Drill Configuration",
+    label: "Sessions",
     icon: Settings2,
     to: "/session-drill-configuration",
   },
@@ -104,9 +117,9 @@ const navigationSections: Array<{
   items: NavItem[];
 }> = [
   {
-    id: "administration",
-    label: "Administration",
-    items: adminNavItems,
+    id: "setup-configuration",
+    label: "Setup & Configuration",
+    items: setupNavItems,
   },
   {
     id: "check-in",
@@ -141,24 +154,6 @@ const navigationSections: Array<{
         label: "Reporting",
         icon: LineChart,
         disabled: true,
-      },
-    ],
-  },
-  {
-    id: "setup-configuration",
-    label: "Setup & Configuration",
-    items: [
-      {
-        id: "season-management",
-        label: "Season Management",
-        icon: Settings2,
-        to: "/season-management",
-      },
-      {
-        id: "cohort-management",
-        label: "Cohort Management",
-        icon: Users,
-        to: "/cohort-management",
       },
     ],
   },
