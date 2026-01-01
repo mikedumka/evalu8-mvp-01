@@ -12,6 +12,7 @@ import {
   UserMinus,
 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -55,7 +56,7 @@ interface ColumnConfig {
   key: ColumnKey;
   label: string;
   align?: "left" | "right" | "center";
-  getDisplayValue: (row: SystemUserRow) => string;
+  getDisplayValue: (row: SystemUserRow) => React.ReactNode;
   getSortValue?: (
     row: SystemUserRow
   ) => string | number | Date | null | undefined;
@@ -101,7 +102,17 @@ const USER_COLUMNS: ColumnConfig[] = [
     key: "roles",
     label: "System Roles",
     getDisplayValue: (row) =>
-      row.system_roles.length ? row.system_roles.join(", ") : "—",
+      row.system_roles.length ? (
+        <div className="flex flex-col gap-1">
+          {row.system_roles.map((role) => (
+            <Badge key={role} variant="secondary" className="w-fit">
+              {role}
+            </Badge>
+          ))}
+        </div>
+      ) : (
+        "—"
+      ),
     getSortValue: (row) => row.system_roles.join(", "),
   },
   {

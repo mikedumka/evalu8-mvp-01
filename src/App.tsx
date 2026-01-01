@@ -9,12 +9,14 @@ import DrillLibraryPage from "@/pages/DrillLibraryPage";
 import LandingPage from "@/pages/LandingPage";
 import PlayerManagementPage from "@/pages/PlayerManagementPage";
 import PreviousLevelsPage from "@/pages/PreviousLevelsPage";
+import LocationsPage from "@/pages/LocationsPage";
 import PositionTypesPage from "@/pages/PositionTypesPage";
 import SeasonManagementPage from "@/pages/SeasonManagementPage";
 import SchedulingPage from "@/pages/SchedulingPage";
 import SessionDrillConfigurationPage from "@/pages/SessionDrillConfigurationPage";
 import SystemAssociationsPage from "@/pages/SystemAssociationsPage";
 import SystemUsersPage from "@/pages/SystemUsersPage";
+import AssociationUsersPage from "@/pages/AssociationUsersPage";
 import DebugPage from "@/pages/DebugPage";
 
 function App() {
@@ -53,6 +55,7 @@ function App() {
             />
             <Route path="/position-types" element={<PositionTypesPage />} />
             <Route path="/previous-levels" element={<PreviousLevelsPage />} />
+            <Route path="/locations" element={<LocationsPage />} />
             <Route path="/drill-library" element={<DrillLibraryPage />} />
             <Route path="/scheduling" element={<SchedulingPage />} />
             <Route
@@ -64,6 +67,7 @@ function App() {
               element={<SystemAssociationsPage />}
             />
             <Route path="/system/users" element={<SystemUsersPage />} />
+            <Route path="/users" element={<AssociationUsersPage />} />
             <Route path="/debug" element={<DebugPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

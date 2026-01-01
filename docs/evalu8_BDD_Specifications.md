@@ -131,6 +131,54 @@ Scenario: Session capacity locked after first session created
   And I cannot modify the session capacity
   And I see a note "Session capacity was set to 20 and is now locked to maintain wave structure integrity"
 
+### Feature: Manage Locations
+
+**User Story:** As an Association Administrator, I want to manage locations (arenas, fields, gyms) so that I can schedule evaluation sessions at specific venues.
+
+**Business Rules:**
+- Locations must have a Name, City, Province/State, Address, Postal Code, and optional Map Link
+- Locations can be added, edited, and deleted
+- A location cannot be deleted if it is currently assigned to any scheduled session (past or future)
+- Location names must be unique within the association
+
+Scenario: Add a new location
+  Given I am logged in as an Association Administrator
+  When I navigate to "Locations" settings
+  And I click "Add Location"
+  And I enter "Main Arena" as the name
+  And I enter "Moose Jaw" as the city
+  And I enter "SK" as the province/state
+  And I enter "123 Main St" as the address
+  And I enter "S6H 1A1" as the postal code
+  And I enter "https://maps.google.com/..." as the map link
+  And I click "Save"
+  Then the location "Main Arena" is created
+  And I see it in the list of locations
+
+Scenario: Edit an existing location
+  Given I am logged in as an Association Administrator
+  And a location "Main Arena" exists
+  When I click "Edit" for "Main Arena"
+  And I change the name to "Main Arena - Rink A"
+  And I click "Save"
+  Then the location is updated to "Main Arena - Rink A"
+
+Scenario: Delete an unused location
+  Given I am logged in as an Association Administrator
+  And a location "Old Gym" exists
+  And "Old Gym" is not assigned to any sessions
+  When I click "Delete" for "Old Gym"
+  And I confirm the deletion
+  Then the location "Old Gym" is removed from the system
+
+Scenario: Prevent deletion of used location
+  Given I am logged in as an Association Administrator
+  And a location "Main Arena" exists
+  And "Main Arena" is assigned to a session "Session 1"
+  When I attempt to delete "Main Arena"
+  Then I see an error message "Cannot delete location because it is used in scheduled sessions"
+  And the location "Main Arena" is not deleted
+
 ### Feature: Manage Associations & Personnel
 **User Story:** As a Platform Administrator, I want to create associations and assign personnel so that organizations can manage their own evaluation programs
 
@@ -1382,7 +1430,7 @@ Scenario: Export player list for cohort
 **Business Rules:**
 
 - CSV must contain columns: Session Name, Date, Time, Location, Cohort
-- **All sessions in a single import must be for the same cohort** (single cohort per import)
+- **Bulk session imports must contain only ONE cohort per session** (mixed cohorts in a single file are allowed)
 - Date must be in valid format (MM/DD/YYYY or YYYY-MM-DD)
 - Time must be in valid format (HH:MM AM/PM or 24-hour format)
 - Cohort must match an active cohort in the system
@@ -1598,7 +1646,7 @@ Scenario: Preview shows excess sessions beyond required waves
   And I see a prompt "Edit your CSV to remove 4 sessions (import 6 or fewer), then re-upload"
   And I see a note "Custom waves must be created separately after standard waves are established"
 
-Scenario: Prevent importing sessions for multiple cohorts
+Scenario: Import sessions for multiple cohorts
   Given I am logged in as an Association Administrator
   And cohorts "U11" and "U13" exist and are active
   When I upload a CSV file containing:
@@ -1606,11 +1654,13 @@ Scenario: Prevent importing sessions for multiple cohorts
     | U11 Session 1 | 11/15/2025 | 6:00 PM | Main Arena | U11 |
     | U11 Session 2 | 11/16/2025 | 6:00 PM | Main Arena | U11 |
     | U13 Session 1 | 11/17/2025 | 7:00 PM | Practice Rink | U13 |
-  Then I see a validation error "All sessions in an import must be for the same cohort. Found sessions for: U11, U13"
-  And I see details "Row 1-2: U11, Row 3: U13"
-  And no sessions are imported
-  And I see a prompt "Please create separate CSV files for each cohort"
-  And the "Preview Import" button is disabled
+  Then I see a preview table showing all 3 sessions
+  And I see a summary "3 sessions ready to import"
+  When I click "Confirm Import"
+  Then all 3 sessions are created successfully
+  And U11 sessions are assigned to cohort "U11"
+  And U13 session is assigned to cohort "U13"
+  And I see a confirmation message "3 sessions imported successfully"
 
 Scenario: Confirm import after reviewing preview
   Given I am logged in as an Association Administrator

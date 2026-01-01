@@ -14,9 +14,10 @@ import {
   LogOut,
   Settings2,
   Users,
-  UserCog,
+  User,
   Shirt,
   Calendar,
+  MapPin,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -86,6 +87,12 @@ const setupNavItems: NavItem[] = [
     to: "/previous-levels",
   },
   {
+    id: "locations",
+    label: "Locations",
+    icon: MapPin,
+    to: "/locations",
+  },
+  {
     id: "player-administration",
     label: "Players",
     icon: Contact,
@@ -108,6 +115,12 @@ const setupNavItems: NavItem[] = [
     label: "Sessions",
     icon: Settings2,
     to: "/session-drill-configuration",
+  },
+  {
+    id: "users",
+    label: "Users",
+    icon: User,
+    to: "/users",
   },
 ];
 
@@ -277,7 +290,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {
             id: "system-users",
             label: "Users",
-            icon: UserCog,
+            icon: User,
             to: "/system/users",
           },
         ],

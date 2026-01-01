@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Login } from "@/components/Login";
-import { SessionDrillConfigurator } from "@/components/sessions/SessionDrillConfigurator";
+import { SessionDrillConfigurationTable } from "@/components/sessions/SessionDrillConfigurationTable";
 import { AdminPage } from "@/components/layout/AdminPage";
 
 export default function SessionDrillConfigurationPage() {
@@ -23,7 +23,7 @@ export default function SessionDrillConfigurationPage() {
       title="Session Drill Configuration"
       description="Assign drills with weights to positions for each evaluation session."
     >
-      <SessionDrillConfigurator />
+      <SessionDrillConfigurationTable />
     </AdminPage>
   );
 }

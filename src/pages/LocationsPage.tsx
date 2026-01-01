@@ -1,9 +1,9 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Login } from "@/components/Login";
+import { LocationsTable } from "@/components/locations/LocationsTable";
 import { AdminPage } from "@/components/layout/AdminPage";
-import { SessionsTable } from "@/components/sessions/SessionsTable";
 
-export default function SchedulingPage() {
+export default function LocationsPage() {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -20,12 +20,10 @@ export default function SchedulingPage() {
 
   return (
     <AdminPage
-      title="Scheduling"
-      description="Manage evaluation sessions and schedules."
+      title="Locations"
+      description="Manage locations for evaluation sessions."
     >
-      <div className="p-6">
-        <SessionsTable />
-      </div>
+      <LocationsTable />
     </AdminPage>
   );
 }

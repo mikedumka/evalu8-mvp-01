@@ -125,6 +125,53 @@ export type Database = {
           }
         ];
       };
+      locations: {
+        Row: {
+          id: string;
+          association_id: string;
+          name: string;
+          city: string;
+          province_state: string;
+          address: string;
+          postal_code: string;
+          google_maps_link: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          association_id: string;
+          name: string;
+          city: string;
+          province_state: string;
+          address: string;
+          postal_code: string;
+          google_maps_link?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          association_id?: string;
+          name?: string;
+          city?: string;
+          province_state?: string;
+          address?: string;
+          postal_code?: string;
+          google_maps_link?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "locations_association_id_fkey";
+            columns: ["association_id"];
+            isOneToOne: false;
+            referencedRelation: "associations";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       audit_logs: {
         Row: {
           action: string;
@@ -875,8 +922,9 @@ export type Database = {
           cohort_id: string | null;
           created_at: string;
           drill_config_locked: boolean;
+          duration_minutes: number;
           id: string;
-          location: string;
+          location_id: string | null;
           name: string;
           scheduled_date: string;
           scheduled_time: string;
@@ -890,8 +938,9 @@ export type Database = {
           cohort_id?: string | null;
           created_at?: string;
           drill_config_locked?: boolean;
+          duration_minutes?: number;
           id?: string;
-          location: string;
+          location_id?: string | null;
           name: string;
           scheduled_date: string;
           scheduled_time: string;
@@ -905,8 +954,9 @@ export type Database = {
           cohort_id?: string | null;
           created_at?: string;
           drill_config_locked?: boolean;
+          duration_minutes?: number;
           id?: string;
-          location?: string;
+          location_id?: string | null;
           name?: string;
           scheduled_date?: string;
           scheduled_time?: string;
