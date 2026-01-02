@@ -345,7 +345,29 @@ CREATE INDEX idx_drills_association ON drills(association_id);
 CREATE INDEX idx_drills_status ON drills(status);
 ```
 
-#### 10. **players**
+#### 10. **locations**
+
+Venues for evaluation sessions.
+
+```sql
+CREATE TABLE locations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  association_id UUID NOT NULL REFERENCES associations(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  address TEXT,
+  city TEXT,
+  province_state TEXT,
+  postal_code TEXT,
+  map_link TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(association_id, name)
+);
+
+CREATE INDEX idx_locations_association ON locations(association_id);
+```
+
+#### 11. **players**
 
 Registered athletes.
 
@@ -378,7 +400,7 @@ CREATE INDEX idx_players_name ON players(association_id, last_name, first_name);
 
 ### Session Tables
 
-#### 11. **waves**
+#### 12. **waves**
 
 Evaluation rounds where each athlete participates once.
 
@@ -404,7 +426,7 @@ CREATE INDEX idx_waves_cohort ON waves(cohort_id);
 CREATE INDEX idx_waves_type_number ON waves(wave_type, wave_number);
 ```
 
-#### 12. **sessions**
+#### 13. **sessions**
 
 Individual evaluation sessions.
 
@@ -418,7 +440,7 @@ CREATE TABLE sessions (
   name TEXT NOT NULL,
   scheduled_date DATE NOT NULL,
   scheduled_time TIME NOT NULL,
-  location TEXT NOT NULL,
+  location_id UUID REFERENCES locations(id) ON DELETE SET NULL,
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'ready', 'in_progress', 'completed')),
   drill_config_locked BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -433,7 +455,7 @@ CREATE INDEX idx_sessions_status ON sessions(status);
 CREATE INDEX idx_sessions_scheduled ON sessions(scheduled_date, scheduled_time);
 ```
 
-#### 13. **session_drills**
+#### 14. **session_drills**
 
 Many-to-many relationship between sessions and drills with weights.
 
@@ -453,7 +475,7 @@ CREATE INDEX idx_session_drills_session ON session_drills(session_id);
 CREATE INDEX idx_session_drills_drill ON session_drills(drill_id);
 ```
 
-#### 14. **session_evaluators**
+#### 15. **session_evaluators**
 
 Evaluators assigned to sessions.
 
@@ -474,7 +496,7 @@ CREATE INDEX idx_session_evaluators_session ON session_evaluators(session_id);
 CREATE INDEX idx_session_evaluators_user ON session_evaluators(user_id);
 ```
 
-#### 15. **session_intake_personnel**
+#### 16. **session_intake_personnel**
 
 Intake personnel assigned to sessions.
 
@@ -492,7 +514,7 @@ CREATE INDEX idx_session_intake_session ON session_intake_personnel(session_id);
 CREATE INDEX idx_session_intake_user ON session_intake_personnel(user_id);
 ```
 
-#### 16. **player_sessions**
+#### 17. **player_sessions**
 
 Players assigned to sessions with team and jersey information.
 
@@ -523,7 +545,7 @@ CREATE INDEX idx_player_sessions_team ON player_sessions(session_id, team_number
 
 ### Evaluation Tables
 
-#### 17. **evaluations**
+#### 18. **evaluations**
 
 Individual drill scores by evaluators.
 
@@ -549,7 +571,7 @@ CREATE INDEX idx_evaluations_drill ON evaluations(drill_id);
 CREATE INDEX idx_evaluations_outlier ON evaluations(is_outlier);
 ```
 
-#### 18. **reconciliation_decisions**
+#### 19. **reconciliation_decisions**
 
 Administrator decisions on incomplete evaluations.
 
@@ -577,7 +599,7 @@ CREATE INDEX idx_reconciliation_drill ON reconciliation_decisions(drill_id);
 
 ### Audit & System Tables
 
-#### 19. **audit_logs**
+#### 20. **audit_logs**
 
 Security and system event tracking.
 
@@ -617,6 +639,7 @@ erDiagram
     associations ||--o{ position_types : "has"
     associations ||--o{ previous_levels : "has"
     associations ||--o{ drills : "has"
+    associations ||--o{ locations : "has"
     associations ||--o{ players : "has"
     associations ||--o{ waves : "has"
     associations ||--o{ sessions : "has"
@@ -642,6 +665,7 @@ erDiagram
 
     %% Wave & Session Management
     waves ||--o{ sessions : "contains"
+    locations ||--o{ sessions : "hosts"
 
     sessions ||--o{ session_drills : "uses"
     sessions ||--o{ session_evaluators : "staffed by"

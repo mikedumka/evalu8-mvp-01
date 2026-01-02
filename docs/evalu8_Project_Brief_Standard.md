@@ -26,12 +26,14 @@ Sports organizations conducting player evaluations face critical challenges:
 ## Objectives
 
 **Primary Goals:**
+
 1. Simplify evaluation with an intuitive real-time scoring interface
 2. Standardize assessment across all sessions, cohorts, and evaluators
 3. Enhance data quality through outlier detection and multi-evaluator scoring
 4. Support data-driven decisions with comprehensive reporting and analytics
 
 **Secondary Goals:**
+
 - Reduce administrative overhead
 - Enable multi-sport compatibility
 - Maintain role-based security and data privacy
@@ -42,6 +44,7 @@ Sports organizations conducting player evaluations face critical challenges:
 ## Key Features
 
 **Core Capabilities:**
+
 - Multi-tenant architecture with complete data isolation
 - Reusable drill library with many-to-many relationship to evaluation sessions
 - Sport-specific position types with active/inactive management
@@ -56,6 +59,7 @@ Sports organizations conducting player evaluations face critical challenges:
 - 7-day invitation expiration with bulk invite capability
 
 **Technical Foundation:**
+
 - Stack: Vite + React + Supabase (PostgreSQL)
 - Google OAuth authentication
 - Email reporting capabilities
@@ -66,12 +70,13 @@ Sports organizations conducting player evaluations face critical challenges:
 ## Scope
 
 **In Scope:**
+
 - Association and user management (multi-role invitation system with Google OAuth)
 - Position type configuration (sport-specific, active/inactive states)
 - Reusable drill library (create, edit, activate/deactivate drills)
 - Season management (unique seasons with locked QA parameters)
 - Cohort and player administration
-- Session scheduling and management
+- Session scheduling and management (including location/venue management)
 - Real-time evaluation scoring with fixed 1-10 scale
 - Quality control (locked season-specific outlier thresholds, minimum evaluator requirements)
 - Comprehensive reporting and analytics
@@ -79,6 +84,7 @@ Sports organizations conducting player evaluations face critical challenges:
 - Historical data retention (10 years, read-only for completed seasons)
 
 **Out of Scope:**
+
 - Mobile native applications (MVP)
 - Player/parent portals
 - SMS/Text notifications
@@ -88,16 +94,19 @@ Sports organizations conducting player evaluations face critical challenges:
 ## Success Metrics
 
 **Technical Performance:**
+
 - 99.5% uptime during evaluation season
 - Support 10-20 concurrent evaluators across 3-5 sessions
 - Page loads under 2 seconds
 
 **User Satisfaction:**
+
 - 95% evaluator satisfaction with interface
 - 90% administrator satisfaction with efficiency
 - 85% overall system satisfaction
 
 **Operational Efficiency:**
+
 - Reduction in administrative time
 - Reduction in scheduling errors
 - Reduction in session setup time
@@ -107,11 +116,13 @@ Sports organizations conducting player evaluations face critical challenges:
 ## Key Stakeholders
 
 **Primary:**
+
 - Sports Association Administrators (system configuration, reporting)
 - Evaluators (real-time player scoring)
 - Intake/Operations Staff (player registration, session coordination)
 
 **Secondary:**
+
 - System Administrators (platform management)
 - Players & Parents (beneficiaries of fair evaluation)
 
@@ -120,6 +131,7 @@ Sports organizations conducting player evaluations face critical challenges:
 ## Risks & Mitigation
 
 **Top Risks:**
+
 1. **User adoption resistance** → Mitigation: Early user involvement, 15-minute training, intuitive design
 2. **Data quality issues** → Mitigation: Outlier detection, multi-evaluator requirements, validation rules
 3. **Performance under load** → Mitigation: Load testing, horizontal scaling, CDN for assets
@@ -130,7 +142,7 @@ Sports organizations conducting player evaluations face critical challenges:
 ## Next Steps
 
 **Development Preparation:**
+
 1. Complete user story mapping (The Big Picture)
 2. Create the Behavior Driven Development Specification (BDD Spec) using Gherkin
 3. Create high-fidelity mockups
-

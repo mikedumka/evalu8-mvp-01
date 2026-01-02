@@ -1,4 +1,5 @@
 # User Story Mapping: Evalu8 Sports Player Evaluation System
+
 ## The Big Picture
 
 **Project:** Evalu8 - Sports Player Evaluation System  
@@ -34,10 +35,13 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 ## Story Map by Journey Stage
 
 ### 1️⃣ SETUP & CONFIGURATION
-*User: Association Administrator, System Administrator*
+
+_User: Association Administrator, System Administrator_
 
 #### 🟦 MVP Release 1 (Must Have)
+
 - **As an** Association Administrator, **I want to** define position types for our sport **so that** players can be evaluated for appropriate positions
+- **As an** Association Administrator, **I want to** manage locations (arenas, fields, gyms) **so that** I can schedule evaluation sessions at specific venues
 - **As an** Association Administrator, **I want to** create evaluation criteria/drills **so that** evaluators score consistent attributes
 - **As an** Association Administrator, **I want to** configure outlier deviation thresholds **so that** quality control matches our standards
 - **As an** Association Administrator, **I want to** set up a new season **so that** we can run annual evaluations
@@ -45,17 +49,21 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 - **As an** Association Administrator, **I want to** require minimum evaluators per player (e.g., 3) **so that** scores are reliable
 
 #### 🟩 MVP Release 2 (Should Have)
+
 - **As an** Association Administrator, **I want to** copy configuration from previous season **so that** I don't recreate criteria annually
 
 #### 🟨 Future Enhancement (Nice to Have)
+
 - **As an** Association Administrator, **I want to** create custom drill categories **so that** evaluations reflect our unique methodology
 
 ---
 
 ### 2️⃣ PLAYER REGISTRATION & COHORT MANAGEMENT
-*User: Association Administrator*
+
+_User: Association Administrator_
 
 #### 🟦 MVP Release 1 (Must Have)
+
 - **As an** Association Administrator, **I want to** bulk import players via CSV with their details (name, birth year, preferred position) **so that** registration is efficient for large groups
 - **As an** Association Administrator, **I want to** manually add individual players with their details **so that** late registrations are accommodated
 - **As an** Association Administrator, **I want to** edit player information **so that** errors can be corrected
@@ -65,15 +73,18 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 - **As an** Association Administrator, **I want to** view player lists by cohort **so that** I can verify registration accuracy
 
 #### 🟩 MVP Release 2 (Should Have)
+
 - **As an** Association Administrator, **I want to** validate jersey number uniqueness per session **so that** evaluators don't confuse players during evaluations
 - **As an** Association Administrator, **I want to** export player lists **so that** I can share rosters with staff
 
 ---
 
 ### 3️⃣ SESSION SCHEDULING & PLAYER DISTRIBUTION
-*User: Association Administrator*
+
+_User: Association Administrator_
 
 #### 🟦 MVP Release 1 (Must Have)
+
 - **As an** Association Administrator, **I want to** bulk import sessions via CSV with their details (date/time/location) **so that** scheduling is efficient for multiple sessions
 - **As an** Association Administrator, **I want to** manually create individual sessions with their details **so that** ad-hoc sessions can be added
 - **As an** Association Administrator, **I want to** assign sessions to specific cohorts **so that** the right players attend
@@ -88,9 +99,11 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 ---
 
 ### 4️⃣ SESSION INTAKE & CHECK-IN
-*User: Intake Personnel*
+
+_User: Intake Personnel_
 
 #### 🟦 MVP Release 1 (Must Have)
+
 - **As** Intake Personnel, **I want to** see my assigned sessions **so that** I know when and where to check in players
 - **As** Intake Personnel, **I want to** view the list of players scheduled for a session **so that** I can prepare for arrivals
 - **As** Intake Personnel, **I want to** check players in as they arrive **so that** attendance is tracked
@@ -99,15 +112,18 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 - **As** Intake Personnel, **I want to** add walk-in players to the session **so that** late registrations can participate
 
 #### 🟩 MVP Release 2 (Should Have)
+
 - **As** Intake Personnel, **I want to** print player roster with jersey numbers **so that** evaluators have a backup copy to perform evaluations by paper (in case their device isn't working or they can't log in)
 - **As** Intake Personnel, **I want to** send check-in confirmations to parents/players **so that** attendance is communicated
 
 ---
 
 ### 5️⃣ REAL-TIME PLAYER EVALUATION
-*User: Evaluator*
+
+_User: Evaluator_
 
 #### 🟦 MVP Release 1 (Must Have)
+
 - **As an** Evaluator, **I want to** log in and see my assigned sessions **so that** I know my schedule
 - **As an** Evaluator, **I want to** start an evaluation session **so that** I can begin scoring
 - **As an** Evaluator, **I want to** see a list of players assigned to me (by jersey number) **so that** I know who to evaluate
@@ -130,27 +146,33 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 ---
 
 ### 6️⃣ QUALITY CONTROL & VALIDATION
-*User: Association Administrator*
+
+_User: Association Administrator_
 
 #### 🟦 MVP Release 1 (Must Have)
+
 - **As an** Association Administrator, **I want to** configure quality validation sessions (non-scoring) **so that** evaluator accuracy can be benchmarked
 - **As an** Association Administrator, **I want to** see outlier detection alerts (25% deviation threshold) **so that** inconsistent scores are flagged
 - **As an** Association Administrator, **I want to** view flagged evaluations **so that** I can investigate scoring inconsistencies
 
 #### 🟩 MVP Release 2 (Should Have)
+
 - **As an** Association Administrator, **I want to** review evaluator consistency reports **so that** I can identify training needs
 - **As an** Association Administrator, **I want to** exclude outlier scores from final rankings **so that** results are accurate
 - **As an** Association Administrator, **I want to** contact evaluators about flagged scores **so that** clarification can be requested
 
 #### 🟨 Future Enhancement (Nice to Have)
+
 - **As an** Association Administrator, **I want to** use machine learning to predict outliers **so that** quality control is proactive
 
 ---
 
 ### 7️⃣ REPORTING & ANALYTICS
-*User: Association Administrator*
+
+_User: Association Administrator_
 
 #### 🟦 MVP Release 1 (Must Have)
+
 - **As an** Association Administrator, **I want to** generate player ranking reports by cohort **so that** team formation is data-driven
 - **As an** Association Administrator, **I want to** see aggregated scores per player across all evaluations **so that** overall performance is clear
 - **As an** Association Administrator, **I want to** export reports to PDF/Excel **so that** they can be shared with coaches
@@ -158,6 +180,7 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 - **As an** Association Administrator, **I want to** see evaluator participation reports **so that** workload is visible
 
 #### 🟩 MVP Release 2 (Should Have)
+
 - **As an** Association Administrator, **I want to** compare player scores across positions **so that** versatility is assessed
 - **As an** Association Administrator, **I want to** view evaluator consistency metrics **so that** scoring reliability is measured
 - **As an** Association Administrator, **I want to** generate trend reports across seasons **so that** player development is tracked
@@ -165,15 +188,18 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 - **As an** Association Administrator, **I want to** email reports directly to stakeholders **so that** distribution is automated
 
 #### 🟨 Future Enhancement (Nice to Have)
+
 - **As an** Association Administrator, **I want to** create custom dashboards **so that** key metrics are visible at a glance
 - **As an** Association Administrator, **I want to** use predictive analytics to forecast team composition **so that** roster decisions are optimized
 
 ---
 
 ### 8️⃣ SYSTEM ADMINISTRATION & MAINTENANCE
-*User: System Administrator*
+
+_User: System Administrator_
 
 #### 🟦 MVP Release 1 (Must Have)
+
 - **As a** System Administrator, **I want to** create new association accounts **so that** organizations can use the platform independently
 - **As a** System Administrator, **I want to** configure sport types (hockey, basketball, etc.) for associations **so that** evaluation criteria match each sport
 - **As a** System Administrator, **I want to** authenticate users via Google OAuth **so that** login is secure and convenient
@@ -186,6 +212,7 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 - **As a** System Administrator, **I want to** audit logs for security events **so that** breaches are detected
 
 #### 🟩 MVP Release 2 (Should Have)
+
 - **As a** System Administrator, **I want to** auto-scale infrastructure based on load **so that** performance is maintained during peak evaluations
 
 #### 🟨 Future Enhancement (Nice to Have)
@@ -195,11 +222,13 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 ## Release Planning Summary
 
 ### 🟦 MVP Release 1 (Must Have) - Core Functionality
+
 **Goal:** End-to-end evaluation workflow from setup through basic reporting
 
 **User Stories:** 57 stories  
 **Timeline:** 12-16 weeks  
 **Success Criteria:**
+
 - Association can configure system and onboard users
 - Players can be registered and assigned to cohorts
 - Sessions can be scheduled with automated player distribution
@@ -208,22 +237,26 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 - System supports 10-20 concurrent evaluators across 3-5 sessions
 
 ### 🟩 MVP Release 2 (Should Have) - Enhanced Usability
+
 **Goal:** Improve efficiency, flexibility, and data quality
 
 **User Stories:** 12 stories  
 **Timeline:** 8-10 weeks (after Release 1)  
 **Success Criteria:**
+
 - Reduced administrative time through automation
 - Enhanced quality control with evaluator consistency tracking
 - Advanced reporting with trends and analytics
 - Improved evaluator experience with progress tracking
 
 ### 🟨 Future Enhancements (Nice to Have) - Innovation
+
 **Goal:** Competitive differentiation and advanced capabilities
 
 **User Stories:** 13 stories  
 **Timeline:** Post-MVP (prioritized by user feedback)  
 **Success Criteria:**
+
 - Mobile native applications
 - Player/parent portals
 - Advanced analytics and ML-based insights
@@ -234,6 +267,7 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 ## Dependencies & Risks
 
 ### Critical Dependencies
+
 1. **Authentication → All Features:** Google OAuth must be implemented first
 2. **Association Setup → Everything:** Can't register players or create sessions without association configuration
 3. **Player Registration → Evaluation:** Can't evaluate until players are in the system
@@ -241,12 +275,14 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 5. **Evaluation Completion → Reporting:** Reports require completed evaluation data
 
 ### Technical Risks
+
 1. **Real-time Performance:** 10-20 concurrent evaluators must not degrade page load times (<2s target)
 2. **Data Integrity:** Multi-tenant isolation must be bulletproof
 3. **Outlier Detection Accuracy:** 25% threshold may need tuning based on real-world data
 4. **Offline Sync:** Evaluator offline mode adds complexity (Release 2)
 
 ### User Adoption Risks
+
 1. **Evaluator Training:** 15-minute training target must be achievable
 2. **Change Resistance:** Intuitive design critical to overcome status quo bias
 3. **Trust in Automation:** Player distribution algorithms must be transparent
@@ -256,22 +292,26 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 ## Measurement & Success Metrics
 
 ### Technical KPIs (Aligned with Project Brief)
+
 - ✅ 99.5% uptime during evaluation season
 - ✅ Support 10-20 concurrent evaluators across 3-5 sessions
 - ✅ Page loads under 2 seconds
 - ✅ Zero data breaches (multi-tenant isolation)
 
 ### User Satisfaction KPIs
+
 - ✅ 95% evaluator satisfaction with interface
 - ✅ 90% administrator satisfaction with efficiency
 - ✅ 85% overall system satisfaction
 
 ### Operational Efficiency KPIs
+
 - ✅ 50%+ reduction in administrative time (scheduling, reporting)
 - ✅ 80%+ reduction in scheduling errors
 - ✅ 60%+ reduction in session setup time
 
 ### Quality KPIs
+
 - ✅ <5% outlier scores flagged per session
 - ✅ 100% of players evaluated by ≥3 evaluators
 - ✅ <10% evaluator consistency variance
@@ -292,6 +332,7 @@ SETUP → REGISTRATION → SCHEDULING → INTAKE → EVALUATION → REPORTING �
 ## Appendix: Story Sizing Estimates (T-Shirt Sizes)
 
 **Release 1 Stories by Size:**
+
 - **XL (8+ days):** Multi-tenant setup, automated player distribution algorithms, real-time evaluation interface
 - **L (5-7 days):** Session scheduling, player registration import, reporting engine
 - **M (3-4 days):** Cohort management, evaluator assignment, outlier detection
