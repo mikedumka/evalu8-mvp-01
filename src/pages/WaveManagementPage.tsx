@@ -31,13 +31,13 @@ import {
   Loader2,
   Plus,
   Wand2,
-  ArrowRight,
   Dumbbell,
   Users,
   ClipboardList,
   Contact,
   Waves,
 } from "lucide-react";
+import { WaveDistributionDialog } from "@/components/waves/WaveDistributionDialog";
 
 type CohortRow = Database["public"]["Tables"]["cohorts"]["Row"];
 type SeasonRow = Database["public"]["Tables"]["seasons"]["Row"];
@@ -60,6 +60,13 @@ export function WaveManagementPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [distributionDialogState, setDistributionDialogState] = useState<{
+    open: boolean;
+    wave: WaveRow | null;
+  }>({
+    open: false,
+    wave: null,
+  });
 
   useEffect(() => {
     if (currentAssociation) {
@@ -405,7 +412,11 @@ export function WaveManagementPage() {
                         </TableCell>
                         <TableCell>{wave.teams_per_session}</TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setDistributionDialogState({ open: true, wave })}
+                          >
                             Manage
                           </Button>
                         </TableCell>
@@ -603,6 +614,18 @@ export function WaveManagementPage() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Distribution Dialog */}
+      {distributionDialogState.wave && (
+        <WaveDistributionDialog
+            open={distributionDialogState.open}
+            onOpenChange={(open) => setDistributionDialogState(prev => ({ ...prev, open }))}
+            wave={distributionDialogState.wave}
+            onSuccess={() => {
+                fetchCohortData();
+            }}
+        />
       )}
     </div>
   );

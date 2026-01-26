@@ -189,7 +189,9 @@ export function StaffConfiguration({ session }: StaffConfigurationProps) {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-9 w-9">
                       <AvatarFallback>
-                        {getInitials(staff.user?.full_name || staff.user?.email || null)}
+                        {getInitials(
+                          staff.user?.full_name || staff.user?.email || null
+                        )}
                       </AvatarFallback>
                     </Avatar>
                     <div>
@@ -254,7 +256,9 @@ export function StaffConfiguration({ session }: StaffConfigurationProps) {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-9 w-9">
                       <AvatarFallback>
-                        {getInitials(staff.user?.full_name || staff.user?.email || null)}
+                        {getInitials(
+                          staff.user?.full_name || staff.user?.email || null
+                        )}
                       </AvatarFallback>
                     </Avatar>
                     <div>

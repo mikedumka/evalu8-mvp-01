@@ -46,9 +46,10 @@ import { SessionBulkImportDialog } from "./SessionBulkImportDialog";
 type SessionRow = Database["public"]["Tables"]["sessions"]["Row"] & {
   cohort: { name: string } | null;
   location: { name: string } | null;
+  wave?: { wave_number: number | null; custom_wave_name: string | null } | null;
 };
 
-type ColumnKey = "name" | "cohort" | "status" | "date" | "location";
+type ColumnKey = "name" | "cohort" | "wave" | "status" | "date" | "location";
 
 interface ColumnConfig {
   key: ColumnKey;
@@ -70,6 +71,13 @@ const SESSION_COLUMNS: ColumnConfig[] = [
     label: "Cohort",
     getDisplayValue: (row) => row.cohort?.name || "-",
     getSortValue: (row) => row.cohort?.name || "",
+  },
+  {
+    key: "wave",
+    label: "Wave",
+    getDisplayValue: (row) =>
+      row.wave?.wave_number ? `Wave ${row.wave.wave_number}` : "-",
+    getSortValue: (row) => row.wave?.wave_number || 0,
   },
   {
     key: "status",
@@ -256,7 +264,8 @@ export function SessionsTable() {
           `
           *,
           cohort:cohorts(name),
-          location:locations(name)
+          location:locations(name),
+          wave:waves(wave_number, custom_wave_name)
         `
         )
         .eq("association_id", currentAssociation.association_id)

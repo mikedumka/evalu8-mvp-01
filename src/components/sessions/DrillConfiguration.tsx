@@ -324,7 +324,10 @@ export function DrillConfiguration({ session }: DrillConfigurationProps) {
 
       if (error) throw error;
 
-      setFeedback({ type: "success", message: "Configuration cloned to wave." });
+      setFeedback({
+        type: "success",
+        message: "Configuration cloned to wave.",
+      });
     } catch (err) {
       setFeedback({ type: "error", message: (err as Error).message });
     } finally {
@@ -352,9 +355,186 @@ export function DrillConfiguration({ session }: DrillConfigurationProps) {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3 flex-1 min-h-0">
-        {/* Left Column: List */}
-        <div className="rounded-xl border border-border bg-card p-5 h-full overflow-y-auto">
+      <div className="flex flex-col gap-6 flex-1 min-h-0">
+        <div className="grid gap-6 lg:grid-cols-3 shrink-0">
+          {/* Form */}
+          <div className="lg:col-span-2 h-full max-h-[500px] overflow-y-auto">
+            <form
+              className="rounded-xl border border-border bg-muted/40 p-5"
+              onSubmit={handleSubmit}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold uppercase text-muted-foreground">
+                  {editingSessionDrillId
+                    ? "Edit Assignment"
+                    : "Add Drill to Session"}
+                </h3>
+                {editingSessionDrillId && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetForm}
+                    disabled={loadingRequest}
+                  >
+                    Cancel Edit
+                  </Button>
+                )}
+              </div>
+
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label>Drill</Label>
+                  <Select
+                    value={formState.drillId}
+                    onValueChange={(val) =>
+                      setFormState((prev) => ({ ...prev, drillId: val }))
+                    }
+                    disabled={
+                      isLocked ||
+                      loadingRequest ||
+                      Boolean(editingSessionDrillId)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          editingSessionDrillId
+                            ? "Drill cannot be changed"
+                            : "Select drill"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableDrills.map((drill) => (
+                        <SelectItem key={drill.id} value={drill.id}>
+                          {drill.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Weight (%)</Label>
+                  <Input
+                    type="number"
+                    value={formState.weight}
+                    onChange={(e) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        weight: e.target.value,
+                      }))
+                    }
+                    min={1}
+                    max={100}
+                    placeholder="e.g. 40"
+                    disabled={isLocked || loadingRequest}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Positions</Label>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {positions.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        No active positions found.
+                      </p>
+                    ) : (
+                      positions.map((position) => {
+                        const summary = positionSummaries[position.id] ?? {
+                          weight: 0,
+                          count: 0,
+                        };
+                        const isChecked = formState.positionIds.includes(
+                          position.id
+                        );
+                        const isComplete = summary.weight === 100;
+
+                        return (
+                          <div
+                            key={position.id}
+                            className={`flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition ${
+                              isChecked
+                                ? "border-primary bg-primary/10"
+                                : isComplete
+                                ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800"
+                                : "border-border bg-card"
+                            }`}
+                          >
+                            <span className="font-medium">{position.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-xs ${
+                                  isComplete
+                                    ? "text-emerald-600 font-bold"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {summary.weight}% ({summary.count}/4)
+                              </span>
+                              <Checkbox
+                                checked={isChecked}
+                                onCheckedChange={() =>
+                                  handlePositionToggle(position.id)
+                                }
+                                disabled={isLocked || loadingRequest}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 flex justify-end">
+                <Button type="submit" disabled={isLocked || loadingRequest}>
+                  {loadingRequest && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {editingSessionDrillId ? "Save Changes" : "Add Drill"}
+                </Button>
+              </div>
+            </form>
+          </div>
+
+          {/* Business Rules */}
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 h-fit dark:bg-blue-900/20 dark:border-blue-800 overflow-y-auto">
+            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase dark:text-blue-100">
+              <Info className="size-4" />
+              Business Rules
+            </h3>
+            <div className="space-y-4 text-sm dark:text-blue-200/80">
+              <div className="space-y-1">
+                <p className="font-medium dark:text-blue-100">Drill Limits</p>
+                <p>Maximum of 4 drills per position per session.</p>
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium dark:text-blue-100">Weighting</p>
+                <p>Total weight for each position must equal exactly 100%.</p>
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium dark:text-blue-100">Locking</p>
+                <p>
+                  Configuration is locked automatically after the first evaluation
+                  score is entered.
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium dark:text-blue-100">Cloning</p>
+                <p>
+                  Once all positions are configured to 100%, you can clone this
+                  configuration to all other sessions in the same wave.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Assignments List - Repositioned to Bottom */}
+        <div className="rounded-xl border border-border bg-card p-5 flex-1 min-h-0 overflow-y-auto">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold uppercase text-muted-foreground">
               Current Assignments
@@ -373,7 +553,7 @@ export function DrillConfiguration({ session }: DrillConfigurationProps) {
               </Button>
             )}
           </div>
-          
+
           {loadingSessionDrills ? (
             <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -384,7 +564,7 @@ export function DrillConfiguration({ session }: DrillConfigurationProps) {
               No drills assigned.
             </div>
           ) : (
-            <ul className="grid gap-3">
+            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {sessionDrills.map((assignment) => (
                 <li
                   key={assignment.id}
@@ -433,173 +613,6 @@ export function DrillConfiguration({ session }: DrillConfigurationProps) {
               ))}
             </ul>
           )}
-        </div>
-
-        {/* Middle Column: Form */}
-        <div className="h-full overflow-y-auto">
-          <form
-            className="rounded-xl border border-border bg-muted/40 p-5"
-            onSubmit={handleSubmit}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold uppercase text-muted-foreground">
-                {editingSessionDrillId
-                  ? "Edit Assignment"
-                  : "Add Drill to Session"}
-              </h3>
-              {editingSessionDrillId && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={resetForm}
-                  disabled={loadingRequest}
-                >
-                  Cancel Edit
-                </Button>
-              )}
-            </div>
-
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label>Drill</Label>
-                <Select
-                  value={formState.drillId}
-                  onValueChange={(val) =>
-                    setFormState((prev) => ({ ...prev, drillId: val }))
-                  }
-                  disabled={
-                    isLocked || loadingRequest || Boolean(editingSessionDrillId)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        editingSessionDrillId
-                          ? "Drill cannot be changed"
-                          : "Select drill"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableDrills.map((drill) => (
-                      <SelectItem key={drill.id} value={drill.id}>
-                        {drill.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Weight (%)</Label>
-                <Input
-                  type="number"
-                  value={formState.weight}
-                  onChange={(e) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      weight: e.target.value,
-                    }))
-                  }
-                  min={1}
-                  max={100}
-                  placeholder="e.g. 40"
-                  disabled={isLocked || loadingRequest}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Positions</Label>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {positions.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">
-                      No active positions found.
-                    </p>
-                  ) : (
-                    positions.map((position) => {
-                      const summary = positionSummaries[position.id] ?? {
-                        weight: 0,
-                        count: 0,
-                      };
-                      const isChecked = formState.positionIds.includes(
-                        position.id
-                      );
-                      const isComplete = summary.weight === 100;
-                      
-                      return (
-                        <div
-                          key={position.id}
-                          className={`flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition ${
-                            isChecked
-                              ? "border-primary bg-primary/10"
-                              : isComplete 
-                                ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800"
-                                : "border-border bg-card"
-                          }`}
-                        >
-                          <span className="font-medium">{position.name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs ${isComplete ? "text-emerald-600 font-bold" : "text-muted-foreground"}`}>
-                              {summary.weight}% ({summary.count}/4)
-                            </span>
-                            <Checkbox
-                              checked={isChecked}
-                              onCheckedChange={() =>
-                                handlePositionToggle(position.id)
-                              }
-                              disabled={isLocked || loadingRequest}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 flex justify-end">
-              <Button type="submit" disabled={isLocked || loadingRequest}>
-                {loadingRequest && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                {editingSessionDrillId ? "Save Changes" : "Add Drill"}
-              </Button>
-            </div>
-          </form>
-        </div>
-
-        {/* Right Column: Business Rules */}
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 h-fit dark:bg-blue-900/20 dark:border-blue-800 overflow-y-auto">
-          <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase dark:text-blue-100">
-            <Info className="size-4" />
-            Business Rules
-          </h3>
-          <div className="space-y-4 text-sm dark:text-blue-200/80">
-            <div className="space-y-1">
-              <p className="font-medium dark:text-blue-100">Drill Limits</p>
-              <p>Maximum of 4 drills per position per session.</p>
-            </div>
-            <div className="space-y-1">
-              <p className="font-medium dark:text-blue-100">Weighting</p>
-              <p>Total weight for each position must equal exactly 100%.</p>
-            </div>
-            <div className="space-y-1">
-              <p className="font-medium dark:text-blue-100">Locking</p>
-              <p>
-                Configuration is locked automatically after the first evaluation
-                score is entered.
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="font-medium dark:text-blue-100">Cloning</p>
-              <p>
-                Once all positions are configured to 100%, you can clone this
-                configuration to all other sessions in the same wave.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
