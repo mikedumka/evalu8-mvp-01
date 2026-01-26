@@ -670,6 +670,7 @@ export function SessionDrillConfigurationTable({}: SessionDrillConfigurationTabl
             open={activeAction === "clone"}
             onOpenChange={(open) => !open && setActiveAction(null)}
             session={selectedSession}
+            onSuccess={() => void fetchSessions()}
           />
           <SessionStatusDialog
             open={activeAction === "status"}

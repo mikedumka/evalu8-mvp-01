@@ -17,6 +17,7 @@ import SessionDrillConfigurationPage from "@/pages/SessionDrillConfigurationPage
 import SystemAssociationsPage from "@/pages/SystemAssociationsPage";
 import SystemUsersPage from "@/pages/SystemUsersPage";
 import AssociationUsersPage from "@/pages/AssociationUsersPage";
+import { WaveManagementPage } from "@/pages/WaveManagementPage";
 import DebugPage from "@/pages/DebugPage";
 
 function App() {
@@ -58,6 +59,7 @@ function App() {
             <Route path="/locations" element={<LocationsPage />} />
             <Route path="/drill-library" element={<DrillLibraryPage />} />
             <Route path="/scheduling" element={<SchedulingPage />} />
+            <Route path="/waves" element={<WaveManagementPage />} />
             <Route
               path="/session-drill-configuration"
               element={<SessionDrillConfigurationPage />}

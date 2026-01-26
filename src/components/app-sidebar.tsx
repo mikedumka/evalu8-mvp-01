@@ -18,6 +18,7 @@ import {
   Shirt,
   Calendar,
   MapPin,
+  Waves,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -109,6 +110,12 @@ const setupNavItems: NavItem[] = [
     label: "Scheduling",
     icon: Calendar,
     to: "/scheduling",
+  },
+  {
+    id: "waves",
+    label: "Waves",
+    icon: Waves,
+    to: "/waves",
   },
   {
     id: "session-drill-configuration",
