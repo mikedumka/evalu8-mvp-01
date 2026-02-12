@@ -298,6 +298,32 @@ Scenario: Prevent creating cohort without name
   And I leave the name blank
   And I click "Save"
   Then I see an error message "Cohort name is required."
+
+### Feature: Reorder Cohorts
+
+**User Story:** As an Association Administrator, I want to define a custom display order for cohorts so that they appear in a logical sequence (e.g., by age: U9, U11, U13) throughout the application.
+
+**Business Rules:**
+- Users can drag and drop cohorts to reorder them in the Cohort Management list
+- The defined custom order is saved immediately
+- All dropdowns and lists displaying cohorts throughout the application must respect this custom order
+- New cohorts are added to the end of the list by default
+
+```gherkin
+Scenario: Reorder cohorts via drag and drop
+  Given I am logged in as an Association Administrator
+  And I have cohorts "U11", "U9", "U13" displayed in that order
+  When I drag "U9" to the top of the list
+  Then the order updates to "U9", "U11", "U13"
+  And this order is saved for the association
+  And when I navigate to "Add Player", the cohort dropdown displays "U9", "U11", "U13"
+
+Scenario: New cohort added to end
+  Given I have ordered cohorts "U9", "U11"
+  When I create a new cohort "U13"
+  Then "U13" appears at the bottom of the list
+  And the order is "U9", "U11", "U13"
+```
   And the cohort is not created
 
 Scenario: Edit cohort details

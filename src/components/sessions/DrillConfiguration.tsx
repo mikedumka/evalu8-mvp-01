@@ -518,8 +518,8 @@ export function DrillConfiguration({ session }: DrillConfigurationProps) {
               <div className="space-y-1">
                 <p className="font-medium dark:text-blue-100">Locking</p>
                 <p>
-                  Configuration is locked automatically after the first evaluation
-                  score is entered.
+                  Configuration is locked automatically after the first
+                  evaluation score is entered.
                 </p>
               </div>
               <div className="space-y-1">

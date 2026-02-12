@@ -95,6 +95,7 @@ export function SessionDialog({
         .select("*")
         .eq("association_id", currentAssociation.association_id)
         .eq("status", "active")
+        .order("sort_order", { ascending: true })
         .order("name");
 
       setCohorts(cohortData || []);

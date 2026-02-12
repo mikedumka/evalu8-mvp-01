@@ -33,11 +33,12 @@ export function ConfigureSessionDialog({
       <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-6">
         <DialogHeader>
           <DialogTitle>
-            Configure Session: {new Date(session.scheduled_date).toLocaleDateString()} @ {session.location?.name}
+            Configure Session:{" "}
+            {new Date(session.scheduled_date).toLocaleDateString()} @{" "}
+            {session.location?.name}
           </DialogTitle>
           <DialogDescription>
-            {session.cohort?.name} •{" "}
-            {session.scheduled_time}
+            {session.cohort?.name} • {session.scheduled_time}
           </DialogDescription>
         </DialogHeader>
 

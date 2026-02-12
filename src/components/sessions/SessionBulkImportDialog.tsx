@@ -95,7 +95,9 @@ export function SessionBulkImportDialog({
         .from("cohorts")
         .select("*")
         .eq("association_id", currentAssociation.association_id)
-        .eq("status", "active");
+        .eq("status", "active")
+        .order("sort_order", { ascending: true })
+        .order("name");
       setCohorts(cohortData || []);
     } catch (err) {
       console.error("Error fetching reference data:", err);

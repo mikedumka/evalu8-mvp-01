@@ -90,6 +90,7 @@ export function WaveManagementPage() {
       .select("*")
       .eq("association_id", currentAssociation.association_id)
       .eq("status", "active")
+      .order("sort_order", { ascending: true })
       .order("name");
 
     if (cohortsError) console.error("Error fetching cohorts:", cohortsError);
@@ -412,10 +413,12 @@ export function WaveManagementPage() {
                         </TableCell>
                         <TableCell>{wave.teams_per_session}</TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="sm"
-                            onClick={() => setDistributionDialogState({ open: true, wave })}
+                            onClick={() =>
+                              setDistributionDialogState({ open: true, wave })
+                            }
                           >
                             Manage
                           </Button>
@@ -619,12 +622,14 @@ export function WaveManagementPage() {
       {/* Distribution Dialog */}
       {distributionDialogState.wave && (
         <WaveDistributionDialog
-            open={distributionDialogState.open}
-            onOpenChange={(open) => setDistributionDialogState(prev => ({ ...prev, open }))}
-            wave={distributionDialogState.wave}
-            onSuccess={() => {
-                fetchCohortData();
-            }}
+          open={distributionDialogState.open}
+          onOpenChange={(open) =>
+            setDistributionDialogState((prev) => ({ ...prev, open }))
+          }
+          wave={distributionDialogState.wave}
+          onSuccess={() => {
+            fetchCohortData();
+          }}
         />
       )}
     </div>

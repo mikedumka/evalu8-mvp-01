@@ -134,7 +134,9 @@ export function BulkImportDialog({
         .from("cohorts")
         .select("*")
         .eq("association_id", currentAssociation.association_id)
-        .eq("status", "active");
+        .eq("status", "active")
+        .order("sort_order", { ascending: true })
+        .order("name");
       setCohorts(cohortData || []);
 
       // 4. Get Previous Levels

@@ -3,12 +3,30 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  GripVertical,
   PencilRuler,
   Plus,
   RefreshCw,
   SlidersHorizontal,
   Trash2,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -176,6 +194,52 @@ function sortRows(
   });
 }
 
+interface SortableRowProps {
+  id: string;
+  children: React.ReactNode;
+  showHandle?: boolean;
+}
+
+function SortableRow({ id, children, showHandle = true }: SortableRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : "auto",
+    position: isDragging ? ("relative" as const) : undefined,
+  };
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={cn(isDragging && "bg-muted/50 shadow-sm", "border-b transition-colors hover:bg-muted/50")}
+    >
+      {showHandle && (
+        <td className="w-[40px] px-2 py-4">
+          <button
+            type="button"
+            className="cursor-grab touch-none p-1 text-muted-foreground hover:text-foreground active:cursor-grabbing"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="size-4" />
+          </button>
+        </td>
+      )}
+      {children}
+    </tr>
+  );
+}
+
 export function CohortsTable() {
   const { currentAssociation, hasRole } = useAuth();
   const [cohorts, setCohorts] = useState<CohortWithCounts[]>([]);
@@ -192,10 +256,17 @@ export function CohortsTable() {
     "createdAt",
   ]);
   const [sortState, setSortState] = useState<SortState>({
-    columnKey: "name",
+    columnKey: "" as ColumnKey, // Empty implies Custom Order
     direction: "asc",
   });
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Dialog States
   const [createDialogState, setCreateDialogState] = useState<{
@@ -253,7 +324,9 @@ export function CohortsTable() {
       const { data: cohortsData, error: cohortsError } = await supabase
         .from("cohorts")
         .select("*")
-        .eq("association_id", currentAssociation.association_id);
+        .eq("association_id", currentAssociation.association_id)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
 
       if (cohortsError) throw cohortsError;
 
@@ -317,10 +390,47 @@ export function CohortsTable() {
   }, [cohorts, searchTerm]);
 
   const sortedCohorts = useMemo(() => {
+    if (!sortState.columnKey) return filteredCohorts; // Custom Order
     const column = COHORT_COLUMNS.find((c) => c.key === sortState.columnKey);
     if (!column) return filteredCohorts;
     return sortRows(filteredCohorts, column, sortState.direction);
   }, [filteredCohorts, sortState]);
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setCohorts((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        const newItems = arrayMove(items, oldIndex, newIndex);
+
+        // Update database in background
+        const updates = newItems.map((item, index) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { playerCount, ...cohortData } = item;
+          return {
+            ...cohortData,
+            sort_order: index + 1,
+            updated_at: new Date().toISOString(),
+          };
+        });
+
+        supabase
+          .from("cohorts")
+          // @ts-expect-error partial update
+          .upsert(updates)
+          .then(({ error }) => {
+            if (error) {
+              console.error("Failed to update sort order", error);
+              // Ideally revert state on error, but for now we log
+            }
+          });
+
+        return newItems;
+      });
+    }
+  };
 
   // Selection Logic
   const visibleIds = useMemo(
@@ -371,6 +481,16 @@ export function CohortsTable() {
     }));
 
     try {
+      // Get max sort order
+      const { data: maxOrderData } = await supabase
+        .from("cohorts")
+        .select("sort_order")
+        .eq("association_id", currentAssociation.association_id)
+        .order("sort_order", { ascending: false })
+        .limit(1);
+
+      const nextOrder = (maxOrderData?.[0]?.sort_order || 0) + 1;
+
       const { error } = await supabase.from("cohorts").insert({
         association_id: currentAssociation.association_id,
         name,
@@ -379,6 +499,7 @@ export function CohortsTable() {
         session_capacity: sessionCapacity,
         minimum_sessions_per_athlete: minSessions,
         sessions_per_cohort: sessionsPerCohort,
+        sort_order: nextOrder,
       });
 
       if (error) {
@@ -584,9 +705,15 @@ export function CohortsTable() {
           </div>
         ) : (
           <div className="overflow-x-auto">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
             <table className="w-full min-w-[600px] border-collapse">
               <thead className="bg-muted text-left text-xs font-semibold uppercase tracking-wide text-foreground">
                 <tr>
+                  {!sortState.columnKey && <th className="w-[40px] px-2" />}
                   <th className="w-12 px-4 py-3">
                     <input
                       ref={selectCheckboxRef}
@@ -618,12 +745,21 @@ export function CohortsTable() {
                   <th className="w-24 px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border text-sm">
-                {sortedCohorts.map((cohort) => (
-                  <tr key={cohort.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
+                <tbody className="divide-y divide-border text-sm">
+                  <SortableContext
+                    items={sortedCohorts}
+                    strategy={verticalListSortingStrategy}
+                    disabled={!!sortState.columnKey}
+                  >
+                    {sortedCohorts.map((cohort) => (
+                      <SortableRow
+                        key={cohort.id}
+                        id={cohort.id}
+                        showHandle={!sortState.columnKey}
+                      >
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
                         className="size-4 rounded border-border text-primary focus:ring-primary"
                         checked={selectedIds.includes(cohort.id)}
                         onChange={() => handleSelectRow(cohort.id)}
@@ -674,10 +810,12 @@ export function CohortsTable() {
                         </Button>
                       </div>
                     </td>
-                  </tr>
+                  </SortableRow>
                 ))}
-              </tbody>
-            </table>
+                  </SortableContext>
+                </tbody>
+              </table>
+            </DndContext>
           </div>
         )}
       </div>

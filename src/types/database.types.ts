@@ -192,6 +192,7 @@ export type Database = {
           name: string
           session_capacity: number
           sessions_per_cohort: number
+          sort_order: number | null
           status: string
           updated_at: string
         }
