@@ -143,7 +143,7 @@ export function WaveManagementPage() {
     const { data: sessionsData, error: sessionsError } = await supabase
       .from("sessions")
       .select(
-        "*, session_drills(count), session_evaluators(count), session_intake_personnel(count), player_sessions(count)"
+        "*, session_drills(count), session_evaluators(count), session_intake_personnel(count), player_sessions(count)",
       )
       .eq("cohort_id", selectedCohortId)
       .eq("season_id", activeSeason.id)
@@ -238,8 +238,8 @@ export function WaveManagementPage() {
           supabase
             .from("sessions")
             .update({ wave_id: update.wave_id })
-            .eq("id", update.id)
-        )
+            .eq("id", update.id),
+        ),
       );
       fetchCohortData();
     }
@@ -477,7 +477,7 @@ export function WaveManagementPage() {
                       const proposedWaveNumber =
                         Math.floor(index / sessionsPerWave) + 1;
                       const currentWave = waves.find(
-                        (w) => w.id === session.wave_id
+                        (w) => w.id === session.wave_id,
                       );
 
                       const drillCount =
@@ -498,7 +498,7 @@ export function WaveManagementPage() {
                             <div className="flex flex-col text-xs">
                               <span>
                                 {new Date(
-                                  session.scheduled_date
+                                  session.scheduled_date,
                                 ).toLocaleDateString()}
                               </span>
                               <span className="text-muted-foreground">
@@ -512,15 +512,15 @@ export function WaveManagementPage() {
                                 session.status === "completed"
                                   ? "default"
                                   : session.status === "in_progress"
-                                  ? "secondary"
-                                  : "outline"
+                                    ? "secondary"
+                                    : "outline"
                               }
                               className={cn(
                                 "capitalize",
                                 session.status === "completed" &&
                                   "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400",
                                 session.status === "in_progress" &&
-                                  "bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400"
+                                  "bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400",
                               )}
                             >
                               {session.status.replace("_", " ")}
@@ -547,7 +547,7 @@ export function WaveManagementPage() {
                                   "flex items-center gap-1 text-xs",
                                   currentWave
                                     ? "text-emerald-600"
-                                    : "text-muted-foreground"
+                                    : "text-muted-foreground",
                                 )}
                                 title={
                                   currentWave
@@ -563,7 +563,7 @@ export function WaveManagementPage() {
                                   "flex items-center gap-1 text-xs",
                                   drillCount > 0
                                     ? "text-emerald-600"
-                                    : "text-muted-foreground"
+                                    : "text-muted-foreground",
                                 )}
                                 title={`${drillCount} Drills Assigned`}
                               >
@@ -575,7 +575,7 @@ export function WaveManagementPage() {
                                   "flex items-center gap-1 text-xs",
                                   evaluatorCount > 0
                                     ? "text-emerald-600"
-                                    : "text-muted-foreground"
+                                    : "text-muted-foreground",
                                 )}
                                 title={`${evaluatorCount} Evaluators Assigned`}
                               >
@@ -587,7 +587,7 @@ export function WaveManagementPage() {
                                   "flex items-center gap-1 text-xs",
                                   intakeCount > 0
                                     ? "text-emerald-600"
-                                    : "text-muted-foreground"
+                                    : "text-muted-foreground",
                                 )}
                                 title={`${intakeCount} Intake Staff Assigned`}
                               >
@@ -599,7 +599,7 @@ export function WaveManagementPage() {
                                   "flex items-center gap-1 text-xs",
                                   playerCount > 0
                                     ? "text-emerald-600"
-                                    : "text-muted-foreground"
+                                    : "text-muted-foreground",
                                 )}
                                 title={`${playerCount} Players Assigned`}
                               >

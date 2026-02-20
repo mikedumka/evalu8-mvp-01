@@ -100,7 +100,7 @@ const COHORT_COLUMNS: ColumnConfig[] = [
           "capitalize",
           row.status === "active"
             ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400"
-            : "bg-slate-100 text-slate-800 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400"
+            : "bg-slate-100 text-slate-800 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400",
         )}
       >
         {row.status}
@@ -169,7 +169,7 @@ interface SortState {
 function sortRows(
   rows: CohortWithCounts[],
   column: ColumnConfig,
-  direction: SortDirection
+  direction: SortDirection,
 ): CohortWithCounts[] {
   const modifier = direction === "asc" ? 1 : -1;
 
@@ -221,7 +221,10 @@ function SortableRow({ id, children, showHandle = true }: SortableRowProps) {
     <tr
       ref={setNodeRef}
       style={style}
-      className={cn(isDragging && "bg-muted/50 shadow-sm", "border-b transition-colors hover:bg-muted/50")}
+      className={cn(
+        isDragging && "bg-muted/50 shadow-sm",
+        "border-b transition-colors hover:bg-muted/50",
+      )}
     >
       {showHandle && (
         <td className="w-[40px] px-2 py-4">
@@ -265,7 +268,7 @@ export function CohortsTable() {
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   // Dialog States
@@ -351,12 +354,15 @@ export function CohortsTable() {
           .in("cohort_id", cohortIds);
 
         if (playerData) {
-          counts = (playerData as PlayerRow[]).reduce((acc, p) => {
-            if (p.cohort_id) {
-              acc[p.cohort_id] = (acc[p.cohort_id] || 0) + 1;
-            }
-            return acc;
-          }, {} as Record<string, number>);
+          counts = (playerData as PlayerRow[]).reduce(
+            (acc, p) => {
+              if (p.cohort_id) {
+                acc[p.cohort_id] = (acc[p.cohort_id] || 0) + 1;
+              }
+              return acc;
+            },
+            {} as Record<string, number>,
+          );
         }
       }
 
@@ -385,7 +391,7 @@ export function CohortsTable() {
     return cohorts.filter(
       (c) =>
         c.name.toLowerCase().includes(term) ||
-        (c.description && c.description.toLowerCase().includes(term))
+        (c.description && c.description.toLowerCase().includes(term)),
     );
   }, [cohorts, searchTerm]);
 
@@ -435,7 +441,7 @@ export function CohortsTable() {
   // Selection Logic
   const visibleIds = useMemo(
     () => sortedCohorts.map((c) => c.id),
-    [sortedCohorts]
+    [sortedCohorts],
   );
   const allSelected =
     visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
@@ -459,7 +465,7 @@ export function CohortsTable() {
 
   const handleSelectRow = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
@@ -470,7 +476,7 @@ export function CohortsTable() {
     status: "active" | "inactive",
     sessionCapacity: number,
     minSessions: number,
-    sessionsPerCohort: number
+    sessionsPerCohort: number,
   ) => {
     if (!currentAssociation) return;
 
@@ -534,7 +540,7 @@ export function CohortsTable() {
     status: "active" | "inactive",
     sessionCapacity: number,
     minSessions: number,
-    sessionsPerCohort: number
+    sessionsPerCohort: number,
   ) => {
     if (!editDialogState.cohort) return;
 
@@ -593,7 +599,7 @@ export function CohortsTable() {
 
   const visibleColumnConfigs = useMemo(
     () => COHORT_COLUMNS.filter((c) => visibleColumns.includes(c.key)),
-    [visibleColumns]
+    [visibleColumns],
   );
 
   const handleSortToggle = (key: ColumnKey) => {
@@ -624,7 +630,7 @@ export function CohortsTable() {
             "rounded-md border px-4 py-3 text-sm",
             feedback.type === "success"
               ? "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-600/60 dark:bg-emerald-950/50 dark:text-emerald-100"
-              : "border-destructive/60 bg-destructive/10 text-destructive"
+              : "border-destructive/60 bg-destructive/10 text-destructive",
           )}
         >
           {feedback.message}
@@ -677,7 +683,7 @@ export function CohortsTable() {
                       setVisibleColumns([...visibleColumns, col.key]);
                     else
                       setVisibleColumns(
-                        visibleColumns.filter((c) => c !== col.key)
+                        visibleColumns.filter((c) => c !== col.key),
                       );
                   }}
                 >
@@ -710,41 +716,41 @@ export function CohortsTable() {
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
-            <table className="w-full min-w-[600px] border-collapse">
-              <thead className="bg-muted text-left text-xs font-semibold uppercase tracking-wide text-foreground">
-                <tr>
-                  {!sortState.columnKey && <th className="w-[40px] px-2" />}
-                  <th className="w-12 px-4 py-3">
-                    <input
-                      ref={selectCheckboxRef}
-                      type="checkbox"
-                      className="size-4 rounded border-border text-primary focus:ring-primary"
-                      checked={allSelected}
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                    />
-                  </th>
-                  {visibleColumnConfigs.map((col) => (
-                    <th key={col.key} className="px-4 py-3">
-                      <button
-                        className="flex items-center gap-1 hover:text-foreground"
-                        onClick={() => handleSortToggle(col.key)}
-                      >
-                        {col.label}
-                        {sortState.columnKey === col.key ? (
-                          sortState.direction === "asc" ? (
-                            <ArrowUp className="size-3.5" />
-                          ) : (
-                            <ArrowDown className="size-3.5" />
-                          )
-                        ) : (
-                          <ArrowUpDown className="size-3.5 opacity-50" />
-                        )}
-                      </button>
+              <table className="w-full min-w-[600px] border-collapse">
+                <thead className="bg-muted text-left text-xs font-semibold uppercase tracking-wide text-foreground">
+                  <tr>
+                    {!sortState.columnKey && <th className="w-[40px] px-2" />}
+                    <th className="w-12 px-4 py-3">
+                      <input
+                        ref={selectCheckboxRef}
+                        type="checkbox"
+                        className="size-4 rounded border-border text-primary focus:ring-primary"
+                        checked={allSelected}
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                      />
                     </th>
-                  ))}
-                  <th className="w-24 px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
+                    {visibleColumnConfigs.map((col) => (
+                      <th key={col.key} className="px-4 py-3">
+                        <button
+                          className="flex items-center gap-1 hover:text-foreground"
+                          onClick={() => handleSortToggle(col.key)}
+                        >
+                          {col.label}
+                          {sortState.columnKey === col.key ? (
+                            sortState.direction === "asc" ? (
+                              <ArrowUp className="size-3.5" />
+                            ) : (
+                              <ArrowDown className="size-3.5" />
+                            )
+                          ) : (
+                            <ArrowUpDown className="size-3.5 opacity-50" />
+                          )}
+                        </button>
+                      </th>
+                    ))}
+                    <th className="w-24 px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
                 <tbody className="divide-y divide-border text-sm">
                   <SortableContext
                     items={sortedCohorts}
@@ -760,58 +766,58 @@ export function CohortsTable() {
                         <td className="px-4 py-3">
                           <input
                             type="checkbox"
-                        className="size-4 rounded border-border text-primary focus:ring-primary"
-                        checked={selectedIds.includes(cohort.id)}
-                        onChange={() => handleSelectRow(cohort.id)}
-                      />
-                    </td>
-                    {visibleColumnConfigs.map((col) => (
-                      <td
-                        key={col.key}
-                        className={cn(
-                          "px-4 py-3",
-                          col.align === "center" && "text-center",
-                          col.align === "right" && "text-right"
-                        )}
-                      >
-                        {col.getDisplayValue(cohort)}
-                      </td>
+                            className="size-4 rounded border-border text-primary focus:ring-primary"
+                            checked={selectedIds.includes(cohort.id)}
+                            onChange={() => handleSelectRow(cohort.id)}
+                          />
+                        </td>
+                        {visibleColumnConfigs.map((col) => (
+                          <td
+                            key={col.key}
+                            className={cn(
+                              "px-4 py-3",
+                              col.align === "center" && "text-center",
+                              col.align === "right" && "text-right",
+                            )}
+                          >
+                            {col.getDisplayValue(cohort)}
+                          </td>
+                        ))}
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() =>
+                                setEditDialogState({
+                                  open: true,
+                                  cohort,
+                                  submitting: false,
+                                  error: null,
+                                })
+                              }
+                            >
+                              <PencilRuler className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() =>
+                                setDeleteDialogState({
+                                  open: true,
+                                  cohort,
+                                  submitting: false,
+                                })
+                              }
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </SortableRow>
                     ))}
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() =>
-                            setEditDialogState({
-                              open: true,
-                              cohort,
-                              submitting: false,
-                              error: null,
-                            })
-                          }
-                        >
-                          <PencilRuler className="size-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() =>
-                            setDeleteDialogState({
-                              open: true,
-                              cohort,
-                              submitting: false,
-                            })
-                          }
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </SortableRow>
-                ))}
                   </SortableContext>
                 </tbody>
               </table>

@@ -65,10 +65,10 @@ export function PlayerDialog({
   const [positionId, setPositionId] = useState("");
   const [cohortId, setCohortId] = useState<string | "null">("null");
   const [previousLevelId, setPreviousLevelId] = useState<string | "null">(
-    "null"
+    "null",
   );
   const [status, setStatus] = useState<"active" | "withdrawn" | "other">(
-    "active"
+    "active",
   );
   const [statusReason, setStatusReason] = useState("");
   const [notes, setNotes] = useState("");
@@ -99,7 +99,7 @@ export function PlayerDialog({
       // Fetch cohorts
       console.log(
         "Fetching cohorts for association:",
-        currentAssociation.association_id
+        currentAssociation.association_id,
       );
       const { data: cohortData, error: cohortError } = await supabase
         .from("cohorts")
@@ -242,7 +242,7 @@ export function PlayerDialog({
     } catch (err) {
       console.error("Failed to save player:", err);
       setError(
-        err instanceof Error ? err.message : "An unknown error occurred."
+        err instanceof Error ? err.message : "An unknown error occurred.",
       );
     } finally {
       setSubmitting(false);

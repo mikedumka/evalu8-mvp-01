@@ -85,6 +85,7 @@ _User: Association Administrator_
 
 #### 🟦 MVP Release 1 (Must Have)
 
+- **As an** Association Administrator, **I want to** view a consolidated dashboard of waves and session schedules **so that** I can manage the entire evaluation process from one screen
 - **As an** Association Administrator, **I want to** bulk import sessions via CSV with their details (date/time/location) **so that** scheduling is efficient for multiple sessions
 - **As an** Association Administrator, **I want to** manually create individual sessions with their details **so that** ad-hoc sessions can be added
 - **As an** Association Administrator, **I want to** assign sessions to specific cohorts **so that** the right players attend

@@ -19,6 +19,7 @@ import {
   Calendar,
   MapPin,
   Waves,
+  LayoutDashboard,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -116,6 +117,12 @@ const setupNavItems: NavItem[] = [
     label: "Waves",
     icon: Waves,
     to: "/waves",
+  },
+  {
+    id: "scheduling-dashboard",
+    label: "Scheduling Dashboard",
+    icon: LayoutDashboard,
+    to: "/scheduling-dashboard",
   },
   {
     id: "session-drill-configuration",
@@ -276,7 +283,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   };
 
-  const showSystemSection = hasAnyRole(["System Administrator"]);
+  const showSystemSection = associations.some(assoc => 
+    assoc.roles.includes("System Administrator")
+  );
 
   const sections = useMemo(() => {
     if (!showSystemSection) {

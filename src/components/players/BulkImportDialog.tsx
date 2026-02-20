@@ -93,7 +93,7 @@ export function BulkImportDialog({
   // Validation Results
   const [results, setResults] = useState<ValidationResult[]>([]);
   const [selectedDuplicates, setSelectedDuplicates] = useState<Set<number>>(
-    new Set()
+    new Set(),
   );
 
   // Reset state when dialog opens/closes
@@ -202,6 +202,24 @@ export function BulkImportDialog({
     Papa.parse<CSVRow>(file, {
       header: true,
       skipEmptyLines: true,
+      transformHeader: (header) => {
+        // Normalize headers to Title Case to match CSVRow interface
+        const map: Record<string, string> = {
+          "first name": "First Name",
+          "last name": "Last Name",
+          birthdate: "Birthdate",
+          dob: "Birthdate", // Handle alias
+          gender: "Gender",
+          position: "Position",
+          cohort: "Cohort",
+          "previous level": "Previous Level",
+          phone: "Phone",
+          "email 1": "Email 1",
+          email: "Email 1", // Handle alias
+          "email 2": "Email 2",
+        };
+        return map[header.toLowerCase().trim()] || header.trim();
+      },
       complete: (results) => {
         validateRows(results.data);
         setParsing(false);
@@ -250,10 +268,14 @@ export function BulkImportDialog({
               .padStart(2, "0")}`;
             birthYear = year;
           } else {
-            errors.push("Invalid Birthdate (use m/d/yyyy)");
+            errors.push(
+              `Invalid Birthdate '${row["Birthdate"]}'. Please use m/d/yyyy format (e.g. 5/15/2010).`,
+            );
           }
         } else {
-          errors.push("Invalid Birthdate format (use m/d/yyyy)");
+          errors.push(
+            `Invalid Birthdate '${row["Birthdate"]}'. Please use m/d/yyyy format (e.g. 5/15/2010).`,
+          );
         }
       }
 
@@ -261,24 +283,30 @@ export function BulkImportDialog({
       let positionId = "";
       if (row["Position"]) {
         const pos = positions.find(
-          (p) => p.name.toLowerCase() === row["Position"].trim().toLowerCase()
+          (p) => p.name.toLowerCase() === row["Position"].trim().toLowerCase(),
         );
         if (pos) {
           positionId = pos.id;
         } else {
-          errors.push(`Position '${row["Position"]}' not found`);
+          const availablePositions = positions.map((p) => p.name).join(", ");
+          errors.push(
+            `Position '${row["Position"]}' not found. Available positions: ${availablePositions}`,
+          );
         }
       }
 
       let cohortId: string | null = null;
       if (row["Cohort"]?.trim()) {
         const cohort = cohorts.find(
-          (c) => c.name.toLowerCase() === row["Cohort"]?.trim().toLowerCase()
+          (c) => c.name.toLowerCase() === row["Cohort"]?.trim().toLowerCase(),
         );
         if (cohort) {
           cohortId = cohort.id;
         } else {
-          errors.push(`Cohort '${row["Cohort"]}' not found`);
+          const availableCohorts = cohorts.map((c) => c.name).join(", ");
+          errors.push(
+            `Cohort '${row["Cohort"]}' not found. Available cohorts: ${availableCohorts}`,
+          );
         }
       }
 
@@ -287,12 +315,15 @@ export function BulkImportDialog({
         const prevLevel = previousLevels.find(
           (pl) =>
             pl.name.toLowerCase() ===
-            row["Previous Level"]?.trim().toLowerCase()
+            row["Previous Level"]?.trim().toLowerCase(),
         );
         if (prevLevel) {
           previousLevelId = prevLevel.id;
         } else {
-          errors.push(`Previous Level '${row["Previous Level"]}' not found`);
+          const availableLevels = previousLevels.map((l) => l.name).join(", ");
+          errors.push(
+            `Previous Level '${row["Previous Level"]}' not found. Available levels: ${availableLevels}`,
+          );
         }
       }
 
@@ -304,7 +335,7 @@ export function BulkImportDialog({
               row["First Name"].trim().toLowerCase() &&
             p.last_name.toLowerCase() ===
               row["Last Name"].trim().toLowerCase() &&
-            (p.birth_date === birthDateStr || p.birth_year === birthYear) // Check both for backward compatibility
+            (p.birth_date === birthDateStr || p.birth_year === birthYear), // Check both for backward compatibility
         );
         if (duplicate) {
           isDuplicate = true;
@@ -315,11 +346,17 @@ export function BulkImportDialog({
       // 5. Gender Normalization (Optional)
       let gender: string | null = null;
       if (row["Gender"]?.trim()) {
-        const g = row["Gender"].trim();
-        // Simple normalization, can be expanded
-        if (["Male", "M", "Boy"].includes(g)) gender = "Male";
-        else if (["Female", "F", "Girl"].includes(g)) gender = "Female";
-        else gender = "Other";
+        const g = row["Gender"].trim().toLowerCase();
+        // Simple normalization
+        if (["male", "m", "boy"].includes(g)) gender = "Male";
+        else if (["female", "f", "girl"].includes(g)) gender = "Female";
+        else {
+          gender = "Other";
+          // Warning for unrecognized gender
+          warnings.push(
+            `Gender '${row["Gender"]}' normalized to 'Other'. Accepted values: Male, Female, M, F.`,
+          );
+        }
       }
 
       return {
@@ -562,14 +599,14 @@ export function BulkImportDialog({
                                   selectedDuplicates.size === duplicateCount
                                 }
                                 onCheckedChange={(
-                                  checked: boolean | "indeterminate"
+                                  checked: boolean | "indeterminate",
                                 ) => {
                                   if (checked === true) {
                                     const allDupIndices = results
                                       .filter((r) => r.isDuplicate)
                                       .map((r) => r.rowIndex);
                                     setSelectedDuplicates(
-                                      new Set(allDupIndices)
+                                      new Set(allDupIndices),
                                     );
                                   } else {
                                     setSelectedDuplicates(new Set());
@@ -595,10 +632,10 @@ export function BulkImportDialog({
                                   <Checkbox
                                     checked={selectedDuplicates.has(r.rowIndex)}
                                     onCheckedChange={(
-                                      checked: boolean | "indeterminate"
+                                      checked: boolean | "indeterminate",
                                     ) => {
                                       const newSet = new Set(
-                                        selectedDuplicates
+                                        selectedDuplicates,
                                       );
                                       if (checked === true)
                                         newSet.add(r.rowIndex);

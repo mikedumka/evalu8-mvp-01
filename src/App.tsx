@@ -18,6 +18,7 @@ import SystemAssociationsPage from "@/pages/SystemAssociationsPage";
 import SystemUsersPage from "@/pages/SystemUsersPage";
 import AssociationUsersPage from "@/pages/AssociationUsersPage";
 import { WaveManagementPage } from "@/pages/WaveManagementPage";
+import { SchedulingDashboardPage } from "@/pages/SchedulingDashboardPage";
 import DebugPage from "@/pages/DebugPage";
 
 function App() {
@@ -60,6 +61,7 @@ function App() {
             <Route path="/drill-library" element={<DrillLibraryPage />} />
             <Route path="/scheduling" element={<SchedulingPage />} />
             <Route path="/waves" element={<WaveManagementPage />} />
+            <Route path="/scheduling-dashboard" element={<SchedulingDashboardPage />} />
             <Route
               path="/session-drill-configuration"
               element={<SessionDrillConfigurationPage />}

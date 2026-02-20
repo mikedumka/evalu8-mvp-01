@@ -58,7 +58,7 @@ export function SessionDialog({
   const [locations, setLocations] = useState<LocationRow[]>([]);
   const [activeSeason, setActiveSeason] = useState<SeasonRow | null>(null);
   const [availableEvaluators, setAvailableEvaluators] = useState<UserOption[]>(
-    []
+    [],
   );
   const [availableIntake, setAvailableIntake] = useState<UserOption[]>([]);
   const [loadingRefs, setLoadingRefs] = useState(true);
@@ -71,7 +71,7 @@ export function SessionDialog({
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [cohortId, setCohortId] = useState<string | "null">("null");
   const [assignedEvaluatorIds, setAssignedEvaluatorIds] = useState<string[]>(
-    []
+    [],
   );
   const [assignedIntakeIds, setAssignedIntakeIds] = useState<string[]>([]);
 
@@ -121,7 +121,7 @@ export function SessionDialog({
             full_name,
             email
           )
-        `
+        `,
         )
         .eq("association_id", currentAssociation.association_id)
         .eq("status", "active");
@@ -313,13 +313,13 @@ export function SessionDialog({
       onSuccess(
         session
           ? "Session updated successfully."
-          : "Session created successfully."
+          : "Session created successfully.",
       );
       onOpenChange(false);
     } catch (err) {
       console.error("Failed to save session:", err);
       setError(
-        err instanceof Error ? err.message : "An unknown error occurred."
+        err instanceof Error ? err.message : "An unknown error occurred.",
       );
     } finally {
       setSubmitting(false);
@@ -330,7 +330,7 @@ export function SessionDialog({
     setAssignedEvaluatorIds((prev) =>
       prev.includes(userId)
         ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
+        : [...prev, userId],
     );
   };
 
@@ -338,7 +338,7 @@ export function SessionDialog({
     setAssignedIntakeIds((prev) =>
       prev.includes(userId)
         ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
+        : [...prev, userId],
     );
   };
 

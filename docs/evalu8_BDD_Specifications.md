@@ -767,12 +767,15 @@ Scenario: Bulk invite multiple evaluators
 
 **Business Rules:**
 
-- CSV must contain columns in this exact order: First Name, Last Name, Birthdate, Gender, Position, Cohort, Previous Level, Phone, Email 1, Email 2
+- CSV must contain columns mapping to: First Name, Last Name, Birthdate, Gender, Position, Cohort, Previous Level, Phone, Email 1, Email 2
+- **Column headers are case-insensitive** (e.g., "first name", "FIRST NAME", "First Name" are all valid)
+- **Supported aliases:** "DOB" can be used for "Birthdate", "Email" can be used for "Email 1"
 - Birthdate must be in valid format (m/d/yyyy)
 - Birth Year is automatically calculated from Birthdate
-- Position must match an active position type in the system
-- Cohort (if provided) must match an active cohort in the system
-- Previous Level (if provided) must match an active previous level in the system
+- **Position matching is case-insensitive** (e.g., "forward" matches "Forward")
+- **Cohort matching is case-insensitive** (e.g., "u11" matches "U11")
+- **Previous Level matching is case-insensitive** (e.g., "a1" matches "A1")
+- **Gender matching is case-insensitive** and supports variations (M/F, Male/Female, Boy/Girl)
 - Players without a cohort value remain unassigned and can be assigned later
 - Duplicate players (same first name, last name, and birthdate) are flagged for review
 - Import validates all rows before processing
@@ -1448,6 +1451,43 @@ Scenario: Export player list for cohort
 ---
 
 ## 3️⃣ SESSION SCHEDULING & CONFIGURATION
+
+### Feature: Scheduling Dashboard
+
+**User Story:** As an Association Administrator, I want a centralized dashboard to manage both waves and scheduling for a cohort so that I can see all relevant information in one place
+
+**Business Rules:**
+
+- **Cohort Selection:** Dashboard requires a cohort selection to display data
+- **Wave Statistics:** Displays key metrics (Active Athletes, Required Waves, Session Capacity, Sessions/Wave)
+- **Wave Management:** Displays list of waves with status and configuration options
+- **Session Schedule:** Displays list of all sessions for the selected cohort
+- **Empty State:** If no sessions exist, displays "No Sessions Scheduled" message with "Import Schedule" action
+- **Session List Formatting:**
+    - Columns: Session Name, Date & Location, Status, Wave, Configuration
+    - Status "Draft" or "Not Started" is highlighted in yellow
+    - Wave tags are styled black with white text
+    - Configuration column includes icons with counts for: Drills, Evaluators, Intake Personnel, Assigned Players
+- **System Navigation:** "System" menu section is visible to users with "System Administrator" role in ANY associated organization
+
+Scenario: View Scheduling Dashboard with no sessions
+  Given I am logged in as an Association Administrator
+  And I navigate to "Scheduling Dashboard"
+  And I select cohort "U11"
+  And cohort "U11" has 0 sessions
+  Then I see the wave statistics cards
+  And I see the wave management list
+  And I see a message "No Sessions Scheduled"
+  And I see a button "Import Schedule"
+
+Scenario: View Scheduling Dashboard with existing sessions
+  Given I am logged in as an Association Administrator
+  And I navigate to "Scheduling Dashboard"
+  And I select cohort "U11"
+  And cohort "U11" has 5 sessions
+  Then I see the session schedule table
+  And the table displays columns: Session Name, Date & Location, Status, Wave, Configuration
+  And the configuration column shows icon counts for drills, evaluators, and players
 
 ### Feature: Create Sessions in Bulk
 

@@ -151,6 +151,25 @@ Scenario: [Scenario name]
 - State validation (e.g., only active items can be assigned)
 - Permission checks (role-based access)
 
+### 9. Self-Verification Protocol
+
+Before announcing a task as complete, you must perform and report on the following self-checks:
+
+1. **Terminology Scan**
+   - Search for banned terms: "year", "age group", "division", "role" (position context), "inactive" (player context), "prior level", "check-in staff", "judge/scorer".
+   - Confirm use of mandatory terms: Season, Cohort, Position, Withdrawn, Previous Level, Intake Personnel, Evaluator.
+
+2. **BDD Alignment**
+   - Verify that the code implementation matches the Gherkin `Given-When-Then` steps exactly.
+   - Confirm that all criteria in the BDD specification file are covered by the implementation.
+
+3. **Static Analysis**
+   - Run `npm run lint` and verify no errors.
+   - Run `npm run type-check` and verify no errors.
+
+4. **Reporting**
+   - **Mandatory:** Explicitly state in your final response: "I have verified the code against the BDD assignments, checked for prohibited terminology, and confirmed that linting and type-checking pass."
+
 ## File Structure
 
 ```

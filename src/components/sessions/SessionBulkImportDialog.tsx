@@ -234,7 +234,7 @@ export function SessionBulkImportDialog({
       let cohortId = "";
       if (row["Cohort"]?.trim()) {
         const cohort = cohorts.find(
-          (c) => c.name.toLowerCase() === row["Cohort"]?.trim().toLowerCase()
+          (c) => c.name.toLowerCase() === row["Cohort"]?.trim().toLowerCase(),
         );
         if (cohort) {
           cohortId = cohort.id;
