@@ -44,7 +44,14 @@ export function StaffConfiguration({ session }: StaffConfigurationProps) {
       // 1. Fetch all active association users (staff)
       const { data: staffData, error: staffError } = await supabase
         .from("association_users")
-        .select("user_id, roles, user:users(email, full_name)")
+        .select(`
+          user_id,
+          roles,
+          user:users!association_users_user_id_fkey(
+            email,
+            full_name
+          )
+        `)
         .eq("association_id", currentAssociation.association_id)
         .eq("status", "active")
         .order("created_at");
@@ -67,7 +74,14 @@ export function StaffConfiguration({ session }: StaffConfigurationProps) {
 
       if (intakeError) throw intakeError;
 
-      setStaffList((staffData as unknown as StaffUser[]) || []);
+      // Manually map to StaffUser format since TypeScript/Supabase types might not be 100% aligned with the result
+      const formattedStaff: StaffUser[] = (staffData || []).map((entry: any) => ({
+        user_id: entry.user_id,
+        roles: entry.roles,
+        user: entry.user
+      }));
+
+      setStaffList(formattedStaff);
       setEvaluatorIds(new Set(evaluatorsData?.map((e) => e.user_id)));
       setIntakeIds(new Set(intakeData?.map((i) => i.user_id)));
     } catch (error) {

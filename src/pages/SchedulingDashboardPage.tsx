@@ -54,6 +54,8 @@ import { SessionBulkImportDialog } from "@/components/sessions/SessionBulkImport
 import { WaveDistributionDialog } from "@/components/waves/WaveDistributionDialog";
 import { SessionSummaryDialog } from "@/components/sessions/SessionSummaryDialog";
 import { DrillConfigurationDialog } from "@/components/sessions/DrillConfigurationDialog";
+import { SessionEvaluatorManagementDialog } from "@/components/sessions/SessionEvaluatorManagementDialog";
+import { SessionIntakePersonnelManagementDialog } from "@/components/sessions/SessionIntakePersonnelManagementDialog";
 import { SessionPlayerManagementDialog } from "@/components/sessions/SessionPlayerManagementDialog";
 
 type CohortRow = Database["public"]["Tables"]["cohorts"]["Row"];
@@ -116,6 +118,20 @@ export function SchedulingDashboardPage() {
     session: null,
   });
   const [drillDialogState, setDrillDialogState] = useState<{
+    open: boolean;
+    session: SessionRowWithCounts | null;
+  }>({
+    open: false,
+    session: null,
+  });
+  const [evaluatorDialogState, setEvaluatorDialogState] = useState<{
+    open: boolean;
+    session: SessionRowWithCounts | null;
+  }>({
+    open: false,
+    session: null,
+  });
+  const [intakeDialogState, setIntakeDialogState] = useState<{
     open: boolean;
     session: SessionRowWithCounts | null;
   }>({
@@ -842,10 +858,10 @@ export function SchedulingDashboardPage() {
                                       variant="ghost"
                                       size="sm"
                                       className={cn(
-                                        "h-8 gap-1 px-2",
+                                        "h-8 gap-1 px-2 border",
                                         isDrillConfigured
-                                          ? "text-green-600 hover:text-green-700"
-                                          : "text-muted-foreground",
+                                          ? "bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border-green-200"
+                                          : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border-slate-200",
                                       )}
                                       onClick={() =>
                                         setDrillDialogState({
@@ -880,11 +896,23 @@ export function SchedulingDashboardPage() {
                                       variant="ghost"
                                       size="sm"
                                       className={cn(
-                                        "h-8 gap-1 px-2",
+                                        "h-8 gap-1 px-2 border",
                                         evaluatorCount > 0
-                                          ? "text-blue-600 hover:text-blue-700"
-                                          : "text-muted-foreground",
+                                          ? "bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border-green-200"
+                                          : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border-slate-200",
                                       )}
+                                      onClick={() =>
+                                        setEvaluatorDialogState({
+                                          open: true,
+                                          session: {
+                                            ...session,
+                                            location: session.location || null,
+                                            cohort: selectedCohort
+                                              ? { name: selectedCohort.name }
+                                              : null,
+                                          },
+                                        })
+                                      }
                                     >
                                       <IdCardLanyard className="h-4 w-4" />
                                       <span className="text-xs">
@@ -904,11 +932,23 @@ export function SchedulingDashboardPage() {
                                       variant="ghost"
                                       size="sm"
                                       className={cn(
-                                        "h-8 gap-1 px-2",
+                                        "h-8 gap-1 px-2 border",
                                         intakeCount > 0
-                                          ? "text-blue-600 hover:text-blue-700"
-                                          : "text-muted-foreground",
+                                          ? "bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border-green-200"
+                                          : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border-slate-200",
                                       )}
+                                      onClick={() =>
+                                        setIntakeDialogState({
+                                          open: true,
+                                          session: {
+                                            ...session,
+                                            location: session.location || null,
+                                            cohort: selectedCohort
+                                              ? { name: selectedCohort.name }
+                                              : null,
+                                          },
+                                        })
+                                      }
                                     >
                                       <ClipboardCheck className="h-4 w-4" />
                                       <span className="text-xs">
@@ -928,10 +968,10 @@ export function SchedulingDashboardPage() {
                                       variant="ghost"
                                       size="sm"
                                       className={cn(
-                                        "h-8 gap-1 px-2",
+                                        "h-8 gap-1 px-2 border",
                                         playerCount > 0
-                                          ? "text-blue-600 hover:text-blue-700"
-                                          : "text-muted-foreground",
+                                          ? "bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border-green-200"
+                                          : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border-slate-200",
                                       )}
                                       onClick={() =>
                                         setPlayerDialogState({
@@ -965,7 +1005,7 @@ export function SchedulingDashboardPage() {
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className="h-8 w-8 p-0"
+                                      className="h-8 w-8 p-0 border bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-500 hover:text-slate-700"
                                       onClick={() =>
                                         setSummaryDialogState({
                                           open: true,
@@ -1034,6 +1074,29 @@ export function SchedulingDashboardPage() {
                 setDrillDialogState((prev) => ({ ...prev, open }))
               }
               session={drillDialogState.session}
+            />
+          )}
+
+          {evaluatorDialogState.session && (
+            <SessionEvaluatorManagementDialog
+              open={evaluatorDialogState.open}
+              onOpenChange={(open) =>
+                setEvaluatorDialogState((prev) => ({ ...prev, open }))
+              }
+              session={evaluatorDialogState.session}
+              minEvaluators={activeSeason?.minimum_evaluators_per_athlete || 0}
+              onUpdate={fetchCohortData}
+            />
+          )}
+
+          {intakeDialogState.session && (
+            <SessionIntakePersonnelManagementDialog
+              open={intakeDialogState.open}
+              onOpenChange={(open) =>
+                setIntakeDialogState((prev) => ({ ...prev, open }))
+              }
+              session={intakeDialogState.session}
+              onUpdate={fetchCohortData}
             />
           )}
 
