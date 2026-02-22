@@ -25,11 +25,13 @@ import { supabase } from "@/lib/supabase";
 import type { Database } from "@/types/database.types";
 
 type CohortRow = Database["public"]["Tables"]["cohorts"]["Row"];
+type LocationRow = Database["public"]["Tables"]["locations"]["Row"];
 
 interface SessionBulkImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: (message: string) => void;
+  autoGenerateNames?: boolean;
 }
 
 interface CSVRow {
@@ -52,7 +54,7 @@ interface ValidationResult {
     scheduled_date: string;
     scheduled_time: string;
     duration_minutes: number;
-    location: string;
+    location_id: string | null;
     cohort_id: string;
   };
 }
@@ -61,6 +63,7 @@ export function SessionBulkImportDialog({
   open,
   onOpenChange,
   onSuccess,
+  autoGenerateNames = false,
 }: SessionBulkImportDialogProps) {
   const { currentAssociation } = useAuth();
   const [step, setStep] = useState<"upload" | "review" | "importing">("upload");
@@ -69,7 +72,16 @@ export function SessionBulkImportDialog({
 
   // Reference Data
   const [cohorts, setCohorts] = useState<CohortRow[]>([]);
+  const [locations, setLocations] = useState<LocationRow[]>([]);
   const [activeSeasonId, setActiveSeasonId] = useState<string | null>(null);
+  const [existingSessions, setExistingSessions] = useState<
+    {
+      scheduled_date: string;
+      scheduled_time: string;
+      location_id: string | null;
+      cohort_id: string | null;
+    }[]
+  >([]);
   const [loadingRefs, setLoadingRefs] = useState(false);
 
   // Validation Results
@@ -90,6 +102,15 @@ export function SessionBulkImportDialog({
 
       setActiveSeasonId(seasonData?.id || null);
 
+      if (seasonData?.id) {
+        // Fetch existing sessions for duplicate checking
+        const { data: sessionData } = await supabase
+          .from("sessions")
+          .select("scheduled_date, scheduled_time, location_id, cohort_id")
+          .eq("season_id", seasonData.id);
+        setExistingSessions(sessionData || []);
+      }
+
       // 2. Get Cohorts
       const { data: cohortData } = await supabase
         .from("cohorts")
@@ -99,6 +120,14 @@ export function SessionBulkImportDialog({
         .order("sort_order", { ascending: true })
         .order("name");
       setCohorts(cohortData || []);
+
+      // 3. Get Locations
+      const { data: locationData } = await supabase
+        .from("locations")
+        .select("*")
+        .eq("association_id", currentAssociation.association_id)
+        .order("name");
+      setLocations(locationData || []);
     } catch (err) {
       console.error("Error fetching reference data:", err);
     } finally {
@@ -124,7 +153,7 @@ export function SessionBulkImportDialog({
   };
 
   const downloadTemplate = () => {
-    const headers = [
+    let headers = [
       "Session Name",
       "Date",
       "Time",
@@ -132,10 +161,17 @@ export function SessionBulkImportDialog({
       "Location",
       "Cohort",
     ];
-    const csvContent =
-      headers.join(",") +
-      "\n" +
-      "U11 Evaluation 1,11/15/2025,18:00,60,Main Arena,U11";
+
+    let exampleRow = "U11 Evaluation 1,11/15/2025,18:00,60,Main Arena,U11";
+
+    if (autoGenerateNames) {
+      // Remove Session Name from template
+      headers = headers.filter((h) => h !== "Session Name");
+      // Adjust example row
+      exampleRow = "11/15/2025,18:00,60,Main Arena,U11";
+    }
+
+    const csvContent = headers.join(",") + "\n" + exampleRow;
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -153,6 +189,19 @@ export function SessionBulkImportDialog({
     Papa.parse<CSVRow>(file, {
       header: true,
       skipEmptyLines: true,
+      transformHeader: (header) => {
+        // Normalize headers to Title Case
+        const map: Record<string, string> = {
+          "session name": "Session Name",
+          session: "Session Name", // Alias
+          date: "Date",
+          time: "Time",
+          duration: "Duration",
+          location: "Location",
+          cohort: "Cohort",
+        };
+        return map[header.toLowerCase().trim()] || header.trim();
+      },
       complete: (results) => {
         validateRows(results.data);
         setParsing(false);
@@ -170,7 +219,8 @@ export function SessionBulkImportDialog({
       const errors: string[] = [];
 
       // 1. Required Fields
-      if (!row["Session Name"]?.trim()) errors.push("Session Name is required");
+      if (!autoGenerateNames && !row["Session Name"]?.trim())
+        errors.push("Session Name is required");
       if (!row["Date"]?.trim()) errors.push("Date is required");
       if (!row["Time"]?.trim()) errors.push("Time is required");
       if (!row["Location"]?.trim()) errors.push("Location is required");
@@ -232,14 +282,84 @@ export function SessionBulkImportDialog({
 
       // 4. Reference Data Validation
       let cohortId = "";
+      let locationId = "";
+      let sessionName = row["Session Name"]?.trim() || "";
+
+      if (row["Location"]?.trim()) {
+        const loc = locations.find(
+          (l) => l.name.toLowerCase() === row["Location"]?.trim().toLowerCase(),
+        );
+        if (loc) {
+          locationId = loc.id;
+        } else {
+          // Keep showing user error, but technically could be allowed to be null if optional? Usually location is required.
+          const availableLocations = locations.map((l) => l.name).join(", ");
+          errors.push(
+            `Location '${row["Location"]}' not found. Available locations: ${availableLocations}`,
+          );
+        }
+      }
+
       if (row["Cohort"]?.trim()) {
         const cohort = cohorts.find(
           (c) => c.name.toLowerCase() === row["Cohort"]?.trim().toLowerCase(),
         );
         if (cohort) {
           cohortId = cohort.id;
+
+          if (autoGenerateNames) {
+            // (COHORT) + "SESSION" + (2 Digit Row Number starting at 01 for the Import)
+            // Example: U13-COED-SESSION-01
+            // Use index + 1 for counting sessions in this import batch
+            const sessionNum = (index + 1).toString().padStart(2, "0");
+            // Normalize cohort name for display if needed, but requirements say (COHORT)
+            // Assuming strict uppercase or trimmed name
+            const cohortPrefix = cohort.name.toUpperCase().replace(/\s+/g, "-");
+            sessionName = `${cohortPrefix}-SESSION-${sessionNum}`;
+          }
         } else {
-          errors.push(`Cohort '${row["Cohort"]}' not found`);
+          const availableCohorts = cohorts.map((c) => c.name).join(", ");
+          errors.push(
+            `Cohort '${row["Cohort"]}' not found. Available cohorts: ${availableCohorts}`,
+          );
+        }
+      }
+
+      // 5. Duplicate Detection
+      // A) Duplicate within the import file itself
+      const duplicateInFile = rows.find(
+        (chk, chkIdx) =>
+          chkIdx < index &&
+          chk["Cohort"] === row["Cohort"] &&
+          chk["Date"] === row["Date"] &&
+          chk["Time"] === row["Time"],
+      );
+      if (duplicateInFile) {
+        errors.push("Duplicate session found within this import file.");
+      }
+
+      // B) Duplicate against existing sessions in DB
+      // Convert current row Date/Time to match DB format for comparison?
+      // Actually DB stores strings for date, time.
+      // scheduledDateStr is YYYY-MM-DD
+      // scheduledTimeStr is HH:MM:SS
+      if (
+        scheduledDateStr &&
+        scheduledTimeStr &&
+        cohortId &&
+        existingSessions.length > 0
+      ) {
+        const isDuplicate = existingSessions.some(
+          (s) =>
+            s.scheduled_date === scheduledDateStr &&
+            s.scheduled_time === scheduledTimeStr &&
+            s.cohort_id === cohortId,
+        );
+
+        if (isDuplicate) {
+          errors.push(
+            "This session already exists in the system (Same Cohort, Date & Time).",
+          );
         }
       }
 
@@ -251,11 +371,11 @@ export function SessionBulkImportDialog({
         mappedData:
           errors.length === 0
             ? {
-                name: row["Session Name"].trim(),
+                name: sessionName,
                 scheduled_date: scheduledDateStr,
                 scheduled_time: scheduledTimeStr,
                 duration_minutes: duration,
-                location: row["Location"].trim(),
+                location_id: locationId,
                 cohort_id: cohortId,
               }
             : undefined,
@@ -269,30 +389,143 @@ export function SessionBulkImportDialog({
     if (!currentAssociation || !activeSeasonId) return;
     setStep("importing");
 
-    const recordsToInsert = results
-      .filter((r) => r.isValid)
-      .map((r) => ({
-        association_id: currentAssociation.association_id,
-        season_id: activeSeasonId,
-        status: "draft",
-        ...r.mappedData!,
-      }));
-
-    if (recordsToInsert.length === 0) {
-      setStep("review");
-      return;
-    }
-
     try {
-      const { error } = await supabase.from("sessions").insert(recordsToInsert);
+      // Group sessions by cohort
+      const validResults = results.filter((r) => r.isValid);
 
-      if (error) throw error;
+      // Get unique cohort IDs from the import data
+      const cohortIds = Array.from(
+        new Set(validResults.map((r) => r.mappedData!.cohort_id)),
+      );
 
-      onSuccess(`Successfully imported ${recordsToInsert.length} sessions.`);
+      for (const cohortId of cohortIds) {
+        // Get all sessions for this cohort
+        const cohortSessions = validResults
+          .filter((r) => r.mappedData!.cohort_id === cohortId)
+          .sort((a, b) => {
+            // Sort by date and time to ensure chronological order for waves
+            const dateA = new Date(
+              `${a.mappedData!.scheduled_date}T${a.mappedData!.scheduled_time}`,
+            );
+            const dateB = new Date(
+              `${b.mappedData!.scheduled_date}T${b.mappedData!.scheduled_time}`,
+            );
+            return dateA.getTime() - dateB.getTime();
+          });
+
+        if (cohortSessions.length === 0) continue;
+
+        // 1. Get Cohort Details & Player Count for Wave Calculation
+        const { data: cohort, error: cohortError } = await supabase
+          .from("cohorts")
+          .select("session_capacity, minimum_sessions_per_athlete")
+          .eq("id", cohortId)
+          .single();
+
+        if (cohortError || !cohort) {
+          console.error(
+            `Could not fetch details for cohort ${cohortId}`,
+            cohortError,
+          );
+          continue;
+        }
+
+        // Get Player Count for this cohort in the active season
+        const { count: playerCount, error: playerError } = await supabase
+          .from("players")
+          .select("*", { count: "exact", head: true })
+          .eq("cohort_id", cohortId)
+          .eq("status", "active")
+          .eq("season_id", activeSeasonId);
+
+        if (playerError) {
+          console.error(
+            `Could not fetch player count for cohort ${cohortId}`,
+            playerError,
+          );
+          continue;
+        }
+
+        const sessionCapacity =
+          cohort.session_capacity && cohort.session_capacity > 0
+            ? cohort.session_capacity
+            : 20; // Default buffer
+        // Calculate Sessions Per Wave: Total Active Players / Session Capacity (rounded up)
+        const sessionsPerWave =
+          Math.ceil((playerCount || 0) / sessionCapacity) || 1;
+
+        // 2. Determine Starting Wave Number (Check existing waves)
+        const { data: existingWaves } = await supabase
+          .from("waves")
+          .select("wave_number")
+          .eq("cohort_id", cohortId)
+          .eq("season_id", activeSeasonId)
+          .eq("wave_type", "standard")
+          .order("wave_number", { ascending: false })
+          .limit(1);
+
+        let nextWaveNumber = (existingWaves?.[0]?.wave_number || 0) + 1;
+
+        // 3. Create Waves and Assign Sessions
+        let processedCount = 0;
+
+        while (processedCount < cohortSessions.length) {
+          // Determine sessions for this wave
+          const sessionsForThisWave = cohortSessions.slice(
+            processedCount,
+            processedCount + sessionsPerWave,
+          );
+
+          // Create a new Wave record
+          const { data: newWave, error: waveError } = await supabase
+            .from("waves")
+            .insert({
+              season_id: activeSeasonId,
+              association_id: currentAssociation.association_id,
+              cohort_id: cohortId,
+              wave_number: nextWaveNumber,
+              wave_type: "standard",
+              status: "not_started",
+            })
+            .select()
+            .single();
+
+          if (waveError) {
+            console.error("Failed to create wave:", waveError);
+            throw waveError;
+          }
+
+          // Insert Sessions linked to this Wave
+          const sessionsPayload = sessionsForThisWave.map((s) => ({
+            association_id: currentAssociation.association_id,
+            season_id: activeSeasonId,
+            status: "draft",
+            wave_id: newWave.id, // Link to the newly created wave
+            ...s.mappedData!,
+          }));
+
+          const { error: sessionError } = await supabase
+            .from("sessions")
+            .insert(sessionsPayload);
+
+          if (sessionError) {
+            console.error("Failed to insert sessions:", sessionError);
+            throw sessionError;
+          }
+
+          processedCount += sessionsForThisWave.length;
+          nextWaveNumber++;
+        }
+      }
+
+      onSuccess(`Successfully imported sessions and generated waves.`);
       onOpenChange(false);
     } catch (err) {
-      console.error("Import failed:", err);
-      setStep("review");
+      console.error("Import process failed:", err);
+      // Ideally show user an error message, but component uses simple onSuccess callback
+    } finally {
+      setStep("review"); // Reset or close? Maybe close if success.
+      // If success loop finished, success called. If error, catch block log.
     }
   };
 

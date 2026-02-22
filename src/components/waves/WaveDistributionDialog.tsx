@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Shuffle } from "lucide-react";
+import { Loader2, Shuffle, Save } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -40,8 +40,9 @@ export function WaveDistributionDialog({
 }: WaveDistributionDialogProps) {
   const { currentAssociation } = useAuth();
   const [sessions, setSessions] = useState<SessionRow[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Used in fetchWaveSessions
   const [distributing, setDistributing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [algorithm, setAlgorithm] = useState<string>("alphabetical");
   const [teamsPerSession, setTeamsPerSession] = useState<number>(2);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +69,33 @@ export function WaveDistributionDialog({
     setLoading(false);
   };
 
+  const handleSaveSettings = async () => {
+    if (!currentAssociation) return;
+    setSaving(true);
+    setError(null);
+
+    try {
+      const { error: updateError } = await supabase
+        .from("waves")
+        .update({
+          // @ts-ignore
+          distribution_algorithm: algorithm,
+          teams_per_session: teamsPerSession,
+        })
+        .eq("id", wave.id);
+
+      if (updateError) throw updateError;
+
+      onSuccess("Wave settings saved successfully.");
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error("Save error:", err);
+      setError(err.message || "Failed to save settings.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDistribute = async () => {
     if (!currentAssociation) return;
     setDistributing(true);
@@ -87,13 +115,13 @@ export function WaveDistributionDialog({
       if (updateError) throw updateError;
 
       // 2. Call distribution RPC
-      const { error: rpcError } = await supabase.rpc(
+      const { error: rpcError } = await (supabase.rpc as any)(
         "distribute_wave_players",
         {
           p_wave_id: wave.id,
           p_algorithm: algorithm,
           p_teams_per_session: teamsPerSession,
-        }
+        },
       );
 
       if (rpcError) throw rpcError;
@@ -136,7 +164,10 @@ export function WaveDistributionDialog({
                 <SelectContent>
                   <SelectItem value="alphabetical">Alphabetical</SelectItem>
                   <SelectItem value="random">Random</SelectItem>
-                  <SelectItem value="previous_level">
+                  <SelectItem value="previous_level_grouped">
+                    Previous Level (Grouped)
+                  </SelectItem>
+                  <SelectItem value="previous_level_balanced">
                     Previous Level (Balanced)
                   </SelectItem>
                 </SelectContent>
@@ -177,9 +208,21 @@ export function WaveDistributionDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleDistribute} disabled={distributing}>
+          <Button
+            onClick={handleSaveSettings}
+            disabled={distributing || saving}
+            variant="secondary"
+          >
+            {saving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Save Settings
+          </Button>
+          <Button onClick={handleDistribute} disabled={distributing || saving}>
             {distributing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <Shuffle className="mr-2 h-4 w-4" />
+            {!distributing && <Shuffle className="mr-2 h-4 w-4" />}
             Distribute Players
           </Button>
         </DialogFooter>

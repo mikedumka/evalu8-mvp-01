@@ -107,21 +107,9 @@ const setupNavItems: NavItem[] = [
     to: "/drill-library",
   },
   {
-    id: "scheduling",
+    id: "scheduling-dashboard",
     label: "Scheduling",
     icon: Calendar,
-    to: "/scheduling",
-  },
-  {
-    id: "waves",
-    label: "Waves",
-    icon: Waves,
-    to: "/waves",
-  },
-  {
-    id: "scheduling-dashboard",
-    label: "Scheduling Dashboard",
-    icon: LayoutDashboard,
     to: "/scheduling-dashboard",
   },
   {
@@ -283,8 +271,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   };
 
-  const showSystemSection = associations.some(assoc => 
-    assoc.roles.includes("System Administrator")
+  const showSystemSection = associations.some((assoc) =>
+    assoc.roles.includes("System Administrator"),
   );
 
   const sections = useMemo(() => {
@@ -385,13 +373,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     className={cn(
                       "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground",
                       "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0",
-                      isCollapsed && "justify-center gap-0"
+                      isCollapsed && "justify-center gap-0",
                     )}
                   >
                     <div
                       className={cn(
                         "flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground transition-colors",
-                        "group-data-[collapsible=icon]:bg-sidebar-primary group-data-[collapsible=icon]:text-sidebar-primary-foreground"
+                        "group-data-[collapsible=icon]:bg-sidebar-primary group-data-[collapsible=icon]:text-sidebar-primary-foreground",
                       )}
                     >
                       <IdCardLanyard className="size-4" />

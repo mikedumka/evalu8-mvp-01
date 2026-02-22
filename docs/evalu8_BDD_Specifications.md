@@ -1464,30 +1464,30 @@ Scenario: Export player list for cohort
 - **Session Schedule:** Displays list of all sessions for the selected cohort
 - **Empty State:** If no sessions exist, displays "No Sessions Scheduled" message with "Import Schedule" action
 - **Session List Formatting:**
-    - Columns: Session Name, Date & Location, Status, Wave, Configuration
-    - Status "Draft" or "Not Started" is highlighted in yellow
-    - Wave tags are styled black with white text
-    - Configuration column includes icons with counts for: Drills, Evaluators, Intake Personnel, Assigned Players
+  - Columns: Session Name, Date & Location, Status, Wave, Configuration
+  - Status "Draft" or "Not Started" is highlighted in yellow
+  - Wave tags are styled black with white text
+  - Configuration column includes icons with counts for: Drills, Evaluators, Intake Personnel, Assigned Players
 - **System Navigation:** "System" menu section is visible to users with "System Administrator" role in ANY associated organization
 
 Scenario: View Scheduling Dashboard with no sessions
-  Given I am logged in as an Association Administrator
-  And I navigate to "Scheduling Dashboard"
-  And I select cohort "U11"
-  And cohort "U11" has 0 sessions
-  Then I see the wave statistics cards
-  And I see the wave management list
-  And I see a message "No Sessions Scheduled"
-  And I see a button "Import Schedule"
+Given I am logged in as an Association Administrator
+And I navigate to "Scheduling Dashboard"
+And I select cohort "U11"
+And cohort "U11" has 0 sessions
+Then I see the wave statistics cards
+And I see the wave management list
+And I see a message "No Sessions Scheduled"
+And I see a button "Import Schedule"
 
 Scenario: View Scheduling Dashboard with existing sessions
-  Given I am logged in as an Association Administrator
-  And I navigate to "Scheduling Dashboard"
-  And I select cohort "U11"
-  And cohort "U11" has 5 sessions
-  Then I see the session schedule table
-  And the table displays columns: Session Name, Date & Location, Status, Wave, Configuration
-  And the configuration column shows icon counts for drills, evaluators, and players
+Given I am logged in as an Association Administrator
+And I navigate to "Scheduling Dashboard"
+And I select cohort "U11"
+And cohort "U11" has 5 sessions
+Then I see the session schedule table
+And the table displays columns: Session Name, Date & Location, Status, Wave, Configuration
+And the configuration column shows icon counts for drills, evaluators, and players
 
 ### Feature: Create Sessions in Bulk
 
@@ -2886,7 +2886,7 @@ Scenario: Finalize random distribution for wave
 
 ---
 
-### Feature: Distribute Players to Sessions Using Previous Level Algorithm
+### Feature: Distribute Players to Sessions Using Previous Level (Balanced) Algorithm
 
 **User Story:** As an Association Administrator, I want to distribute players by previous level so that sessions have balanced skill distributions
 
@@ -2894,7 +2894,7 @@ Scenario: Finalize random distribution for wave
 
 - Players are grouped by previous level (A, B, C, D, etc.)
 - **Two-level distribution:** Players distributed to sessions first (by level), then to teams within each session
-- Within each level, players are distributed evenly across sessions
+- Within each level, players are distributed evenly across sessions (snake/round-robin)
 - Within each session, players are distributed evenly across teams ensuring each team gets a mix of skill levels
 - Players without a previous level are distributed last (alphabetically)
 - Only "Active" players from the assigned cohort are included
@@ -2906,18 +2906,17 @@ Scenario: Finalize random distribution for wave
 - Team count per session configured during wave distribution (applies to all sessions in wave)
 
 ```gherkin
-Scenario: Distribute players by previous level across wave sessions with team distribution
+Scenario: Distribute players by previous level (balanced) across wave sessions
   Given I am logged in as an Association Administrator
   And cohort "U11" has 24 active players
   And 6 players have previous level "A"
   And 8 players have previous level "B"
   And 10 players have previous level "C"
   And Wave 1 for cohort "U11" has 3 sessions with status "Not Started"
-  And Wave 1 sessions are: "U11 Session 1", "U11 Session 2", "U11 Session 3"
   When I navigate to "Wave Management" for cohort "U11"
   And I click on "Wave 1"
   And I click "Distribute Players"
-  And I select distribution method "Previous Level"
+  And I select distribution method "Previous Level (Balanced)"
   And I set teams per session to "2"
   And I click "Preview Distribution"
   Then I see a preview showing session-level distribution:
@@ -2928,46 +2927,61 @@ Scenario: Distribute players by previous level across wave sessions with team di
   And I see team-level distribution within sessions:
     | Session | Team 1 | Team 2 |
     | Session 1 | 4 players (1A, 1B, 2C) | 4 players (1A, 2B, 1C) |
-    | Session 2 | 4 players (1A, 1B, 2C) | 4 players (1A, 2B, 1C) |
-    | Session 3 | 4 players (1A, 1B, 2C) | 4 players (1A, 1B, 2C) |
   And each session has a balanced mix of skill levels
   And each team within sessions has a balanced mix of skill levels
-  And I see a summary "24 players distributed across 3 sessions in Wave 1 (8 per session, 4 per team)"
 
-Scenario: Handle players without previous level in wave distribution (with team distribution)
+Scenario: Finalize previous level (balanced) distribution for wave
   Given I am logged in as an Association Administrator
-  And cohort "U11" has 27 active players
-  And 6 players have previous level "A"
-  And 6 players have previous level "B"
-  And 6 players have previous level "C"
-  And 9 players have no previous level assigned
-  And Wave 1 for cohort "U11" has 3 sessions with status "Not Started"
-  And Wave 1 sessions are: "U11 Session 1", "U11 Session 2", "U11 Session 3"
-  When I navigate to "Wave Management" for cohort "U11"
-  And I click on "Wave 1"
-  And I click "Distribute Players"
-  And I select distribution method "Previous Level"
-  And I set teams per session to "2"
-  And I click "Preview Distribution"
-  Then players with levels A, B, C are distributed first (to sessions and teams)
-  And players without previous level are distributed last (alphabetically to sessions and teams)
-  And I see session-level distribution:
-    | Session | Players with Levels | Players without Level | Total |
-    | Session 1 | 6 (2A, 2B, 2C) | 3 | 9 |
-    | Session 2 | 6 (2A, 2B, 2C) | 3 | 9 |
-    | Session 3 | 6 (2A, 2B, 2C) | 3 | 9 |
-  And I see team-level distribution showing balanced levels within each session
-  And I see a note "9 players without previous level distributed alphabetically across sessions and teams"
-
-Scenario: Finalize previous level distribution for wave
-  Given I am logged in as an Association Administrator
-  And I have previewed a previous level distribution for Wave 1
-  And each session has a balanced skill mix
+  And I have previewed a previous level (balanced) distribution for Wave 1
   When I click "Finalize Distribution"
   Then all players are assigned to their respective sessions and teams in Wave 1
-  And I see a confirmation message "Wave 1 ready: 24 players distributed across 3 sessions (2 teams per session) using Previous Level algorithm"
+  And I see a confirmation message "Wave 1 ready: 24 players distributed across 3 sessions (2 teams per session) using Previous Level (Balanced) algorithm"
   And Wave 1 status changes to "Ready"
-  And each session in Wave 1 shows its assigned player count, team assignments, and breakdown by level
+```
+
+### Feature: Distribute Players to Sessions Using Previous Level (Grouped) Algorithm
+
+**User Story:** As an Association Administrator, I want to distribute players by previous level so that sessions are tiered (e.g., A players in Session 1, B players in Session 2)
+
+**Business Rules:**
+
+- Players are sorted by previous level rank (A -> B -> C -> D)
+- **Chunked distribution:** Top ranked players fill the first session, next ranked fill the second, etc.
+- **Teams within session:** Players within the session are distributed evenly across teams
+- Players without a previous level are treated as the lowest rank/last
+- Only "Active" players from the assigned cohort are included
+- Distribution is previewed before finalizing
+- Ensures sessions are homogeneous by skill level
+- System calculates actual players per session (total active players ÷ number of sessions) within session capacity limit set during season setup
+
+```gherkin
+Scenario: Distribute players by previous level (grouped) across wave sessions
+  Given I am logged in as an Association Administrator
+  And cohort "U11" has 24 active players
+  And 8 players have previous level "A"
+  And 8 players have previous level "B"
+  And 8 players have previous level "C"
+  And Wave 1 for cohort "U11" has 3 sessions
+  When I navigate to "Wave Management" for cohort "U11"
+  And I click "Distribute Players"
+  And I select distribution method "Previous Level (Grouped)"
+  And I set teams per session to "2"
+  And I click "Preview Distribution"
+  Then I see a preview showing session-level distribution:
+    | Session | Total Players | Primary Level |
+    | U11 Session 1 | 8 | Level A |
+    | U11 Session 2 | 8 | Level B |
+    | U11 Session 3 | 8 | Level C |
+  And each session contains players of similar skill level
+  And each team within Session 1 gets ~4 Level A players
+
+Scenario: Finalize previous level (grouped) distribution for wave
+  Given I am logged in as an Association Administrator
+  And I have previewed a previous level (grouped) distribution for Wave 1
+  When I click "Finalize Distribution"
+  Then all players are assigned to their respective sessions and teams in Wave 1
+  And I see a confirmation message "Wave 1 ready: 24 players distributed across 3 sessions (2 teams per session) using Previous Level (Grouped) algorithm"
+  And Wave 1 status changes to "Ready"
 ```
 
 ---

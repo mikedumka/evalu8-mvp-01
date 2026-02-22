@@ -61,7 +61,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   >(() =>
     typeof window !== "undefined"
       ? window.localStorage.getItem(AUTH_ASSOCIATION_KEY)
-      : null
+      : null,
   );
 
   const setCurrentAssociationIdHandler = useCallback(
@@ -81,10 +81,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.error("Unexpected error setting association context", error);
       }
     },
-    []
+    [],
   );
 
   const fetchAssociations = useCallback(async () => {
+    // If loading, don't make decisions yet
+    if (loading) return;
+
     if (!user) {
       setAssociations([]);
       setCurrentAssociationIdState(null);
@@ -98,7 +101,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data, error } = await supabase
         .from("association_users")
         .select(
-          `association_id, roles, status, association:associations!inner ( id, name, status, abbreviation, sport_type:sport_types!associations_sport_type_id_fkey ( id, name, status ) )`
+          `association_id, roles, status, association:associations!inner ( id, name, status, abbreviation, sport_type:sport_types!associations_sport_type_id_fkey ( id, name, status ) )`,
         )
         .eq("user_id", user.id)
         .eq("status", "active");
@@ -110,7 +113,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       const activeAssociations = (data ?? []).filter(
-        (item) => item.association?.status === "active"
+        (item) => item.association?.status === "active",
       ) as AssociationUser[];
 
       setAssociations(activeAssociations);
@@ -130,7 +133,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       const defaultAssociationId = activeAssociations[0]?.association_id;
       const validAssociationId = activeAssociations.some(
-        (membership) => membership.association_id === storedAssociationId
+        (membership) => membership.association_id === storedAssociationId,
       )
         ? storedAssociationId
         : defaultAssociationId;
@@ -142,7 +145,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error("Unexpected error loading association memberships", error);
       setAssociations([]);
     }
-  }, [user, setCurrentAssociationIdHandler]);
+  }, [user, loading, setCurrentAssociationIdHandler]);
 
   useEffect(() => {
     // Get initial session
@@ -218,7 +221,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return (
       associations.find(
-        (membership) => membership.association_id === currentAssociationId
+        (membership) => membership.association_id === currentAssociationId,
       ) ?? null
     );
   }, [associations, currentAssociationId]);
@@ -231,7 +234,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       return currentAssociation.roles.includes(role);
     },
-    [currentAssociation]
+    [currentAssociation],
   );
 
   const hasAnyRole = useCallback(
@@ -242,7 +245,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       return roles.some((role) => currentAssociation.roles.includes(role));
     },
-    [currentAssociation]
+    [currentAssociation],
   );
 
   const value = {

@@ -12,12 +12,10 @@ import PreviousLevelsPage from "@/pages/PreviousLevelsPage";
 import LocationsPage from "@/pages/LocationsPage";
 import PositionTypesPage from "@/pages/PositionTypesPage";
 import SeasonManagementPage from "@/pages/SeasonManagementPage";
-import SchedulingPage from "@/pages/SchedulingPage";
 import SessionDrillConfigurationPage from "@/pages/SessionDrillConfigurationPage";
 import SystemAssociationsPage from "@/pages/SystemAssociationsPage";
 import SystemUsersPage from "@/pages/SystemUsersPage";
 import AssociationUsersPage from "@/pages/AssociationUsersPage";
-import { WaveManagementPage } from "@/pages/WaveManagementPage";
 import { SchedulingDashboardPage } from "@/pages/SchedulingDashboardPage";
 import DebugPage from "@/pages/DebugPage";
 
@@ -59,9 +57,10 @@ function App() {
             <Route path="/previous-levels" element={<PreviousLevelsPage />} />
             <Route path="/locations" element={<LocationsPage />} />
             <Route path="/drill-library" element={<DrillLibraryPage />} />
-            <Route path="/scheduling" element={<SchedulingPage />} />
-            <Route path="/waves" element={<WaveManagementPage />} />
-            <Route path="/scheduling-dashboard" element={<SchedulingDashboardPage />} />
+            <Route
+              path="/scheduling-dashboard"
+              element={<SchedulingDashboardPage />}
+            />
             <Route
               path="/session-drill-configuration"
               element={<SessionDrillConfigurationPage />}

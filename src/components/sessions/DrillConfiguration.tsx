@@ -12,6 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -72,7 +80,7 @@ export function DrillConfiguration({ session }: DrillConfigurationProps) {
   const availableDrills = useMemo(() => {
     if (editingSessionDrillId) {
       const currentAssignment = sessionDrills.find(
-        (item) => item.id === editingSessionDrillId
+        (item) => item.id === editingSessionDrillId,
       );
       if (!currentAssignment) {
         return activeDrills;
@@ -80,7 +88,7 @@ export function DrillConfiguration({ session }: DrillConfigurationProps) {
       return activeDrills.filter(
         (drill) =>
           drill.id === currentAssignment.drill_id ||
-          !assignedDrillIds.has(drill.id)
+          !assignedDrillIds.has(drill.id),
       );
     }
     return activeDrills.filter((drill) => !assignedDrillIds.has(drill.id));
@@ -278,7 +286,7 @@ export function DrillConfiguration({ session }: DrillConfigurationProps) {
     if (!session) return;
 
     const confirmed = window.confirm(
-      `Remove ${assignment.drill?.name ?? "this drill"} from the session?`
+      `Remove ${assignment.drill?.name ?? "this drill"} from the session?`,
     );
 
     if (!confirmed) return;
@@ -308,7 +316,7 @@ export function DrillConfiguration({ session }: DrillConfigurationProps) {
     if (!session || !isConfigurationComplete) return;
 
     const confirmed = window.confirm(
-      "This will overwrite drill configurations for all other sessions in this wave. Continue?"
+      "This will overwrite drill configurations for all other sessions in this wave. Continue?",
     );
 
     if (!confirmed) return;
@@ -447,7 +455,7 @@ export function DrillConfiguration({ session }: DrillConfigurationProps) {
                           count: 0,
                         };
                         const isChecked = formState.positionIds.includes(
-                          position.id
+                          position.id,
                         );
                         const isComplete = summary.weight === 100;
 
@@ -458,8 +466,8 @@ export function DrillConfiguration({ session }: DrillConfigurationProps) {
                               isChecked
                                 ? "border-primary bg-primary/10"
                                 : isComplete
-                                ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800"
-                                : "border-border bg-card"
+                                  ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800"
+                                  : "border-border bg-card"
                             }`}
                           >
                             <span className="font-medium">{position.name}</span>
@@ -564,54 +572,81 @@ export function DrillConfiguration({ session }: DrillConfigurationProps) {
               No drills assigned.
             </div>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {sessionDrills.map((assignment) => (
-                <li
-                  key={assignment.id}
-                  className="rounded-lg border border-border bg-card p-3 text-sm"
-                >
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Drill Name</TableHead>
+                    <TableHead>Positions</TableHead>
+                    <TableHead className="w-[100px]">Weight</TableHead>
+                    <TableHead className="text-right w-[140px]">
+                      Actions
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sessionDrills.map((assignment) => (
+                    <TableRow key={assignment.id}>
+                      <TableCell className="font-medium">
                         {assignment.drill?.name ?? "Unknown drill"}
-                      </span>
-                      <Badge variant="secondary">
-                        {assignment.weight_percent}%
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {(assignment.applies_to_positions ?? [])
-                        .map(
-                          (id) =>
-                            positions.find((p) => p.id === id)?.name ??
-                            "Unknown"
-                        )
-                        .join(", ") || "No positions"}
-                    </div>
-                    <div className="mt-2 flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs"
-                        onClick={() => handleEditAssignment(assignment)}
-                        disabled={isLocked || loadingRequest}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs text-destructive hover:text-destructive"
-                        onClick={() => handleRemoveAssignment(assignment)}
-                        disabled={isLocked || loadingRequest}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {(assignment.applies_to_positions ?? []).length >
+                          0 ? (
+                            (assignment.applies_to_positions ?? []).map(
+                              (id) => {
+                                const pos = positions.find((p) => p.id === id);
+                                return (
+                                  <Badge
+                                    key={id}
+                                    variant="outline"
+                                    className="text-xs font-normal"
+                                  >
+                                    {pos?.name ?? "Unknown"}
+                                  </Badge>
+                                );
+                              },
+                            )
+                          ) : (
+                            <span className="text-muted-foreground italic text-xs">
+                              No positions
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {assignment.weight_percent}%
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 text-xs"
+                            onClick={() => handleEditAssignment(assignment)}
+                            disabled={isLocked || loadingRequest}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleRemoveAssignment(assignment)}
+                            disabled={isLocked || loadingRequest}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </div>
       </div>
