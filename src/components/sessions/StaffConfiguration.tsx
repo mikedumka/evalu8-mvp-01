@@ -44,14 +44,16 @@ export function StaffConfiguration({ session }: StaffConfigurationProps) {
       // 1. Fetch all active association users (staff)
       const { data: staffData, error: staffError } = await supabase
         .from("association_users")
-        .select(`
+        .select(
+          `
           user_id,
           roles,
           user:users!association_users_user_id_fkey(
             email,
             full_name
           )
-        `)
+        `,
+        )
         .eq("association_id", currentAssociation.association_id)
         .eq("status", "active")
         .order("created_at");
@@ -75,11 +77,13 @@ export function StaffConfiguration({ session }: StaffConfigurationProps) {
       if (intakeError) throw intakeError;
 
       // Manually map to StaffUser format since TypeScript/Supabase types might not be 100% aligned with the result
-      const formattedStaff: StaffUser[] = (staffData || []).map((entry: any) => ({
-        user_id: entry.user_id,
-        roles: entry.roles,
-        user: entry.user
-      }));
+      const formattedStaff: StaffUser[] = (staffData || []).map(
+        (entry: any) => ({
+          user_id: entry.user_id,
+          roles: entry.roles,
+          user: entry.user,
+        }),
+      );
 
       setStaffList(formattedStaff);
       setEvaluatorIds(new Set(evaluatorsData?.map((e) => e.user_id)));
@@ -204,7 +208,7 @@ export function StaffConfiguration({ session }: StaffConfigurationProps) {
                     <Avatar className="h-9 w-9">
                       <AvatarFallback>
                         {getInitials(
-                          staff.user?.full_name || staff.user?.email || null
+                          staff.user?.full_name || staff.user?.email || null,
                         )}
                       </AvatarFallback>
                     </Avatar>
@@ -271,7 +275,7 @@ export function StaffConfiguration({ session }: StaffConfigurationProps) {
                     <Avatar className="h-9 w-9">
                       <AvatarFallback>
                         {getInitials(
-                          staff.user?.full_name || staff.user?.email || null
+                          staff.user?.full_name || staff.user?.email || null,
                         )}
                       </AvatarFallback>
                     </Avatar>

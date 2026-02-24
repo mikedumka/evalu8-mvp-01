@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -12,7 +11,15 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Trash2, UserPlus, UserMinus, Copy, Loader2 } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Trash2,
+  UserPlus,
+  UserMinus,
+  Copy,
+  Loader2,
+} from "lucide-react";
 
 interface IntakePersonnel {
   id: string;
@@ -55,7 +62,8 @@ export function SessionIntakePersonnelManagementDialog({
       // 1. Fetch all users with 'Intake' role in this association
       const { data: associationUsers, error: assocError } = await supabase
         .from("association_users")
-        .select(`
+        .select(
+          `
           user_id,
           roles,
           user:users!association_users_user_id_fkey (
@@ -63,18 +71,19 @@ export function SessionIntakePersonnelManagementDialog({
             email,
             full_name
           )
-        `)
+        `,
+        )
         .eq("association_id", session.association_id);
 
       if (assocError) throw assocError;
 
       const allIntake: IntakePersonnel[] = (associationUsers || [])
-        .filter((au: any) => 
-            au.roles && (
-                au.roles.includes("Intake") || 
-                au.roles.includes("intake") ||
-                au.roles.includes("Intake Personnel") // Cover potential variations
-            )
+        .filter(
+          (au: any) =>
+            au.roles &&
+            (au.roles.includes("Intake") ||
+              au.roles.includes("intake") ||
+              au.roles.includes("Intake Personnel")), // Cover potential variations
         )
         .map((au: any) => ({
           id: au.user.id,
@@ -115,40 +124,38 @@ export function SessionIntakePersonnelManagementDialog({
   const handleAssign = async (person: IntakePersonnel) => {
     // Validation: Only allow 1 intake personnel per session
     if (assignedIntake.length >= 1) {
-        toast({
-          title: "Limit Reached",
-          description: "Only 1 intake personnel can be assigned per session.",
-          variant: "destructive",
-        });
-        return;
+      toast({
+        title: "Limit Reached",
+        description: "Only 1 intake personnel can be assigned per session.",
+        variant: "destructive",
+      });
+      return;
     }
 
     try {
-      const { error } = await supabase
-        .from("session_intake_personnel")
-        .insert({
-          session_id: session.id,
-          user_id: person.id,
-          association_id: session.association_id,
-        });
+      const { error } = await supabase.from("session_intake_personnel").insert({
+        session_id: session.id,
+        user_id: person.id,
+        association_id: session.association_id,
+      });
 
       if (error) throw error;
 
       setAvailableIntake((prev) => prev.filter((p) => p.id !== person.id));
       setAssignedIntake((prev) => [...prev, person]);
-      onUpdate(); 
-      
+      onUpdate();
+
       toast({
         title: "Intake Personnel Assigned",
         description: `${person.full_name || person.email} added to session.`,
       });
     } catch (err: any) {
-        console.error("Error assigning intake personnel:", err);
-        toast({
-            title: "Error",
-            description: "Failed to assign intake personnel.",
-            variant: "destructive",
-        });
+      console.error("Error assigning intake personnel:", err);
+      toast({
+        title: "Error",
+        description: "Failed to assign intake personnel.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -171,110 +178,110 @@ export function SessionIntakePersonnelManagementDialog({
         description: `${person.full_name || person.email} removed from session.`,
       });
     } catch (err: any) {
-        console.error("Error removing intake personnel:", err);
-        toast({
-            title: "Error",
-            description: "Failed to remove intake personnel.",
-            variant: "destructive",
-        });
+      console.error("Error removing intake personnel:", err);
+      toast({
+        title: "Error",
+        description: "Failed to remove intake personnel.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleCloneToWave = async () => {
     if (!session.wave_id) {
+      toast({
+        title: "No Wave Assigned",
+        description: "This session is not part of a wave.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (assignedIntake.length === 0) {
+      toast({
+        title: "No Staff",
+        description: "Assign intake personnel to this session first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (
+      !confirm(
+        "This will OVERWRITE assigned intake personnel for all other sessions in this wave. Are you sure?",
+      )
+    ) {
+      return;
+    }
+
+    setCloning(true);
+    try {
+      // 1. Get target sessions in the same wave
+      const { data: targetSessions, error: sessionError } = await supabase
+        .from("sessions")
+        .select("id")
+        .eq("wave_id", session.wave_id)
+        .neq("id", session.id); // Exclude current session
+
+      if (sessionError) throw sessionError;
+
+      if (!targetSessions || targetSessions.length === 0) {
         toast({
-          title: "No Wave Assigned",
-          description: "This session is not part of a wave.",
-          variant: "destructive",
+          title: "No Other Sessions",
+          description: "There are no other sessions in this wave.",
         });
-        return;
-      }
-  
-      if (assignedIntake.length === 0) {
-        toast({
-            title: "No Staff",
-            description: "Assign intake personnel to this session first.",
-            variant: "destructive",
-        });
-        return;
-      }
-  
-      if (
-        !confirm(
-          "This will OVERWRITE assigned intake personnel for all other sessions in this wave. Are you sure?",
-        )
-      ) {
-        return;
-      }
-  
-      setCloning(true);
-      try {
-        // 1. Get target sessions in the same wave
-        const { data: targetSessions, error: sessionError } = await supabase
-          .from("sessions")
-          .select("id")
-          .eq("wave_id", session.wave_id)
-          .neq("id", session.id); // Exclude current session
-  
-        if (sessionError) throw sessionError;
-  
-        if (!targetSessions || targetSessions.length === 0) {
-          toast({
-            title: "No Other Sessions",
-            description: "There are no other sessions in this wave.",
-          });
-          setCloning(false);
-          return;
-        }
-  
-        const targetSessionIds = targetSessions.map((s) => s.id);
-  
-        // 2. Delete existing intake for target sessions
-        const { error: deleteError } = await supabase
-          .from("session_intake_personnel")
-          .delete()
-          .in("session_id", targetSessionIds);
-  
-        if (deleteError) throw deleteError;
-  
-        // 3. Insert new intake
-        const newIntake = [];
-        for (const targetId of targetSessionIds) {
-          for (const person of assignedIntake) {
-            newIntake.push({
-              session_id: targetId,
-              user_id: person.id,
-              association_id: session.association_id,
-            });
-          }
-        }
-  
-        const { error: insertError } = await supabase
-          .from("session_intake_personnel")
-          .insert(newIntake);
-  
-        if (insertError) throw insertError;
-  
-        toast({
-          title: "Intake Cloned",
-          description: `Successfully copied intake personnel to ${targetSessionIds.length} other sessions in this wave.`,
-        });
-      } catch (error) {
-        console.error("Error cloning intake:", error);
-        toast({
-          title: "Clone Failed",
-          description: "Could not copy intake personnel.",
-          variant: "destructive",
-        });
-      } finally {
         setCloning(false);
+        return;
       }
+
+      const targetSessionIds = targetSessions.map((s) => s.id);
+
+      // 2. Delete existing intake for target sessions
+      const { error: deleteError } = await supabase
+        .from("session_intake_personnel")
+        .delete()
+        .in("session_id", targetSessionIds);
+
+      if (deleteError) throw deleteError;
+
+      // 3. Insert new intake
+      const newIntake = [];
+      for (const targetId of targetSessionIds) {
+        for (const person of assignedIntake) {
+          newIntake.push({
+            session_id: targetId,
+            user_id: person.id,
+            association_id: session.association_id,
+          });
+        }
+      }
+
+      const { error: insertError } = await supabase
+        .from("session_intake_personnel")
+        .insert(newIntake);
+
+      if (insertError) throw insertError;
+
+      toast({
+        title: "Intake Cloned",
+        description: `Successfully copied intake personnel to ${targetSessionIds.length} other sessions in this wave.`,
+      });
+    } catch (error) {
+      console.error("Error cloning intake:", error);
+      toast({
+        title: "Clone Failed",
+        description: "Could not copy intake personnel.",
+        variant: "destructive",
+      });
+    } finally {
+      setCloning(false);
+    }
   };
 
   const filteredAvailable = availableIntake.filter(
     (i) =>
       i.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      i.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      i.email?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -284,7 +291,8 @@ export function SessionIntakePersonnelManagementDialog({
           <div>
             <DialogTitle>Manage Intake Personnel</DialogTitle>
             <DialogDescription>
-              Assign or remove intake staff for {session?.name || "this session"}.
+              Assign or remove intake staff for{" "}
+              {session?.name || "this session"}.
             </DialogDescription>
           </div>
           {session?.wave_id && assignedIntake.length > 0 && (
@@ -323,7 +331,7 @@ export function SessionIntakePersonnelManagementDialog({
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            
+
             <ScrollArea className="h-64 pr-2">
               {loading ? (
                 <div className="text-center py-8 text-muted-foreground text-sm">
@@ -331,7 +339,9 @@ export function SessionIntakePersonnelManagementDialog({
                 </div>
               ) : filteredAvailable.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground text-xs">
-                  {searchQuery ? "No matching staff found" : "No intake personnel found"}
+                  {searchQuery
+                    ? "No matching staff found"
+                    : "No intake personnel found"}
                 </div>
               ) : (
                 <div className="space-y-1">
@@ -342,10 +352,10 @@ export function SessionIntakePersonnelManagementDialog({
                     >
                       <div className="flex flex-col overflow-hidden max-w-[160px]">
                         <span className="font-medium truncate">
-                            {person.full_name || "Unknown"}
+                          {person.full_name || "Unknown"}
                         </span>
                         <span className="text-xs text-muted-foreground truncate">
-                            {person.email}
+                          {person.email}
                         </span>
                       </div>
                       <Button
@@ -372,9 +382,9 @@ export function SessionIntakePersonnelManagementDialog({
               </span>
             </h3>
             <p className="text-xs text-muted-foreground mb-2 px-1">
-                These users can check players in.
+              These users can check players in.
             </p>
-            
+
             <ScrollArea className="h-64 pr-2">
               {assignedIntake.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground text-xs border-2 border-dashed rounded-md m-1">
@@ -387,12 +397,12 @@ export function SessionIntakePersonnelManagementDialog({
                       key={person.id}
                       className="group flex items-center justify-between p-2 rounded-md bg-background border shadow-sm text-sm"
                     >
-                       <div className="flex flex-col overflow-hidden max-w-[160px]">
+                      <div className="flex flex-col overflow-hidden max-w-[160px]">
                         <span className="font-medium truncate">
-                            {person.full_name || "Unknown"}
+                          {person.full_name || "Unknown"}
                         </span>
                         <span className="text-xs text-muted-foreground truncate">
-                            {person.email}
+                          {person.email}
                         </span>
                       </div>
                       <Button

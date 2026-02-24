@@ -47,6 +47,8 @@ export function WaveDistributionDialog({
   const [teamsPerSession, setTeamsPerSession] = useState<number>(2);
   const [error, setError] = useState<string | null>(null);
 
+  const [clearing, setClearing] = useState(false);
+
   useEffect(() => {
     if (open && wave) {
       fetchWaveSessions();
@@ -67,6 +69,40 @@ export function WaveDistributionDialog({
       .order("scheduled_time");
     setSessions(data || []);
     setLoading(false);
+  };
+
+  const handleClearWave = async () => {
+    if (!currentAssociation || sessions.length === 0) return;
+
+    if (
+      !confirm(
+        "Are you sure? This will remove ALL players from sessions in this wave. (Testing Only)",
+      )
+    ) {
+      return;
+    }
+
+    setClearing(true);
+    setError(null);
+
+    try {
+      const sessionIds = sessions.map((s) => s.id);
+
+      const { error: deleteError } = await supabase
+        .from("player_sessions")
+        .delete()
+        .in("session_id", sessionIds);
+
+      if (deleteError) throw deleteError;
+
+      onSuccess("Wave cleared successfully.");
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error("Clear error:", err);
+      setError(err.message || "Failed to clear wave.");
+    } finally {
+      setClearing(false);
+    }
   };
 
   const handleSaveSettings = async () => {
@@ -102,7 +138,50 @@ export function WaveDistributionDialog({
     setError(null);
 
     try {
-      // 1. Update wave configuration first
+      // 1. Validation: Sequential Waves (Strict Evaluation Rule)
+      console.log("Checking wave validation for Wave:", wave.wave_number);
+
+      if (wave.wave_number && wave.wave_number > 1) {
+        // Find previous wave
+        const { data: prevWave, error: prevWaveError } = await supabase
+          .from("waves")
+          .select("id")
+          .eq("cohort_id", wave.cohort_id)
+          .eq("wave_number", wave.wave_number - 1)
+          .eq("season_id", wave.season_id)
+          .maybeSingle(); // Changed from single() to maybeSingle() to prevent error if not found (though it should exist)
+
+        if (prevWaveError) {
+          console.error("Error fetching previous wave:", prevWaveError);
+        }
+
+        if (prevWave) {
+          console.log("Found previous wave ID:", prevWave.id);
+
+          // Check if ANY session in previous wave is NOT completed
+          const { data: incompleteSessions, error: sessionError } =
+            await supabase
+              .from("sessions")
+              .select("id, name, status")
+              .eq("wave_id", prevWave.id)
+              .neq("status", "completed");
+
+          if (sessionError) {
+            console.error("Error fetching incomplete sessions:", sessionError);
+          }
+
+          if (incompleteSessions && incompleteSessions.length > 0) {
+            console.warn("Blocked by incomplete sessions:", incompleteSessions);
+            throw new Error(
+              `Cannot distribute Wave ${wave.wave_number} until all sessions in Wave ${wave.wave_number - 1} are marked as 'Completed'. (${incompleteSessions.length} sessions pending)`,
+            );
+          }
+        } else {
+          console.warn("Previous wave not found. Skipping validation.");
+        }
+      }
+
+      // 2. Update wave configuration first
       const { error: updateError } = await supabase
         .from("waves")
         .update({
@@ -204,27 +283,46 @@ export function WaveDistributionDialog({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSaveSettings}
-            disabled={distributing || saving}
-            variant="secondary"
-          >
-            {saving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            Save Settings
-          </Button>
-          <Button onClick={handleDistribute} disabled={distributing || saving}>
-            {distributing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {!distributing && <Shuffle className="mr-2 h-4 w-4" />}
-            Distribute Players
-          </Button>
+        <DialogFooter className="md:justify-between sm:justify-between flex-wrap gap-2">
+          {wave.wave_number && sessions.length > 0 && (
+            <Button
+              variant="destructive"
+              onClick={handleClearWave}
+              disabled={clearing || distributing || saving}
+            >
+              {clearing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Clear (Test)
+            </Button>
+          )}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveSettings}
+              disabled={distributing || saving || clearing}
+              variant="secondary"
+            >
+              {saving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Save Settings
+            </Button>
+            <Button
+              onClick={handleDistribute}
+              disabled={distributing || saving || clearing}
+            >
+              {distributing && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {!distributing && <Shuffle className="mr-2 h-4 w-4" />}
+              Distribute Players
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

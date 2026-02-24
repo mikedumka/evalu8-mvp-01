@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -13,7 +12,16 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Trash2, UserPlus, UserMinus, ShieldCheck, Copy, Loader2 } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Trash2,
+  UserPlus,
+  UserMinus,
+  ShieldCheck,
+  Copy,
+  Loader2,
+} from "lucide-react";
 
 interface Evaluator {
   id: string;
@@ -39,7 +47,9 @@ export function SessionEvaluatorManagementDialog({
   onUpdate,
 }: SessionEvaluatorManagementDialogProps) {
   const { toast } = useToast();
-  const [availableEvaluators, setAvailableEvaluators] = useState<Evaluator[]>([]);
+  const [availableEvaluators, setAvailableEvaluators] = useState<Evaluator[]>(
+    [],
+  );
   const [assignedEvaluators, setAssignedEvaluators] = useState<Evaluator[]>([]);
   const [loading, setLoading] = useState(false);
   const [cloning, setCloning] = useState(false);
@@ -60,7 +70,8 @@ export function SessionEvaluatorManagementDialog({
       // Fetch ANY user in association first, then filter in JS to be safe about role casing
       const { data: associationUsers, error: assocError } = await supabase
         .from("association_users")
-        .select(`
+        .select(
+          `
           user_id,
           roles,
           user:users!association_users_user_id_fkey (
@@ -68,17 +79,17 @@ export function SessionEvaluatorManagementDialog({
             email,
             full_name
           )
-        `)
+        `,
+        )
         .eq("association_id", session.association_id);
 
       if (assocError) throw assocError;
 
       const allEvaluators: Evaluator[] = (associationUsers || [])
-        .filter((au: any) => 
-            au.roles && (
-                au.roles.includes("Evaluator") || 
-                au.roles.includes("evaluator")
-            )
+        .filter(
+          (au: any) =>
+            au.roles &&
+            (au.roles.includes("Evaluator") || au.roles.includes("evaluator")),
         )
         .map((au: any) => ({
           id: au.user.id,
@@ -137,21 +148,23 @@ export function SessionEvaluatorManagementDialog({
 
       if (error) throw error;
 
-      setAvailableEvaluators((prev) => prev.filter((e) => e.id !== evaluator.id));
+      setAvailableEvaluators((prev) =>
+        prev.filter((e) => e.id !== evaluator.id),
+      );
       setAssignedEvaluators((prev) => [...prev, evaluator]);
       onUpdate(); // Trigger parent refresh
-      
+
       toast({
         title: "Evaluator Assigned",
         description: `${evaluator.full_name || evaluator.email} added to session.`,
       });
     } catch (err: any) {
-        console.error("Error assigning evaluator:", err);
-        toast({
-            title: "Error",
-            description: "Failed to assign evaluator.",
-            variant: "destructive",
-        });
+      console.error("Error assigning evaluator:", err);
+      toast({
+        title: "Error",
+        description: "Failed to assign evaluator.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -165,7 +178,9 @@ export function SessionEvaluatorManagementDialog({
 
       if (error) throw error;
 
-      setAssignedEvaluators((prev) => prev.filter((e) => e.id !== evaluator.id));
+      setAssignedEvaluators((prev) =>
+        prev.filter((e) => e.id !== evaluator.id),
+      );
       setAvailableEvaluators((prev) => [...prev, evaluator]);
       onUpdate(); // Trigger parent refresh
 
@@ -174,112 +189,112 @@ export function SessionEvaluatorManagementDialog({
         description: `${evaluator.full_name || evaluator.email} removed from session.`,
       });
     } catch (err: any) {
-        console.error("Error removing evaluator:", err);
-        toast({
-            title: "Error",
-            description: "Failed to remove evaluator.",
-            variant: "destructive",
-        });
+      console.error("Error removing evaluator:", err);
+      toast({
+        title: "Error",
+        description: "Failed to remove evaluator.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleCloneToWave = async () => {
     if (!session.wave_id) {
+      toast({
+        title: "No Wave Assigned",
+        description: "This session is not part of a wave.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (assignedEvaluators.length === 0) {
+      toast({
+        title: "No Evaluators",
+        description: "Assign evaluators to this session first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (
+      !confirm(
+        "This will OVERWRITE assigned evaluators for all other sessions in this wave. Are you sure?",
+      )
+    ) {
+      return;
+    }
+
+    setCloning(true);
+    try {
+      // 1. Get target sessions in the same wave
+      const { data: targetSessions, error: sessionError } = await supabase
+        .from("sessions")
+        .select("id")
+        .eq("wave_id", session.wave_id)
+        .neq("id", session.id); // Exclude current session
+
+      if (sessionError) throw sessionError;
+
+      if (!targetSessions || targetSessions.length === 0) {
         toast({
-          title: "No Wave Assigned",
-          description: "This session is not part of a wave.",
-          variant: "destructive",
+          title: "No Other Sessions",
+          description: "There are no other sessions in this wave.",
         });
-        return;
-      }
-  
-      if (assignedEvaluators.length === 0) {
-        toast({
-            title: "No Evaluators",
-            description: "Assign evaluators to this session first.",
-            variant: "destructive",
-        });
+        setCloning(false);
         return;
       }
 
-      if (
-        !confirm(
-          "This will OVERWRITE assigned evaluators for all other sessions in this wave. Are you sure?",
-        )
-      ) {
-        return;
-      }
-  
-      setCloning(true);
-      try {
-        // 1. Get target sessions in the same wave
-        const { data: targetSessions, error: sessionError } = await supabase
-          .from("sessions")
-          .select("id")
-          .eq("wave_id", session.wave_id)
-          .neq("id", session.id); // Exclude current session
-  
-        if (sessionError) throw sessionError;
-  
-        if (!targetSessions || targetSessions.length === 0) {
-          toast({
-            title: "No Other Sessions",
-            description: "There are no other sessions in this wave.",
+      const targetSessionIds = targetSessions.map((s) => s.id);
+
+      // 2. Delete existing evaluators for target sessions
+      const { error: deleteError } = await supabase
+        .from("session_evaluators")
+        .delete()
+        .in("session_id", targetSessionIds);
+
+      if (deleteError) throw deleteError;
+
+      // 3. Insert new evaluators
+      const newEvaluators = [];
+      for (const targetId of targetSessionIds) {
+        for (const evaluator of assignedEvaluators) {
+          newEvaluators.push({
+            session_id: targetId,
+            user_id: evaluator.id,
+            association_id: session.association_id,
           });
-          setCloning(false);
-          return;
         }
-  
-        const targetSessionIds = targetSessions.map((s) => s.id);
-  
-        // 2. Delete existing evaluators for target sessions
-        const { error: deleteError } = await supabase
-          .from("session_evaluators")
-          .delete()
-          .in("session_id", targetSessionIds);
-  
-        if (deleteError) throw deleteError;
-  
-        // 3. Insert new evaluators
-        const newEvaluators = [];
-        for (const targetId of targetSessionIds) {
-          for (const evaluator of assignedEvaluators) {
-            newEvaluators.push({
-              session_id: targetId,
-              user_id: evaluator.id,
-              association_id: session.association_id,
-            });
-          }
-        }
-  
-        const { error: insertError } = await supabase
-          .from("session_evaluators")
-          .insert(newEvaluators);
-  
-        if (insertError) throw insertError;
-  
-        toast({
-          title: "Evaluators Cloned",
-          description: `Successfully copied evaluators to ${targetSessionIds.length} other sessions in this wave.`,
-        });
-        
-        // No need to trigger parent refresh here as it only affects other sessions
-      } catch (error) {
-        console.error("Error cloning evaluators:", error);
-        toast({
-          title: "Clone Failed",
-          description: "Could not copy evaluators.",
-          variant: "destructive",
-        });
-      } finally {
-        setCloning(false);
       }
+
+      const { error: insertError } = await supabase
+        .from("session_evaluators")
+        .insert(newEvaluators);
+
+      if (insertError) throw insertError;
+
+      toast({
+        title: "Evaluators Cloned",
+        description: `Successfully copied evaluators to ${targetSessionIds.length} other sessions in this wave.`,
+      });
+
+      // No need to trigger parent refresh here as it only affects other sessions
+    } catch (error) {
+      console.error("Error cloning evaluators:", error);
+      toast({
+        title: "Clone Failed",
+        description: "Could not copy evaluators.",
+        variant: "destructive",
+      });
+    } finally {
+      setCloning(false);
+    }
   };
 
   const filteredAvailable = availableEvaluators.filter(
     (e) =>
       e.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      e.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      e.email?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -328,41 +343,45 @@ export function SessionEvaluatorManagementDialog({
                 className="h-8 pl-8 text-xs"
               />
             </div>
-            
+
             <ScrollArea className="flex-1 -mx-3 px-3">
-                <div className="space-y-1">
-                    {loading ? (
-                        <div className="text-xs text-muted-foreground p-2">Loading...</div>
-                    ) : filteredAvailable.length === 0 ? (
-                        <div className="text-xs text-muted-foreground p-2 text-center italic">
-                            {searchQuery ? "No matches found" : "No available evaluators"}
-                        </div>
-                    ) : (
-                        filteredAvailable.map((evaluator) => (
-                            <div
-                                key={evaluator.id}
-                                className="flex items-center justify-between p-2 rounded-md hover:bg-muted group transition-colors"
-                            >
-                                <div className="flex flex-col overflow-hidden">
-                                    <span className="text-sm font-medium truncate">
-                                        {evaluator.full_name || "Unknown"}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground truncate">
-                                        {evaluator.email}
-                                    </span>
-                                </div>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-green-600 hover:text-green-700 hover:bg-green-50"
-                                    onClick={() => handleAssign(evaluator)}
-                                >
-                                    <Plus className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))
-                    )}
-                </div>
+              <div className="space-y-1">
+                {loading ? (
+                  <div className="text-xs text-muted-foreground p-2">
+                    Loading...
+                  </div>
+                ) : filteredAvailable.length === 0 ? (
+                  <div className="text-xs text-muted-foreground p-2 text-center italic">
+                    {searchQuery
+                      ? "No matches found"
+                      : "No available evaluators"}
+                  </div>
+                ) : (
+                  filteredAvailable.map((evaluator) => (
+                    <div
+                      key={evaluator.id}
+                      className="flex items-center justify-between p-2 rounded-md hover:bg-muted group transition-colors"
+                    >
+                      <div className="flex flex-col overflow-hidden">
+                        <span className="text-sm font-medium truncate">
+                          {evaluator.full_name || "Unknown"}
+                        </span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {evaluator.email}
+                        </span>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-green-600 hover:text-green-700 hover:bg-green-50"
+                        onClick={() => handleAssign(evaluator)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
             </ScrollArea>
           </div>
 
@@ -374,47 +393,49 @@ export function SessionEvaluatorManagementDialog({
                 {assignedEvaluators.length}
               </span>
             </h3>
-            
-            <ScrollArea className="flex-1 -mx-3 px-3 mt-10"> 
-               {/* Added margin top to match alignment with search bar on left roughly if desired, or just list */}
-                <div className="space-y-1">
-                    {loading ? (
-                        <div className="text-xs text-muted-foreground p-2">Loading...</div>
-                    ) : assignedEvaluators.length === 0 ? (
-                        <div className="text-xs text-muted-foreground p-2 text-center italic">
-                            No evaluators assigned yet
+
+            <ScrollArea className="flex-1 -mx-3 px-3 mt-10">
+              {/* Added margin top to match alignment with search bar on left roughly if desired, or just list */}
+              <div className="space-y-1">
+                {loading ? (
+                  <div className="text-xs text-muted-foreground p-2">
+                    Loading...
+                  </div>
+                ) : assignedEvaluators.length === 0 ? (
+                  <div className="text-xs text-muted-foreground p-2 text-center italic">
+                    No evaluators assigned yet
+                  </div>
+                ) : (
+                  assignedEvaluators.map((evaluator) => (
+                    <div
+                      key={evaluator.id}
+                      className="flex items-center justify-between p-2 rounded-md bg-background border shadow-sm group"
+                    >
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="bg-blue-100 text-blue-700 p-1.5 rounded-full">
+                          <ShieldCheck className="h-4 w-4" />
                         </div>
-                    ) : (
-                        assignedEvaluators.map((evaluator) => (
-                            <div
-                                key={evaluator.id}
-                                className="flex items-center justify-between p-2 rounded-md bg-background border shadow-sm group"
-                            >
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                     <div className="bg-blue-100 text-blue-700 p-1.5 rounded-full">
-                                        <ShieldCheck className="h-4 w-4" />
-                                     </div>
-                                    <div className="flex flex-col overflow-hidden">
-                                        <span className="text-sm font-medium truncate">
-                                            {evaluator.full_name || "Unknown"}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground truncate">
-                                            {evaluator.email}
-                                        </span>
-                                    </div>
-                                </div>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 hover:bg-red-50"
-                                    onClick={() => handleRemove(evaluator)}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))
-                    )}
-                </div>
+                        <div className="flex flex-col overflow-hidden">
+                          <span className="text-sm font-medium truncate">
+                            {evaluator.full_name || "Unknown"}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate">
+                            {evaluator.email}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleRemove(evaluator)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
             </ScrollArea>
           </div>
         </div>
