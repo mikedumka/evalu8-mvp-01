@@ -424,7 +424,6 @@ export function CohortsTable() {
 
         supabase
           .from("cohorts")
-          // @ts-expect-error partial update
           .upsert(updates)
           .then(({ error }) => {
             if (error) {

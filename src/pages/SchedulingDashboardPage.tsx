@@ -50,6 +50,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { SessionBulkImportDialog } from "@/components/sessions/SessionBulkImportDialog";
 import { WaveDistributionDialog } from "@/components/waves/WaveDistributionDialog";
 import { SessionSummaryDialog } from "@/components/sessions/SessionSummaryDialog";
@@ -82,6 +94,7 @@ type SessionRowWithCounts = Database["public"]["Tables"]["sessions"]["Row"] & {
 
 export function SchedulingDashboardPage() {
   const { currentAssociation } = useAuth();
+  const { toast } = useToast();
   const [cohorts, setCohorts] = useState<CohortRow[]>([]);
   const [selectedCohortId, setSelectedCohortId] = useState<string>("");
   const [activeSeason, setActiveSeason] = useState<SeasonRow | null>(null);
@@ -144,6 +157,16 @@ export function SchedulingDashboardPage() {
   }>({
     open: false,
     session: null,
+  });
+  const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
+  const [cleanupInProgress, setCleanupInProgress] = useState(false);
+  const [cleanupWaveId, setCleanupWaveId] = useState<string>("");
+  const [cleanupOptions, setCleanupOptions] = useState({
+    removeDrills: false,
+    removeEvaluators: false,
+    removeIntake: false,
+    removePlayers: false,
+    removeSchedule: false,
   });
 
   const selectedCohort = cohorts.find((c) => c.id === selectedCohortId);
@@ -334,47 +357,139 @@ export function SchedulingDashboardPage() {
     return timeString.split(":").slice(0, 2).join(":");
   };
 
-  const handleClearCohortSchedule = async () => {
+  const resetCleanupState = () => {
+    setCleanupWaveId("");
+    setCleanupOptions({
+      removeDrills: false,
+      removeEvaluators: false,
+      removeIntake: false,
+      removePlayers: false,
+      removeSchedule: false,
+    });
+  };
+
+  const getWaveLabel = (waveId: string) => {
+    const wave = waves.find((w) => w.id === waveId);
+    if (!wave) return "Selected Wave";
+
+    if (wave.wave_type === "standard") {
+      return `Wave ${wave.wave_number}`;
+    }
+
+    return wave.custom_wave_name || `Wave ${wave.wave_number}`;
+  };
+
+  const openCleanupDialog = () => {
+    const preselectedWave =
+      filterWave !== "all" && filterWave !== "unassigned" ? filterWave : "";
+
+    resetCleanupState();
+    setCleanupWaveId(preselectedWave);
+    setCleanupDialogOpen(true);
+  };
+
+  const setCleanupOption = (
+    key: keyof typeof cleanupOptions,
+    checked: boolean,
+  ) => {
+    setCleanupOptions((prev) => ({ ...prev, [key]: checked }));
+  };
+
+  const hasCleanupSelection = Object.values(cleanupOptions).some(Boolean);
+
+  const handleWaveCleanup = async () => {
     if (!selectedCohortId || !activeSeason) return;
 
-    if (
-      !window.confirm(
-        "Are you sure you want to DELETE ALL sessions and waves for this cohort? This action cannot be undone.",
-      )
-    ) {
+    if (!cleanupWaveId) {
+      toast({
+        title: "Wave required",
+        description: "Select a wave before running data cleanup.",
+        variant: "destructive",
+      });
       return;
     }
 
+    if (!hasCleanupSelection) {
+      toast({
+        title: "Cleanup option required",
+        description: "Select at least one cleanup option.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const targetSessions = sessions.filter((s) => s.wave_id === cleanupWaveId);
+    const sessionIds = targetSessions.map((s) => s.id);
+
+    if (sessionIds.length === 0) {
+      toast({
+        title: "No sessions found",
+        description: `${getWaveLabel(cleanupWaveId)} has no sessions to clean up.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCleanupInProgress(true);
+
     try {
-      // 1. Delete Sessions for this cohort
-      const { error: sessErr } = await supabase
-        .from("sessions")
-        .delete()
-        .eq("cohort_id", selectedCohortId)
-        .eq("season_id", activeSeason.id);
-
-      if (sessErr) {
-        console.error("Error deleting sessions", sessErr);
-        throw sessErr;
+      if (cleanupOptions.removeDrills) {
+        const { error } = await supabase
+          .from("session_drills")
+          .delete()
+          .in("session_id", sessionIds);
+        if (error) throw error;
       }
 
-      // 2. Delete Waves for this cohort (only standard ones or all?)
-      // Assuming all waves for this cohort in this season
-      const { error: waveErr } = await supabase
-        .from("waves")
-        .delete()
-        .eq("cohort_id", selectedCohortId)
-        .eq("season_id", activeSeason.id);
-
-      if (waveErr) {
-        console.error("Error deleting waves", waveErr);
-        throw waveErr;
+      if (cleanupOptions.removeEvaluators) {
+        const { error } = await supabase
+          .from("session_evaluators")
+          .delete()
+          .in("session_id", sessionIds);
+        if (error) throw error;
       }
 
-      void fetchCohortData();
-    } catch (err) {
-      console.error("Error clearing schedule:", err);
-      alert("Failed to clear schedule. Check console for details.");
+      if (cleanupOptions.removeIntake) {
+        const { error } = await supabase
+          .from("session_intake_personnel")
+          .delete()
+          .in("session_id", sessionIds);
+        if (error) throw error;
+      }
+
+      if (cleanupOptions.removePlayers) {
+        const { error } = await supabase
+          .from("player_sessions")
+          .delete()
+          .in("session_id", sessionIds);
+        if (error) throw error;
+      }
+
+      if (cleanupOptions.removeSchedule) {
+        const { error } = await supabase
+          .from("sessions")
+          .delete()
+          .in("id", sessionIds);
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Data cleanup complete",
+        description: `Cleanup completed for ${getWaveLabel(cleanupWaveId)}.`,
+      });
+
+      setCleanupDialogOpen(false);
+      resetCleanupState();
+      await fetchCohortData();
+    } catch (error: any) {
+      console.error("Error during wave cleanup:", error);
+      toast({
+        title: "Cleanup failed",
+        description: error?.message || "Unable to complete selected cleanup actions.",
+        variant: "destructive",
+      });
+    } finally {
+      setCleanupInProgress(false);
     }
   };
 
@@ -658,9 +773,9 @@ export function SchedulingDashboardPage() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={handleClearCohortSchedule}
+                    onClick={openCleanupDialog}
                   >
-                    <Trash2 className="mr-2 h-4 w-4" /> Clear Schedule
+                    <Trash2 className="mr-2 h-4 w-4" /> Data Cleanup
                   </Button>
                   <Button onClick={() => setImportOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" /> Import Schedule
@@ -1046,6 +1161,121 @@ export function SchedulingDashboardPage() {
               fetchCohortData();
             }}
           />
+
+          <AlertDialog
+            open={cleanupDialogOpen}
+            onOpenChange={(open) => {
+              setCleanupDialogOpen(open);
+              if (!open && !cleanupInProgress) resetCleanupState();
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Data Cleanup</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Select a wave and choose what to remove. Cleanup actions apply
+                  only to sessions in the selected wave.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Wave selection</div>
+                  <Select
+                    value={cleanupWaveId}
+                    onValueChange={setCleanupWaveId}
+                    disabled={cleanupInProgress}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select wave" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableWaves.map((wave) => (
+                        <SelectItem key={wave.id} value={wave.id}>
+                          {getWaveLabel(wave.id)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="text-sm font-medium">Cleanup options</div>
+
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={cleanupOptions.removeDrills}
+                      onCheckedChange={(checked) =>
+                        setCleanupOption("removeDrills", Boolean(checked))
+                      }
+                      disabled={cleanupInProgress}
+                    />
+                    <span>Remove Drills</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={cleanupOptions.removeEvaluators}
+                      onCheckedChange={(checked) =>
+                        setCleanupOption("removeEvaluators", Boolean(checked))
+                      }
+                      disabled={cleanupInProgress}
+                    />
+                    <span>Remove Evaluators</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={cleanupOptions.removeIntake}
+                      onCheckedChange={(checked) =>
+                        setCleanupOption("removeIntake", Boolean(checked))
+                      }
+                      disabled={cleanupInProgress}
+                    />
+                    <span>Remove Intake</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={cleanupOptions.removePlayers}
+                      onCheckedChange={(checked) =>
+                        setCleanupOption("removePlayers", Boolean(checked))
+                      }
+                      disabled={cleanupInProgress}
+                    />
+                    <span>Remove Players</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-sm font-medium text-destructive">
+                    <Checkbox
+                      checked={cleanupOptions.removeSchedule}
+                      onCheckedChange={(checked) =>
+                        setCleanupOption("removeSchedule", Boolean(checked))
+                      }
+                      disabled={cleanupInProgress}
+                    />
+                    <span>Remove Schedule</span>
+                  </label>
+                </div>
+              </div>
+
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={cleanupInProgress}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleWaveCleanup}
+                  disabled={
+                    cleanupInProgress || !cleanupWaveId || !hasCleanupSelection
+                  }
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {cleanupInProgress ? "Cleaning..." : "Run Cleanup"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {distributionDialogState.wave && (
             <WaveDistributionDialog
               open={distributionDialogState.open}

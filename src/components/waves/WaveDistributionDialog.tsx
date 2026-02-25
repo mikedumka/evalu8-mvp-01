@@ -40,7 +40,7 @@ export function WaveDistributionDialog({
 }: WaveDistributionDialogProps) {
   const { currentAssociation } = useAuth();
   const [sessions, setSessions] = useState<SessionRow[]>([]);
-  const [loading, setLoading] = useState(false); // Used in fetchWaveSessions
+  const [_loading, setLoading] = useState(false); // Used in fetchWaveSessions
   const [distributing, setDistributing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [algorithm, setAlgorithm] = useState<string>("alphabetical");
@@ -248,6 +248,9 @@ export function WaveDistributionDialog({
                   </SelectItem>
                   <SelectItem value="previous_level_balanced">
                     Previous Level (Balanced)
+                  </SelectItem>
+                  <SelectItem value="current_ranking">
+                    Current Ranking
                   </SelectItem>
                 </SelectContent>
               </Select>

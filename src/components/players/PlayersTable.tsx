@@ -124,8 +124,8 @@ const PLAYER_COLUMNS: ColumnConfig[] = [
         row.status === "active"
           ? "default"
           : row.status === "withdrawn"
-          ? "destructive"
-          : "secondary";
+            ? "destructive"
+            : "secondary";
 
       return (
         <div className="flex items-center gap-2">
@@ -136,7 +136,7 @@ const PLAYER_COLUMNS: ColumnConfig[] = [
               row.status === "active" &&
                 "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400",
               row.status === "other" &&
-                "bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400"
+                "bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400",
             )}
           >
             {row.status}
@@ -163,7 +163,7 @@ interface SortState {
 function sortRows(
   rows: PlayerRow[],
   column: ColumnConfig,
-  direction: SortDirection
+  direction: SortDirection,
 ): PlayerRow[] {
   const modifier = direction === "asc" ? 1 : -1;
 
@@ -286,7 +286,7 @@ export function PlayersTable() {
           position_type:position_types(name),
           cohort:cohorts(name),
           previous_level:previous_levels(name)
-        `
+        `,
         )
         .eq("association_id", currentAssociation.association_id)
         .eq("season_id", seasonData.id)
@@ -295,28 +295,38 @@ export function PlayersTable() {
       if (error) throw error;
 
       // Cast the data to match our PlayerRow type (Supabase types can be tricky with joins)
-      const typedData = (data || []) as unknown as PlayerRow[];
+      const typedData = (data || []).map((p: any) => ({
+        ...p,
+        position_type: Array.isArray(p.position_type)
+          ? p.position_type[0]
+          : p.position_type,
+        cohort: Array.isArray(p.cohort) ? p.cohort[0] : p.cohort,
+        previous_level: Array.isArray(p.previous_level)
+          ? p.previous_level[0]
+          : p.previous_level,
+      })) as unknown as PlayerRow[];
+
       setPlayers(typedData);
 
       // Extract unique values for filters
       const cohorts = Array.from(
         new Set(
-          typedData.map((p) => p.cohort?.name).filter(Boolean) as string[]
-        )
+          typedData.map((p) => p.cohort?.name).filter(Boolean) as string[],
+        ),
       ).sort();
       const positions = Array.from(
         new Set(
           typedData
             .map((p) => p.position_type?.name)
-            .filter(Boolean) as string[]
-        )
+            .filter(Boolean) as string[],
+        ),
       ).sort();
       const previousLevels = Array.from(
         new Set(
           typedData
             .map((p) => p.previous_level?.name)
-            .filter(Boolean) as string[]
-        )
+            .filter(Boolean) as string[],
+        ),
       ).sort();
       setAvailableCohorts(cohorts);
       setAvailablePositions(positions);
@@ -433,7 +443,7 @@ export function PlayersTable() {
   const toggleFilter = (
     currentFilters: string[],
     setFilters: (filters: string[]) => void,
-    value: string
+    value: string,
   ) => {
     if (currentFilters.includes(value)) {
       setFilters(currentFilters.filter((f) => f !== value));
@@ -458,7 +468,7 @@ export function PlayersTable() {
             "rounded-md border px-4 py-3 text-sm",
             feedback.type === "success"
               ? "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-600/60 dark:bg-emerald-950/50 dark:text-emerald-100"
-              : "border-destructive/60 bg-destructive/10 text-destructive"
+              : "border-destructive/60 bg-destructive/10 text-destructive",
           )}
         >
           {feedback.message}
@@ -487,7 +497,7 @@ export function PlayersTable() {
                   previousLevelFilter.length > 0) && (
                   <Badge
                     variant="secondary"
-                    className="ml-2 rounded-sm px-1 font-normal lg:hidden"
+                    className="ml-2 font-normal lg:hidden"
                   >
                     {statusFilter.length +
                       cohortFilter.length +
@@ -547,7 +557,7 @@ export function PlayersTable() {
                     toggleFilter(
                       previousLevelFilter,
                       setPreviousLevelFilter,
-                      level
+                      level,
                     )
                   }
                 >
@@ -695,7 +705,7 @@ export function PlayersTable() {
                         className={cn(
                           "px-4 py-3",
                           col.align === "center" && "text-center",
-                          col.align === "right" && "text-right"
+                          col.align === "right" && "text-right",
                         )}
                       >
                         {col.getDisplayValue(player)}

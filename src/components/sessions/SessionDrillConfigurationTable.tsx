@@ -454,7 +454,7 @@ export function SessionDrillConfigurationTable({}: SessionDrillConfigurationTabl
                 {(statusFilter.length > 0 || cohortFilter.length > 0) && (
                   <Badge
                     variant="secondary"
-                    className="ml-2 rounded-sm px-1 font-normal lg:hidden"
+                    className="ml-2 font-normal lg:hidden"
                   >
                     {statusFilter.length + cohortFilter.length}
                   </Badge>

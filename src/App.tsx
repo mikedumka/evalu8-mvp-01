@@ -17,6 +17,7 @@ import SystemAssociationsPage from "@/pages/SystemAssociationsPage";
 import SystemUsersPage from "@/pages/SystemUsersPage";
 import AssociationUsersPage from "@/pages/AssociationUsersPage";
 import { SchedulingDashboardPage } from "@/pages/SchedulingDashboardPage";
+import TestingOverviewPage from "@/pages/TestingOverviewPage";
 import DebugPage from "@/pages/DebugPage";
 
 function App() {
@@ -72,6 +73,7 @@ function App() {
             <Route path="/system/users" element={<SystemUsersPage />} />
             <Route path="/users" element={<AssociationUsersPage />} />
             <Route path="/debug" element={<DebugPage />} />
+            <Route path="/testing/overview" element={<TestingOverviewPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </SidebarInset>

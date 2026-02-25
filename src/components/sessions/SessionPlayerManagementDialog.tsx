@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowRightLeft, UserX, AlertCircle, Plus, Search } from "lucide-react";
+import { UserX, AlertCircle, Plus, Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/types/database.types";
@@ -57,15 +57,6 @@ type AssignedPlayer = {
     } | null;
   } | null;
 };
-
-type WaveSession = {
-  id: string;
-  name: string;
-  scheduled_date: string;
-  scheduled_time: string;
-  player_count: number;
-};
-
 type CohortPlayer = {
   id: string;
   first_name: string;
@@ -94,7 +85,7 @@ export function SessionPlayerManagementDialog({
 }: SessionPlayerManagementDialogProps) {
   const { toast } = useToast();
   const [players, setPlayers] = useState<AssignedPlayer[]>([]);
-  const [otherSessions, setOtherSessions] = useState<WaveSession[]>([]);
+  // const [otherSessions, setOtherSessions] = useState<WaveSession[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Add Player State
@@ -178,38 +169,6 @@ export function SessionPlayerManagementDialog({
             : null,
         })),
       );
-
-      // 2. If part of a wave, fetch other sessions
-      if (session.wave_id) {
-        const { data: sessionData, error: sessionError } = await supabase
-          .from("sessions")
-          .select(
-            `
-            id,
-            name,
-            scheduled_date,
-            scheduled_time,
-            player_sessions (count)
-          `,
-          )
-          .eq("wave_id", session.wave_id)
-          .neq("id", session.id) // Exclude current session
-          .neq("status", "completed") // Only active sessions
-          .order("scheduled_date", { ascending: true })
-          .order("scheduled_time", { ascending: true });
-
-        if (sessionError) throw sessionError;
-
-        setOtherSessions(
-          sessionData.map((s) => ({
-            id: s.id,
-            name: s.name,
-            scheduled_date: s.scheduled_date,
-            scheduled_time: s.scheduled_time,
-            player_count: s.player_sessions?.[0]?.count || 0,
-          })),
-        );
-      }
     } catch (error: any) {
       console.error("Error fetching session data:", error);
       toast({

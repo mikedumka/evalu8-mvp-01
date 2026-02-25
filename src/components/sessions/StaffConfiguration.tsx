@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, UserCheck, UserPlus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -224,7 +224,7 @@ export function StaffConfiguration({ session }: StaffConfigurationProps) {
                           <Badge
                             key={role}
                             variant="secondary"
-                            className="text-[10px] px-1 h-5"
+                            className="text-[10px]"
                           >
                             {role}
                           </Badge>
@@ -291,7 +291,7 @@ export function StaffConfiguration({ session }: StaffConfigurationProps) {
                           <Badge
                             key={role}
                             variant="secondary"
-                            className="text-[10px] px-1 h-5"
+                            className="text-[10px]"
                           >
                             {role}
                           </Badge>

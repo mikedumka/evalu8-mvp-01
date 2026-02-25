@@ -5095,6 +5095,60 @@ Scenario: Export audit logs for compliance
   And the export action itself is logged in the audit log
 ```
 
+### Feature: Testing Overview Wave Test Data Controls
+
+**User Story:** As an Association Administrator, I want to generate and clear test evaluation data by wave so that I can validate wave distribution behavior safely and repeatedly.
+
+**Business Rules:**
+
+- Generate and clear actions must be scoped to one selected wave
+- The system must prompt for wave selection before destructive clear actions
+- Generate test data only works when the selected wave has distributed players assigned to sessions
+- If a selected wave has no sessions, the action is blocked with a clear message
+- Clear action resets evaluations and check-in status only for sessions in the selected wave
+- Session status reset applies only to sessions in the selected wave
+
+```gherkin
+Scenario: Generate test data for a wave with distributed players
+  Given I am logged in as an Association Administrator
+  And I am on the "Testing Overview" page for cohort "U13"
+  And Wave 2 has sessions with distributed players assigned
+  When I click "Generate Test Data"
+  And I select "Wave 2"
+  And I confirm generation
+  Then the system creates evaluation test data only for sessions in Wave 2
+  And sessions outside Wave 2 are not modified
+  And I see a confirmation message including "Wave 2"
+
+Scenario: Block generate when selected wave has no distributed players
+  Given I am logged in as an Association Administrator
+  And I am on the "Testing Overview" page for cohort "U13"
+  And Wave 3 exists but no players are distributed to Wave 3 sessions
+  When I click "Generate Test Data"
+  And I select "Wave 3"
+  And I confirm generation
+  Then no evaluation test data is created
+  And I see an error message "Distribute players to sessions for this wave in the Scheduling Dashboard before generating test data"
+
+Scenario: Prompt for wave when clearing test data
+  Given I am logged in as an Association Administrator
+  And I am on the "Testing Overview" page for cohort "U13"
+  When I click "Clear Data"
+  Then I am prompted to select a wave
+  And I cannot confirm the clear action until a wave is selected
+
+Scenario: Clear test data for one selected wave only
+  Given I am logged in as an Association Administrator
+  And Wave 1 and Wave 2 both contain evaluation test data
+  When I click "Clear Data"
+  And I select "Wave 1"
+  And I confirm clear
+  Then evaluation test data is cleared only for Wave 1 sessions
+  And check-in status is reset only for Wave 1 sessions
+  And session status is reset to "ready" only for Wave 1 sessions
+  And Wave 2 data remains unchanged
+```
+
 ---
 
 ## Document Status

@@ -62,9 +62,9 @@ export function EditUserDialog({
         "system_update_user_profile",
         {
           p_user_id: user.id,
-          p_full_name: fullName,
+          p_full_name: fullName || "",
           p_system_roles: systemRoles,
-        }
+        },
       );
 
       if (updateError) throw updateError;
@@ -76,7 +76,7 @@ export function EditUserDialog({
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to save changes. Please try again."
+          : "Unable to save changes. Please try again.",
       );
     } finally {
       setSubmitting(false);

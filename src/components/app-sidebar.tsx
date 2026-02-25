@@ -18,7 +18,6 @@ import {
   Shirt,
   Calendar,
   MapPin,
-  Waves,
   LayoutDashboard,
 } from "lucide-react";
 
@@ -169,6 +168,24 @@ const navigationSections: Array<{
         label: "Reporting",
         icon: LineChart,
         disabled: true,
+      },
+    ],
+  },
+  {
+    id: "testing",
+    label: "Testing (Dev Only)",
+    items: [
+      {
+        id: "testing-overview",
+        label: "Evaluation Overview",
+        icon: LayoutDashboard,
+        to: "/testing/overview",
+      },
+      {
+        id: "debug",
+        label: "Debug Tools",
+        icon: Settings2,
+        to: "/debug",
       },
     ],
   },

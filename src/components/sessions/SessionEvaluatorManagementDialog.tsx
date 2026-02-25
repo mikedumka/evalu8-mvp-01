@@ -12,16 +12,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Search,
-  Plus,
-  Trash2,
-  UserPlus,
-  UserMinus,
-  ShieldCheck,
-  Copy,
-  Loader2,
-} from "lucide-react";
+import { Search, Plus, Trash2, ShieldCheck, Copy, Loader2 } from "lucide-react";
 
 interface Evaluator {
   id: string;

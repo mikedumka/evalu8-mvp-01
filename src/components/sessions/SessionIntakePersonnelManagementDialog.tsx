@@ -11,15 +11,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Search,
-  Plus,
-  Trash2,
-  UserPlus,
-  UserMinus,
-  Copy,
-  Loader2,
-} from "lucide-react";
+import { Search, Trash2, UserPlus, Copy, Loader2 } from "lucide-react";
 
 interface IntakePersonnel {
   id: string;
