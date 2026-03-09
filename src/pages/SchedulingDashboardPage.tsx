@@ -51,7 +51,16 @@ import {
 } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -73,6 +82,7 @@ import { SessionPlayerManagementDialog } from "@/components/sessions/SessionPlay
 type CohortRow = Database["public"]["Tables"]["cohorts"]["Row"];
 type SeasonRow = Database["public"]["Tables"]["seasons"]["Row"];
 type WaveRow = Database["public"]["Tables"]["waves"]["Row"];
+type PlayerRow = Database["public"]["Tables"]["players"]["Row"];
 // Define the session type with the related counts we need.
 // Note: Supabase returns count as an array of objects like [{ count: 123 }]
 type SessionRowWithCounts = Database["public"]["Tables"]["sessions"]["Row"] & {
@@ -91,6 +101,34 @@ type SessionRowWithCounts = Database["public"]["Tables"]["sessions"]["Row"] & {
     players: number;
   };
 };
+
+type SessionFetchRow = Database["public"]["Tables"]["sessions"]["Row"] & {
+  location: { name: string } | null;
+  session_drills: { count: number }[];
+  session_evaluators: { count: number }[];
+  session_intake_personnel: { count: number }[];
+  player_sessions: { count: number }[];
+};
+
+type WaveAssignmentRow = {
+  player_id: string;
+  session: {
+    wave_id: string | null;
+    cohort_id: string;
+  };
+};
+
+type PlayerForCustomWave = PlayerRow & {
+  position_types?: { name: string } | { name: string }[] | null;
+  previous_levels?: { name: string; rank_order?: number } | { name: string; rank_order?: number }[] | null;
+};
+
+type CustomWaveAlgorithm =
+  | "alphabetical"
+  | "random"
+  | "previous_level_grouped"
+  | "previous_level_balanced"
+  | "current_ranking";
 
 export function SchedulingDashboardPage() {
   const { currentAssociation } = useAuth();
@@ -168,8 +206,42 @@ export function SchedulingDashboardPage() {
     removePlayers: false,
     removeSchedule: false,
   });
+  const [customWaveDialogOpen, setCustomWaveDialogOpen] = useState(false);
+  const [creatingCustomWave, setCreatingCustomWave] = useState(false);
+  const [customWaveName, setCustomWaveName] = useState("");
+  const [customWaveSessionCount, setCustomWaveSessionCount] = useState(1);
+  const [customWaveTeamsPerSession, setCustomWaveTeamsPerSession] = useState(2);
+  const [customWaveAlgorithm, setCustomWaveAlgorithm] =
+    useState<CustomWaveAlgorithm>("alphabetical");
+  const [customWaveDate, setCustomWaveDate] = useState<string>(
+    new Date().toISOString().slice(0, 10),
+  );
+  const [customWaveTime, setCustomWaveTime] = useState<string>("18:00:00");
+  const [customWavePlayerSearch, setCustomWavePlayerSearch] = useState("");
+  const [customWaveStatusFilter, setCustomWaveStatusFilter] =
+    useState<string>("active");
+  const [customWavePositionFilter, setCustomWavePositionFilter] =
+    useState<string>("all");
+  const [customWaveLevelFilter, setCustomWaveLevelFilter] =
+    useState<string>("all");
+  const [customWavePlayers, setCustomWavePlayers] = useState<PlayerForCustomWave[]>(
+    [],
+  );
+  const [customWaveSelectedPlayerIds, setCustomWaveSelectedPlayerIds] = useState<
+    Set<string>
+  >(new Set());
 
   const selectedCohort = cohorts.find((c) => c.id === selectedCohortId);
+
+  const getErrorMessage = (error: unknown, fallback: string) => {
+    if (error && typeof error === "object" && "message" in error) {
+      const maybeMessage = (error as { message?: unknown }).message;
+      if (typeof maybeMessage === "string" && maybeMessage.length > 0) {
+        return maybeMessage;
+      }
+    }
+    return fallback;
+  };
 
   useEffect(() => {
     if (currentAssociation) {
@@ -182,6 +254,12 @@ export function SchedulingDashboardPage() {
       fetchCohortData();
     }
   }, [selectedCohortId, activeSeason]);
+
+  useEffect(() => {
+    if (customWaveDialogOpen && selectedCohortId && activeSeason) {
+      void fetchCustomWavePlayers();
+    }
+  }, [customWaveDialogOpen, selectedCohortId, activeSeason]);
 
   const fetchInitialData = async () => {
     if (!currentAssociation) return;
@@ -256,7 +334,7 @@ export function SchedulingDashboardPage() {
     if (sessionsError) console.error("Error fetching sessions:", sessionsError);
     else {
       // Map wave number to session if possible
-      const mappedSessions = (sessionsData as any[]).map((s) => ({
+      const mappedSessions = ((sessionsData || []) as SessionFetchRow[]).map((s) => ({
         ...s,
         location: s.location || null, // Ensure explicit null if undefined
         cohort: selectedCohort ? { name: selectedCohort.name } : null, // Add cohort info
@@ -300,7 +378,7 @@ export function SchedulingDashboardPage() {
       const counts = new Map<string, number>();
       const processed = new Map<string, Set<string>>(); // waveId -> Set<playerId>
 
-      assignments?.forEach((a: any) => {
+      (assignments as WaveAssignmentRow[] | null)?.forEach((a) => {
         const waveId = a.session.wave_id;
         if (waveId) {
           if (!processed.has(waveId)) {
@@ -386,6 +464,480 @@ export function SchedulingDashboardPage() {
     resetCleanupState();
     setCleanupWaveId(preselectedWave);
     setCleanupDialogOpen(true);
+  };
+
+  const resetCustomWaveState = () => {
+    setCustomWaveName("");
+    setCustomWaveSessionCount(1);
+    setCustomWaveTeamsPerSession(2);
+    setCustomWaveAlgorithm("alphabetical");
+    setCustomWaveDate(new Date().toISOString().slice(0, 10));
+    setCustomWaveTime("18:00:00");
+    setCustomWavePlayerSearch("");
+    setCustomWaveStatusFilter("active");
+    setCustomWavePositionFilter("all");
+    setCustomWaveLevelFilter("all");
+    setCustomWaveSelectedPlayerIds(new Set());
+  };
+
+  const openCustomWaveDialog = () => {
+    if (!selectedCohortId || !activeSeason) {
+      toast({
+        title: "Select cohort first",
+        description: "Please select a cohort with an active season.",
+        variant: "destructive",
+      });
+      return;
+    }
+    resetCustomWaveState();
+    setCustomWaveDialogOpen(true);
+  };
+
+  const getPositionName = (player: PlayerForCustomWave) =>
+    (Array.isArray(player.position_types)
+      ? player.position_types[0]?.name
+      : player.position_types?.name) || "-";
+
+  const getPreviousLevelName = (player: PlayerForCustomWave) =>
+    (Array.isArray(player.previous_levels)
+      ? player.previous_levels[0]?.name
+      : player.previous_levels?.name) || "-";
+
+  const getPreviousLevelRank = (player: PlayerForCustomWave) =>
+    (Array.isArray(player.previous_levels)
+      ? player.previous_levels[0]?.rank_order
+      : player.previous_levels?.rank_order) ?? 999;
+
+  const fetchCustomWavePlayers = async () => {
+    if (!selectedCohortId || !activeSeason) return;
+
+    const { data, error } = await supabase
+      .from("players")
+      .select(
+        `
+          *,
+          position_types(name),
+          previous_levels(name, rank_order)
+        `,
+      )
+      .eq("cohort_id", selectedCohortId)
+      .eq("season_id", activeSeason.id)
+      .order("last_name", { ascending: true })
+      .order("first_name", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching custom wave players:", error);
+      toast({
+        title: "Error",
+        description: "Unable to load players for custom wave creation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCustomWavePlayers((data as PlayerForCustomWave[]) || []);
+  };
+
+  const filteredCustomWavePlayers = customWavePlayers.filter((player) => {
+    const fullName = `${player.last_name}, ${player.first_name}`.toLowerCase();
+    const searchMatch =
+      !customWavePlayerSearch ||
+      fullName.includes(customWavePlayerSearch.toLowerCase());
+
+    const statusMatch =
+      customWaveStatusFilter === "all" || player.status === customWaveStatusFilter;
+
+    const positionName = getPositionName(player);
+    const positionMatch =
+      customWavePositionFilter === "all" ||
+      positionName === customWavePositionFilter;
+
+    const levelName = getPreviousLevelName(player);
+    const levelMatch =
+      customWaveLevelFilter === "all" || levelName === customWaveLevelFilter;
+
+    return searchMatch && statusMatch && positionMatch && levelMatch;
+  });
+
+  const customWavePositions = Array.from(
+    new Set(customWavePlayers.map((p) => getPositionName(p)).filter((p) => p !== "-")),
+  ).sort();
+
+  const customWaveLevels = Array.from(
+    new Set(customWavePlayers.map((p) => getPreviousLevelName(p)).filter((l) => l !== "-")),
+  ).sort();
+
+  const toggleCustomWavePlayer = (playerId: string) => {
+    setCustomWaveSelectedPlayerIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(playerId)) next.delete(playerId);
+      else next.add(playerId);
+      return next;
+    });
+  };
+
+  const selectAllFilteredPlayers = () => {
+    setCustomWaveSelectedPlayerIds((prev) => {
+      const next = new Set(prev);
+      filteredCustomWavePlayers.forEach((p) => next.add(p.id));
+      return next;
+    });
+  };
+
+  const clearFilteredPlayers = () => {
+    setCustomWaveSelectedPlayerIds((prev) => {
+      const next = new Set(prev);
+      filteredCustomWavePlayers.forEach((p) => next.delete(p.id));
+      return next;
+    });
+  };
+
+  const sortPlayersForAlgorithm = (
+    selectedPlayers: PlayerForCustomWave[],
+    algorithm: CustomWaveAlgorithm,
+  ) => {
+    const list = [...selectedPlayers];
+
+    if (algorithm === "random") {
+      for (let i = list.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [list[i], list[j]] = [list[j], list[i]];
+      }
+      return list;
+    }
+
+    if (
+      algorithm === "previous_level_grouped" ||
+      algorithm === "previous_level_balanced"
+    ) {
+      return list.sort((a, b) => {
+        const rankDiff = getPreviousLevelRank(a) - getPreviousLevelRank(b);
+        if (rankDiff !== 0) return rankDiff;
+        const last = a.last_name.localeCompare(b.last_name);
+        if (last !== 0) return last;
+        return a.first_name.localeCompare(b.first_name);
+      });
+    }
+
+    // alphabetical + current_ranking fallback
+    return list.sort((a, b) => {
+      const last = a.last_name.localeCompare(b.last_name);
+      if (last !== 0) return last;
+      return a.first_name.localeCompare(b.first_name);
+    });
+  };
+
+  const assignPlayersToTeamsSnakeByLevel = (
+    players: PlayerForCustomWave[],
+    teamsPerSession: number,
+  ) => {
+    const safeTeamCount = Math.max(1, teamsPerSession);
+    const orderedByLevel = [...players].sort((a, b) => {
+      const rankDiff = getPreviousLevelRank(a) - getPreviousLevelRank(b);
+      if (rankDiff !== 0) return rankDiff;
+      const levelDiff = getPreviousLevelName(a).localeCompare(getPreviousLevelName(b));
+      if (levelDiff !== 0) return levelDiff;
+      const last = a.last_name.localeCompare(b.last_name);
+      if (last !== 0) return last;
+      return a.first_name.localeCompare(b.first_name);
+    });
+
+    const levelGroups = new Map<string, PlayerForCustomWave[]>();
+    orderedByLevel.forEach((player) => {
+      const key = `${getPreviousLevelRank(player)}::${getPreviousLevelName(player)}`;
+      if (!levelGroups.has(key)) levelGroups.set(key, []);
+      levelGroups.get(key)!.push(player);
+    });
+
+    const teamBuckets: PlayerForCustomWave[][] = Array.from(
+      { length: safeTeamCount },
+      () => [],
+    );
+
+    let teamPointer = 0;
+    let teamDirection: 1 | -1 = 1;
+
+    for (const [, groupPlayers] of levelGroups) {
+      for (const player of groupPlayers) {
+        teamBuckets[teamPointer].push(player);
+        if (safeTeamCount > 1) {
+          if (teamDirection === 1) {
+            if (teamPointer === safeTeamCount - 1) {
+              teamDirection = -1;
+            } else {
+              teamPointer += 1;
+            }
+          } else {
+            if (teamPointer === 0) {
+              teamDirection = 1;
+            } else {
+              teamPointer -= 1;
+            }
+          }
+        }
+      }
+    }
+
+    return teamBuckets;
+  };
+
+  const distributePlayersAcrossSessions = (
+    selectedPlayers: PlayerForCustomWave[],
+    sessionIds: string[],
+    teamsPerSession: number,
+    algorithm: CustomWaveAlgorithm,
+  ) => {
+    const assignments: Array<{
+      player_id: string;
+      session_id: string;
+      team_number: number;
+    }> = [];
+
+    if (selectedPlayers.length === 0 || sessionIds.length === 0) return assignments;
+
+    if (algorithm === "previous_level_balanced") {
+      const levelSortedPlayers = [...selectedPlayers].sort((a, b) => {
+        const rankDiff = getPreviousLevelRank(a) - getPreviousLevelRank(b);
+        if (rankDiff !== 0) return rankDiff;
+        const levelDiff = getPreviousLevelName(a).localeCompare(getPreviousLevelName(b));
+        if (levelDiff !== 0) return levelDiff;
+        const last = a.last_name.localeCompare(b.last_name);
+        if (last !== 0) return last;
+        return a.first_name.localeCompare(b.first_name);
+      });
+
+      const levelGroups = new Map<string, PlayerForCustomWave[]>();
+      levelSortedPlayers.forEach((player) => {
+        const key = `${getPreviousLevelRank(player)}::${getPreviousLevelName(player)}`;
+        if (!levelGroups.has(key)) levelGroups.set(key, []);
+        levelGroups.get(key)!.push(player);
+      });
+
+      const sessionBuckets: PlayerForCustomWave[][] = Array.from(
+        { length: sessionIds.length },
+        () => [],
+      );
+
+      let sessionPointer = 0;
+      let sessionDirection: 1 | -1 = 1;
+
+      let remaining = levelSortedPlayers.length;
+      while (remaining > 0) {
+        for (const [, players] of levelGroups) {
+          const nextPlayer = players.shift();
+          if (!nextPlayer) continue;
+          sessionBuckets[sessionPointer].push(nextPlayer);
+          remaining -= 1;
+
+          if (sessionIds.length > 1) {
+            if (sessionDirection === 1) {
+              if (sessionPointer === sessionIds.length - 1) {
+                sessionDirection = -1;
+              } else {
+                sessionPointer += 1;
+              }
+            } else {
+              if (sessionPointer === 0) {
+                sessionDirection = 1;
+              } else {
+                sessionPointer -= 1;
+              }
+            }
+          }
+        }
+      }
+
+      sessionBuckets.forEach((playersInSession, sessionIndex) => {
+        const teams = assignPlayersToTeamsSnakeByLevel(
+          playersInSession,
+          teamsPerSession,
+        );
+        teams.forEach((teamPlayers, teamIndex) => {
+          teamPlayers.forEach((player) => {
+            assignments.push({
+              player_id: player.id,
+              session_id: sessionIds[sessionIndex],
+              team_number: teamIndex + 1,
+            });
+          });
+        });
+      });
+
+      return assignments;
+    }
+
+    const sortedPlayers = sortPlayersForAlgorithm(selectedPlayers, algorithm);
+
+    const totalPlayers = sortedPlayers.length;
+    const sessionCount = sessionIds.length;
+    const base = Math.floor(totalPlayers / sessionCount);
+    const remainder = totalPlayers % sessionCount;
+
+    let cursor = 0;
+
+    sessionIds.forEach((sessionId, index) => {
+      const playersInSession = base + (index < remainder ? 1 : 0);
+
+      for (let i = 0; i < playersInSession; i++) {
+        const player = sortedPlayers[cursor++];
+        if (!player) continue;
+        const teamNumber = (i % Math.max(1, teamsPerSession)) + 1;
+        assignments.push({
+          player_id: player.id,
+          session_id: sessionId,
+          team_number: teamNumber,
+        });
+      }
+    });
+
+    return assignments;
+  };
+
+  const handleCreateCustomWave = async () => {
+    if (!currentAssociation || !activeSeason || !selectedCohortId) return;
+
+    const trimmedName = customWaveName.trim();
+    if (!trimmedName) {
+      toast({
+        title: "Custom wave name required",
+        description: "Please provide a descriptive custom wave name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (customWaveSessionCount < 1) {
+      toast({
+        title: "Invalid session count",
+        description: "Custom wave must have at least one session.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedPlayers = customWavePlayers.filter((p) =>
+      customWaveSelectedPlayerIds.has(p.id),
+    );
+
+    if (selectedPlayers.length === 0) {
+      toast({
+        title: "No players selected",
+        description: "Select at least one player for this custom wave.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreatingCustomWave(true);
+
+    try {
+      const { data: existingWaveName, error: existingWaveError } = await supabase
+        .from("waves")
+        .select("id")
+        .eq("cohort_id", selectedCohortId)
+        .eq("season_id", activeSeason.id)
+        .eq("wave_type", "custom")
+        .eq("custom_wave_name", trimmedName)
+        .maybeSingle();
+
+      if (existingWaveError) throw existingWaveError;
+      if (existingWaveName) {
+        toast({
+          title: "Duplicate custom wave name",
+          description: "A custom wave with this name already exists.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data: insertedWave, error: waveInsertError } = await supabase
+        .from("waves")
+        .insert({
+          association_id: currentAssociation.association_id,
+          season_id: activeSeason.id,
+          cohort_id: selectedCohortId,
+          wave_type: "custom",
+          wave_number: null,
+          custom_wave_name: trimmedName,
+          status: "ready",
+          teams_per_session: customWaveTeamsPerSession,
+          distribution_algorithm: customWaveAlgorithm,
+        })
+        .select("id")
+        .single();
+
+      if (waveInsertError || !insertedWave) throw waveInsertError;
+
+      const baseDate = new Date(`${customWaveDate}T00:00:00`);
+      const newSessions = Array.from({ length: customWaveSessionCount }).map(
+        (_, index) => {
+          const sessionDate = new Date(baseDate);
+          sessionDate.setDate(baseDate.getDate() + index);
+
+          return {
+            association_id: currentAssociation.association_id,
+            season_id: activeSeason.id,
+            cohort_id: selectedCohortId,
+            wave_id: insertedWave.id,
+            name: `${trimmedName} - Session ${index + 1}`,
+            scheduled_date: sessionDate.toISOString().slice(0, 10),
+            scheduled_time: customWaveTime,
+            status: "ready",
+            drill_config_locked: false,
+            duration_minutes: 90,
+          };
+        },
+      );
+
+      const { data: insertedSessions, error: sessionInsertError } = await supabase
+        .from("sessions")
+        .insert(newSessions)
+        .select("id");
+
+      if (sessionInsertError || !insertedSessions?.length) throw sessionInsertError;
+
+      const sessionIds = insertedSessions.map((s) => s.id);
+      const assignments = distributePlayersAcrossSessions(
+        selectedPlayers,
+        sessionIds,
+        customWaveTeamsPerSession,
+        customWaveAlgorithm,
+      );
+
+      const playerSessionRows = assignments.map((a) => ({
+        association_id: currentAssociation.association_id,
+        player_id: a.player_id,
+        session_id: a.session_id,
+        team_number: a.team_number,
+      }));
+
+      const { error: assignmentError } = await supabase
+        .from("player_sessions")
+        .insert(playerSessionRows);
+
+      if (assignmentError) throw assignmentError;
+
+      toast({
+        title: "Custom wave created",
+        description: `${trimmedName} created with ${customWaveSessionCount} sessions and ${selectedPlayers.length} selected players.`,
+      });
+
+      setCustomWaveDialogOpen(false);
+      resetCustomWaveState();
+      await fetchCohortData();
+    } catch (error: unknown) {
+      console.error("Error creating custom wave:", error);
+      toast({
+        title: "Failed to create custom wave",
+        description: getErrorMessage(
+          error,
+          "An unexpected error occurred creating custom wave.",
+        ),
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingCustomWave(false);
+    }
   };
 
   const setCleanupOption = (
@@ -481,11 +1033,14 @@ export function SchedulingDashboardPage() {
       setCleanupDialogOpen(false);
       resetCleanupState();
       await fetchCohortData();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error during wave cleanup:", error);
       toast({
         title: "Cleanup failed",
-        description: error?.message || "Unable to complete selected cleanup actions.",
+        description: getErrorMessage(
+          error,
+          "Unable to complete selected cleanup actions.",
+        ),
         variant: "destructive",
       });
     } finally {
@@ -654,7 +1209,7 @@ export function SchedulingDashboardPage() {
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline">
+                <Button variant="outline" onClick={openCustomWaveDialog}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Custom Wave
                 </Button>
@@ -744,9 +1299,18 @@ export function SchedulingDashboardPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() =>
-                              setDistributionDialogState({ open: true, wave })
-                            }
+                            disabled={wave.wave_type === "custom"}
+                            onClick={() => {
+                              if (wave.wave_type === "custom") {
+                                toast({
+                                  title: "Custom wave already distributed",
+                                  description:
+                                    "Custom wave player distribution is set during custom wave creation.",
+                                });
+                                return;
+                              }
+                              setDistributionDialogState({ open: true, wave });
+                            }}
                           >
                             Manage
                           </Button>
@@ -830,8 +1394,9 @@ export function SchedulingDashboardPage() {
                         <SelectItem value="unassigned">Unassigned</SelectItem>
                         {availableWaves.map((wave) => (
                           <SelectItem key={wave.id} value={wave.id}>
-                            Wave {wave.wave_number}:{" "}
-                            {wave.custom_wave_name || "Standard"}
+                            {wave.wave_type === "custom"
+                              ? (wave.custom_wave_name ?? "Custom Wave")
+                              : `Wave ${wave.wave_number}`}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1275,6 +1840,256 @@ export function SchedulingDashboardPage() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          <Dialog
+            open={customWaveDialogOpen}
+            onOpenChange={(open) => {
+              setCustomWaveDialogOpen(open);
+              if (!open && !creatingCustomWave) resetCustomWaveState();
+            }}
+          >
+            <DialogContent className="max-w-5xl">
+              <DialogHeader>
+                <DialogTitle>Create Custom Wave</DialogTitle>
+                <DialogDescription>
+                  Create a named custom wave, generate sessions, and assign a
+                  selected subset of players.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="custom-wave-name">Custom Wave Name</Label>
+                  <Input
+                    id="custom-wave-name"
+                    value={customWaveName}
+                    onChange={(e) => setCustomWaveName(e.target.value)}
+                    placeholder="e.g. Catcher Evaluation Wave"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="custom-wave-sessions">Number of Sessions</Label>
+                  <Input
+                    id="custom-wave-sessions"
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={customWaveSessionCount}
+                    onChange={(e) =>
+                      setCustomWaveSessionCount(
+                        Math.max(1, Math.min(20, Number(e.target.value || 1))),
+                      )
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="custom-wave-algorithm">Distribution Algorithm</Label>
+                  <Select
+                    value={customWaveAlgorithm}
+                    onValueChange={(value: CustomWaveAlgorithm) =>
+                      setCustomWaveAlgorithm(value)
+                    }
+                  >
+                    <SelectTrigger id="custom-wave-algorithm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                      <SelectItem value="random">Random</SelectItem>
+                      <SelectItem value="previous_level_grouped">
+                        Previous Level (Grouped)
+                      </SelectItem>
+                      <SelectItem value="previous_level_balanced">
+                        Previous Level (Balanced)
+                      </SelectItem>
+                      <SelectItem value="current_ranking">Current Ranking</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="custom-wave-teams">Teams Per Session</Label>
+                  <Select
+                    value={String(customWaveTeamsPerSession)}
+                    onValueChange={(value) => setCustomWaveTeamsPerSession(Number(value))}
+                  >
+                    <SelectTrigger id="custom-wave-teams">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 6 }, (_, i) => i + 1).map((n) => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="custom-wave-date">Start Date</Label>
+                  <Input
+                    id="custom-wave-date"
+                    type="date"
+                    value={customWaveDate}
+                    onChange={(e) => setCustomWaveDate(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="custom-wave-time">Start Time</Label>
+                  <Input
+                    id="custom-wave-time"
+                    type="time"
+                    value={customWaveTime.slice(0, 5)}
+                    onChange={(e) => setCustomWaveTime(`${e.target.value}:00`)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    value={customWavePlayerSearch}
+                    onChange={(e) => setCustomWavePlayerSearch(e.target.value)}
+                    placeholder="Search players by last name, first name"
+                    className="w-full md:w-80"
+                  />
+
+                  <Select
+                    value={customWaveStatusFilter}
+                    onValueChange={setCustomWaveStatusFilter}
+                  >
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="withdrawn">Withdrawn</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={customWavePositionFilter}
+                    onValueChange={setCustomWavePositionFilter}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Position" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Positions</SelectItem>
+                      {customWavePositions.map((position) => (
+                        <SelectItem key={position} value={position}>
+                          {position}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={customWaveLevelFilter}
+                    onValueChange={setCustomWaveLevelFilter}
+                  >
+                    <SelectTrigger className="w-[220px]">
+                      <SelectValue placeholder="Previous Level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Previous Levels</SelectItem>
+                      {customWaveLevels.map((level) => (
+                        <SelectItem key={level} value={level}>
+                          {level}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Button variant="outline" size="sm" onClick={selectAllFilteredPlayers}>
+                    Select Filtered
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={clearFilteredPlayers}>
+                    Clear Filtered
+                  </Button>
+                </div>
+
+                <div className="rounded-md border max-h-72 overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[60px]">Pick</TableHead>
+                        <TableHead>Last Name</TableHead>
+                        <TableHead>First Name</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Position</TableHead>
+                        <TableHead>Previous Level</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCustomWavePlayers.map((player) => {
+                        const checked = customWaveSelectedPlayerIds.has(player.id);
+                        return (
+                          <TableRow
+                            key={player.id}
+                            className={checked ? "bg-violet-50/50" : ""}
+                          >
+                            <TableCell>
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={() => toggleCustomWavePlayer(player.id)}
+                              />
+                            </TableCell>
+                            <TableCell>{player.last_name}</TableCell>
+                            <TableCell>{player.first_name}</TableCell>
+                            <TableCell>{player.status}</TableCell>
+                            <TableCell>{getPositionName(player)}</TableCell>
+                            <TableCell>{getPreviousLevelName(player)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+
+                      {filteredCustomWavePlayers.length === 0 && (
+                        <TableRow>
+                          <TableCell
+                            colSpan={6}
+                            className="text-center text-muted-foreground"
+                          >
+                            No players match current filters.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <div className="text-sm text-muted-foreground">
+                  Selected players: {customWaveSelectedPlayerIds.size}
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setCustomWaveDialogOpen(false);
+                    resetCustomWaveState();
+                  }}
+                  disabled={creatingCustomWave}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-violet-600 hover:bg-violet-700"
+                  onClick={handleCreateCustomWave}
+                  disabled={creatingCustomWave}
+                >
+                  {creatingCustomWave ? "Creating..." : "Create Custom Wave"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {distributionDialogState.wave && (
             <WaveDistributionDialog

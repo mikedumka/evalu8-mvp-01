@@ -2026,6 +2026,7 @@ Scenario: Prevent distributing multiple waves simultaneously
 - Sessions in custom waves are tagged with the custom wave name
 - Player selection supports filtering by position, previous level, status, search by name
 - Distribution algorithm is still applied to selected athletes
+- When algorithm is "Previous Level (Balanced)", selected athletes are interleaved by previous level across sessions and then snake-balanced across teams within each session
 - Teams per session configured during custom wave distribution (range: 1-6, default: 2)
 - Custom waves can have different team counts than standard waves
 
@@ -2085,6 +2086,22 @@ Scenario: Filter players by previous level for custom wave
   When I click "Select All Filtered"
   And I confirm selection
   Then all filtered players are added to the custom wave
+
+Scenario: Balance selected athletes by previous level across sessions and teams in a custom wave
+  Given I am logged in as an Association Administrator
+  And cohort "U15" has 12 selected athletes for custom wave "Advanced Skills Wave"
+  And selected athletes have previous levels:
+    | Previous Level | Count |
+    | A | 4 |
+    | B | 4 |
+    | C | 4 |
+  When I choose distribution algorithm "Previous Level (Balanced)"
+  And I set sessions to 2
+  And I set teams per session to 2
+  And I click "Create Custom Wave"
+  Then each session receives a mixed previous-level composition
+  And each session is level-balanced across Team 1 and Team 2
+  And no session is composed primarily of a single previous level when a balanced mix is possible
 
 Scenario: Allow mixed participation - athlete in both standard and custom waves
   Given I am logged in as an Association Administrator
@@ -5105,8 +5122,9 @@ Scenario: Export audit logs for compliance
 - The system must prompt for wave selection before destructive clear actions
 - Generate test data only works when the selected wave has distributed players assigned to sessions
 - If a selected wave has no sessions, the action is blocked with a clear message
-- Clear action resets evaluations and check-in status only for sessions in the selected wave
-- Session status reset applies only to sessions in the selected wave
+- Clear action provides selectable cleanup options for the selected wave
+- Available clear options include: Remove Evaluations, Reset Check-In, Reset Session Status, Remove Drills, Remove Evaluators, Remove Intake Personnel, Remove Players Assigned
+- All selected clear options apply only to sessions in the selected wave
 
 ```gherkin
 Scenario: Generate test data for a wave with distributed players
@@ -5142,11 +5160,30 @@ Scenario: Clear test data for one selected wave only
   And Wave 1 and Wave 2 both contain evaluation test data
   When I click "Clear Data"
   And I select "Wave 1"
+  And I keep default cleanup options selected
   And I confirm clear
   Then evaluation test data is cleared only for Wave 1 sessions
   And check-in status is reset only for Wave 1 sessions
   And session status is reset to "ready" only for Wave 1 sessions
   And Wave 2 data remains unchanged
+
+Scenario: Select targeted cleanup options when clearing a wave
+  Given I am logged in as an Association Administrator
+  And Wave 2 has drill configuration, evaluators, intake personnel, and players assigned
+  When I click "Clear Data"
+  And I select "Wave 2"
+  And I select cleanup options:
+    | Option |
+    | Remove Drills |
+    | Remove Evaluators |
+    | Remove Intake Personnel |
+    | Remove Players Assigned |
+  And I confirm clear
+  Then drills are removed only from Wave 2 sessions
+  And evaluators are removed only from Wave 2 sessions
+  And intake personnel are removed only from Wave 2 sessions
+  And player assignments are removed only from Wave 2 sessions
+  And waves other than Wave 2 remain unchanged
 ```
 
 ---

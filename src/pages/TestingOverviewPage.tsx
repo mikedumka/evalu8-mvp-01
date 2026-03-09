@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -119,6 +120,16 @@ type FilterConfig = {
   level: string;
 };
 
+type ClearOptions = {
+  removeEvaluations: boolean;
+  resetCheckIn: boolean;
+  resetSessionStatus: boolean;
+  removeDrills: boolean;
+  removeEvaluators: boolean;
+  removeIntake: boolean;
+  removePlayers: boolean;
+};
+
 export default function TestingOverviewPage() {
   const { currentAssociation } = useAuth();
   const { toast } = useToast();
@@ -131,6 +142,15 @@ export default function TestingOverviewPage() {
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [generateWaveId, setGenerateWaveId] = useState<string>("");
   const [clearWaveId, setClearWaveId] = useState<string>("");
+  const [clearOptions, setClearOptions] = useState<ClearOptions>({
+    removeEvaluations: true,
+    resetCheckIn: true,
+    resetSessionStatus: true,
+    removeDrills: false,
+    removeEvaluators: false,
+    removeIntake: false,
+    removePlayers: false,
+  });
 
   // Data State
   const [waves, setWaves] = useState<Wave[]>([]);
@@ -252,6 +272,24 @@ export default function TestingOverviewPage() {
     sessionDrills,
     sessionEvaluators,
   ]);
+
+  const hasClearSelection = Object.values(clearOptions).some(Boolean);
+
+  const resetClearOptions = () => {
+    setClearOptions({
+      removeEvaluations: true,
+      resetCheckIn: true,
+      resetSessionStatus: true,
+      removeDrills: false,
+      removeEvaluators: false,
+      removeIntake: false,
+      removePlayers: false,
+    });
+  };
+
+  const setClearOption = (key: keyof ClearOptions, checked: boolean) => {
+    setClearOptions((prev) => ({ ...prev, [key]: checked }));
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -831,12 +869,21 @@ export default function TestingOverviewPage() {
     }
   };
 
-  const clearTestData = async (waveId: string) => {
+  const clearTestData = async (waveId: string, options: ClearOptions) => {
     if (!selectedCohortId || sessions.length === 0) return;
     if (!waveId) {
       toast({
         title: "Wave required",
         description: "Please select a wave to clear.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!Object.values(options).some(Boolean)) {
+      toast({
+        title: "Select at least one cleanup option",
+        description: "Choose at least one item to clear for the selected wave.",
         variant: "destructive",
       });
       return;
@@ -859,34 +906,78 @@ export default function TestingOverviewPage() {
 
       const sessionIds = targetSessions.map((s) => s.id);
 
-      // Delete detailed evaluations first
-      const { error: evalError } = await supabase
-        .from("evaluations")
-        .delete()
-        .in("session_id", sessionIds);
+      if (options.removeEvaluations) {
+        const { error } = await supabase
+          .from("evaluations")
+          .delete()
+          .in("session_id", sessionIds);
+        if (error) throw error;
+      }
 
-      if (evalError) throw evalError;
+      if (options.removeDrills) {
+        const { error } = await supabase
+          .from("session_drills")
+          .delete()
+          .in("session_id", sessionIds);
+        if (error) throw error;
+      }
 
-      // Reset check-in status (optional, but good for full reset)
-      // We set 'checked_in' to false for everyone in these sessions
-      const { error: checkinError } = await supabase
-        .from("player_sessions")
-        .update({ checked_in: false })
-        .in("session_id", sessionIds);
+      if (options.removeEvaluators) {
+        const { error } = await supabase
+          .from("session_evaluators")
+          .delete()
+          .in("session_id", sessionIds);
+        if (error) throw error;
+      }
 
-      if (checkinError) throw checkinError;
+      if (options.removeIntake) {
+        const { error } = await supabase
+          .from("session_intake_personnel")
+          .delete()
+          .in("session_id", sessionIds);
+        if (error) throw error;
+      }
 
-      // Reset Session Status to 'ready' (so they can be re-run or distributed correctly)
-      const { error: sessionError } = await supabase
-        .from("sessions")
-        .update({ status: "ready" })
-        .in("id", sessionIds);
+      if (options.removePlayers) {
+        const { error } = await supabase
+          .from("player_sessions")
+          .delete()
+          .in("session_id", sessionIds);
+        if (error) throw error;
+      }
 
-      if (sessionError) throw sessionError;
+      if (options.resetCheckIn && !options.removePlayers) {
+        const { error } = await supabase
+          .from("player_sessions")
+          .update({ checked_in: false })
+          .in("session_id", sessionIds);
+        if (error) throw error;
+      }
+
+      if (options.resetSessionStatus) {
+        const { error } = await supabase
+          .from("sessions")
+          .update({ status: "ready" })
+          .in("id", sessionIds);
+        if (error) throw error;
+      }
+
+      const summaryParts = [
+        options.removeEvaluations ? "evaluations removed" : null,
+        options.removeDrills ? "drills removed" : null,
+        options.removeEvaluators ? "evaluators removed" : null,
+        options.removeIntake ? "intake personnel removed" : null,
+        options.removePlayers
+          ? "player assignments removed"
+          : options.resetCheckIn
+            ? "check-in reset"
+            : null,
+        options.resetSessionStatus ? "session status reset to ready" : null,
+      ].filter(Boolean);
 
       toast({
         title: "Test Data Cleared",
-        description: `${getWaveLabel(waveId)}: Evaluation scores and check-in statuses have been reset.`,
+        description: `${getWaveLabel(waveId)}: ${summaryParts.join(", ")}.`,
       });
 
       await fetchData();
@@ -1329,6 +1420,7 @@ export default function TestingOverviewPage() {
               variant="outline"
               onClick={() => {
                 setClearWaveId(selectedWaveId !== "all" ? selectedWaveId : "");
+                resetClearOptions();
                 setShowClearDialog(true);
               }}
               className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
@@ -1456,18 +1548,23 @@ export default function TestingOverviewPage() {
           </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <AlertDialog
+          open={showClearDialog}
+          onOpenChange={(open) => {
+            setShowClearDialog(open);
+            if (!open && !clearing) resetClearOptions();
+          }}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete evaluation scores and reset
-                check-in status for the selected wave. This action cannot be
-                undone.
+                Select what data to clear for the selected wave. Cleanup is
+                limited to sessions in that wave.
               </AlertDialogDescription>
             </AlertDialogHeader>
 
-            <div className="space-y-2">
+            <div className="space-y-4">
               <div className="text-sm font-medium">Wave to clear</div>
               <Select value={clearWaveId} onValueChange={setClearWaveId}>
                 <SelectTrigger>
@@ -1481,13 +1578,94 @@ export default function TestingOverviewPage() {
                   ))}
                 </SelectContent>
               </Select>
+
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Cleanup options</div>
+
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={clearOptions.removeEvaluations}
+                    onCheckedChange={(checked) =>
+                      setClearOption("removeEvaluations", Boolean(checked))
+                    }
+                    disabled={clearing}
+                  />
+                  <span>Remove Evaluations</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={clearOptions.resetCheckIn}
+                    onCheckedChange={(checked) =>
+                      setClearOption("resetCheckIn", Boolean(checked))
+                    }
+                    disabled={clearing || clearOptions.removePlayers}
+                  />
+                  <span>Reset Check-In</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={clearOptions.resetSessionStatus}
+                    onCheckedChange={(checked) =>
+                      setClearOption("resetSessionStatus", Boolean(checked))
+                    }
+                    disabled={clearing}
+                  />
+                  <span>Reset Session Status to Ready</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={clearOptions.removeDrills}
+                    onCheckedChange={(checked) =>
+                      setClearOption("removeDrills", Boolean(checked))
+                    }
+                    disabled={clearing}
+                  />
+                  <span>Remove Drills</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={clearOptions.removeEvaluators}
+                    onCheckedChange={(checked) =>
+                      setClearOption("removeEvaluators", Boolean(checked))
+                    }
+                    disabled={clearing}
+                  />
+                  <span>Remove Evaluators</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={clearOptions.removeIntake}
+                    onCheckedChange={(checked) =>
+                      setClearOption("removeIntake", Boolean(checked))
+                    }
+                    disabled={clearing}
+                  />
+                  <span>Remove Intake Personnel</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-sm font-medium text-destructive">
+                  <Checkbox
+                    checked={clearOptions.removePlayers}
+                    onCheckedChange={(checked) =>
+                      setClearOption("removePlayers", Boolean(checked))
+                    }
+                    disabled={clearing}
+                  />
+                  <span>Remove Players Assigned</span>
+                </label>
+              </div>
             </div>
 
             <AlertDialogFooter>
               <AlertDialogCancel disabled={clearing}>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => clearTestData(clearWaveId)}
-                disabled={!clearWaveId || clearing}
+                onClick={() => clearTestData(clearWaveId, clearOptions)}
+                disabled={!clearWaveId || clearing || !hasClearSelection}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 {clearing ? "Clearing..." : "Yes, clear selected wave"}
