@@ -140,10 +140,10 @@ const navigationSections: Array<{
     label: "Check-in",
     items: [
       {
-        id: "check-in-placeholder",
+        id: "check-in",
         label: "Check-in",
         icon: ClipboardCheck,
-        disabled: true,
+        to: "/check-in",
       },
     ],
   },

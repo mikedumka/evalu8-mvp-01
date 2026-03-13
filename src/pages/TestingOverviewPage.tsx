@@ -74,6 +74,7 @@ interface Session {
   name: string;
   scheduled_date: string;
   scheduled_time: string;
+  status: string;
   location_id: string | null;
   locations?: { name: string };
   wave_id: string | null;
@@ -322,7 +323,7 @@ export default function TestingOverviewPage() {
       const { data: sessionsData, error: sessionsError } = await supabase
         .from("sessions")
         .select(
-          "id, name, scheduled_date, scheduled_time, wave_id, location_id, locations (name)",
+          "id, name, scheduled_date, scheduled_time, status, wave_id, location_id, locations (name)",
         )
         .eq("cohort_id", selectedCohortId)
         .order("scheduled_date");
@@ -776,8 +777,14 @@ export default function TestingOverviewPage() {
           (sum, d) => sum + d.playersWithoutApplicableDrills,
           0,
         ),
-        preparedRows: sessionDiagnostics.reduce((sum, d) => sum + d.preparedRows, 0),
-        insertedRows: sessionDiagnostics.reduce((sum, d) => sum + d.insertedRows, 0),
+        preparedRows: sessionDiagnostics.reduce(
+          (sum, d) => sum + d.preparedRows,
+          0,
+        ),
+        insertedRows: sessionDiagnostics.reduce(
+          (sum, d) => sum + d.insertedRows,
+          0,
+        ),
         skippedExistingRows: sessionDiagnostics.reduce(
           (sum, d) => sum + d.skippedExistingRows,
           0,
@@ -905,6 +912,35 @@ export default function TestingOverviewPage() {
       }
 
       const sessionIds = targetSessions.map((s) => s.id);
+      const sessionIdSet = new Set(sessionIds);
+      const affectedCounts = {
+        evaluations: evaluations.filter((e) => sessionIdSet.has(e.session_id))
+          .length,
+        drills: sessionDrills.filter((d) => sessionIdSet.has(d.session_id))
+          .length,
+        evaluators: sessionEvaluators.filter((e) =>
+          sessionIdSet.has(e.session_id),
+        ).length,
+        intake: 0,
+        playerAssignments: playerSessions.filter((p) =>
+          sessionIdSet.has(p.session_id),
+        ).length,
+        checkInResets: playerSessions.filter(
+          (p) => sessionIdSet.has(p.session_id) && p.checked_in,
+        ).length,
+        sessionStatusResets: targetSessions.filter((s) => s.status !== "ready")
+          .length,
+      };
+
+      // Fetch intake rows count because this page does not preload intake assignments
+      if (options.removeIntake) {
+        const { data: intakeRows, error: intakeCountError } = await supabase
+          .from("session_intake_personnel")
+          .select("session_id")
+          .in("session_id", sessionIds);
+        if (intakeCountError) throw intakeCountError;
+        affectedCounts.intake = intakeRows?.length || 0;
+      }
 
       if (options.removeEvaluations) {
         const { error } = await supabase
@@ -963,16 +999,26 @@ export default function TestingOverviewPage() {
       }
 
       const summaryParts = [
-        options.removeEvaluations ? "evaluations removed" : null,
-        options.removeDrills ? "drills removed" : null,
-        options.removeEvaluators ? "evaluators removed" : null,
-        options.removeIntake ? "intake personnel removed" : null,
+        options.removeEvaluations
+          ? `evaluations removed (${affectedCounts.evaluations})`
+          : null,
+        options.removeDrills
+          ? `drills removed (${affectedCounts.drills})`
+          : null,
+        options.removeEvaluators
+          ? `evaluators removed (${affectedCounts.evaluators})`
+          : null,
+        options.removeIntake
+          ? `intake personnel removed (${affectedCounts.intake})`
+          : null,
         options.removePlayers
-          ? "player assignments removed"
+          ? `player assignments removed (${affectedCounts.playerAssignments})`
           : options.resetCheckIn
-            ? "check-in reset"
+            ? `check-in reset (${affectedCounts.checkInResets})`
             : null,
-        options.resetSessionStatus ? "session status reset to ready" : null,
+        options.resetSessionStatus
+          ? `session status reset to ready (${affectedCounts.sessionStatusResets})`
+          : null,
       ].filter(Boolean);
 
       toast({
@@ -1437,7 +1483,7 @@ export default function TestingOverviewPage() {
               ) : (
                 <Trash2 className="mr-2 h-4 w-4" />
               )}
-              Clear Data
+              Wave Cleanup
             </Button>
             <Button
               variant="outline"
@@ -1498,27 +1544,45 @@ export default function TestingOverviewPage() {
             {generateWaveId ? (
               <div className="rounded-md border bg-muted/20 p-3 space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Sessions in Wave</span>
-                  <span className="font-medium">{generatePreflight.waveSessions}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Distributed Assignments</span>
-                  <span className="font-medium">{generatePreflight.distributedAssignments}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Unique Players Distributed</span>
-                  <span className="font-medium">{generatePreflight.distributedPlayers}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Sessions with Drill Config</span>
+                  <span className="text-muted-foreground">
+                    Sessions in Wave
+                  </span>
                   <span className="font-medium">
-                    {generatePreflight.sessionsWithDrills}/{generatePreflight.waveSessions}
+                    {generatePreflight.waveSessions}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Sessions with Evaluators</span>
+                  <span className="text-muted-foreground">
+                    Distributed Assignments
+                  </span>
                   <span className="font-medium">
-                    {generatePreflight.sessionsWithEvaluators}/{generatePreflight.waveSessions}
+                    {generatePreflight.distributedAssignments}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">
+                    Unique Players Distributed
+                  </span>
+                  <span className="font-medium">
+                    {generatePreflight.distributedPlayers}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">
+                    Sessions with Drill Config
+                  </span>
+                  <span className="font-medium">
+                    {generatePreflight.sessionsWithDrills}/
+                    {generatePreflight.waveSessions}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">
+                    Sessions with Evaluators
+                  </span>
+                  <span className="font-medium">
+                    {generatePreflight.sessionsWithEvaluators}/
+                    {generatePreflight.waveSessions}
                   </span>
                 </div>
                 <div className="pt-1">
@@ -1536,10 +1600,16 @@ export default function TestingOverviewPage() {
             ) : null}
 
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={generating}>Cancel</AlertDialogCancel>
+              <AlertDialogCancel disabled={generating}>
+                Cancel
+              </AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => generateTestScores(generateWaveId)}
-                disabled={!generateWaveId || generating || !generatePreflight.canGenerate}
+                disabled={
+                  !generateWaveId ||
+                  generating ||
+                  !generatePreflight.canGenerate
+                }
                 className="bg-purple-600 text-white hover:bg-purple-700"
               >
                 {generating ? "Generating..." : "Generate Data"}
@@ -1557,10 +1627,10 @@ export default function TestingOverviewPage() {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogTitle>Wave Cleanup Options</AlertDialogTitle>
               <AlertDialogDescription>
                 Select what data to clear for the selected wave. Cleanup is
-                limited to sessions in that wave.
+                limited to sessions in that wave and cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
 
@@ -1580,7 +1650,7 @@ export default function TestingOverviewPage() {
               </Select>
 
               <div className="space-y-3">
-                <div className="text-sm font-medium">Cleanup options</div>
+                <div className="text-sm font-medium">Reset options</div>
 
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
@@ -1614,6 +1684,10 @@ export default function TestingOverviewPage() {
                   />
                   <span>Reset Session Status to Ready</span>
                 </label>
+
+                <div className="pt-1 text-sm font-medium">
+                  Remove configuration and assignments
+                </div>
 
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
@@ -1658,6 +1732,11 @@ export default function TestingOverviewPage() {
                   />
                   <span>Remove Players Assigned</span>
                 </label>
+
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-2 text-xs text-destructive">
+                  Removing players, drills, or staff assignments may require
+                  reconfiguration before sessions are ready again.
+                </div>
               </div>
             </div>
 

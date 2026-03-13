@@ -1489,6 +1489,56 @@ Then I see the session schedule table
 And the table displays columns: Session Name, Date & Location, Status, Wave, Configuration
 And the configuration column shows icon counts for drills, evaluators, and players
 
+### Feature: Wave Data Cleanup from Scheduling Dashboard
+
+**User Story:** As an Association Administrator, I want to run wave-scoped data cleanup actions from Scheduling Dashboard so that I can reset wave setup and test state safely.
+
+**Business Rules:**
+
+- Data cleanup is always scoped to one selected wave
+- Cleanup options include: Remove Evaluations, Remove Drills, Remove Evaluators, Remove Intake, Remove Players, Remove Schedule
+- At least one cleanup option must be selected before cleanup can run
+- Cleanup actions apply only to sessions in the selected wave
+- Remove Schedule deletes only sessions in the selected wave
+
+```gherkin
+Scenario: Prompt for wave and cleanup option before running scheduling cleanup
+  Given I am logged in as an Association Administrator
+  And I am on "Scheduling Dashboard" for cohort "U13"
+  When I click "Data Cleanup"
+  Then I am prompted to select a wave
+  And I see cleanup options including "Remove Evaluations"
+  And I cannot run cleanup until I select at least one cleanup option
+
+Scenario: Remove evaluations for one selected wave only
+  Given I am logged in as an Association Administrator
+  And Wave 1 and Wave 2 both have evaluation scores
+  When I click "Data Cleanup"
+  And I select "Wave 1"
+  And I select cleanup option "Remove Evaluations"
+  And I run cleanup
+  Then evaluation scores are removed only for Wave 1 sessions
+  And Wave 2 evaluation scores remain unchanged
+
+Scenario: Run targeted cleanup options for selected wave
+  Given I am logged in as an Association Administrator
+  And Wave 2 has drills, evaluators, intake personnel, and players assigned
+  When I click "Data Cleanup"
+  And I select "Wave 2"
+  And I select cleanup options:
+    | Option |
+    | Remove Drills |
+    | Remove Evaluators |
+    | Remove Intake |
+    | Remove Players |
+  And I run cleanup
+  Then drills are removed only from Wave 2 sessions
+  And evaluators are removed only from Wave 2 sessions
+  And intake personnel are removed only from Wave 2 sessions
+  And player assignments are removed only from Wave 2 sessions
+  And other waves remain unchanged
+```
+
 ### Feature: Create Sessions in Bulk
 
 **User Story:** As an Association Administrator, I want to create sessions in bulk via CSV so that scheduling multiple sessions is efficient
@@ -5148,17 +5198,17 @@ Scenario: Block generate when selected wave has no distributed players
   Then no evaluation test data is created
   And I see an error message "Distribute players to sessions for this wave in the Scheduling Dashboard before generating test data"
 
-Scenario: Prompt for wave when clearing test data
+Scenario: Prompt for wave when running wave cleanup
   Given I am logged in as an Association Administrator
   And I am on the "Testing Overview" page for cohort "U13"
-  When I click "Clear Data"
+  When I click "Wave Cleanup"
   Then I am prompted to select a wave
   And I cannot confirm the clear action until a wave is selected
 
 Scenario: Clear test data for one selected wave only
   Given I am logged in as an Association Administrator
   And Wave 1 and Wave 2 both contain evaluation test data
-  When I click "Clear Data"
+  When I click "Wave Cleanup"
   And I select "Wave 1"
   And I keep default cleanup options selected
   And I confirm clear
@@ -5170,7 +5220,7 @@ Scenario: Clear test data for one selected wave only
 Scenario: Select targeted cleanup options when clearing a wave
   Given I am logged in as an Association Administrator
   And Wave 2 has drill configuration, evaluators, intake personnel, and players assigned
-  When I click "Clear Data"
+  When I click "Wave Cleanup"
   And I select "Wave 2"
   And I select cleanup options:
     | Option |

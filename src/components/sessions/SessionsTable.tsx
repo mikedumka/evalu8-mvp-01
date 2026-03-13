@@ -87,8 +87,8 @@ const SESSION_COLUMNS: ColumnConfig[] = [
         row.status === "Completed"
           ? "default"
           : row.status === "In Progress"
-          ? "secondary"
-          : "outline";
+            ? "secondary"
+            : "outline";
 
       return (
         <Badge
@@ -98,7 +98,7 @@ const SESSION_COLUMNS: ColumnConfig[] = [
             row.status === "Completed" &&
               "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400",
             row.status === "In Progress" &&
-              "bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400"
+              "bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400",
           )}
         >
           {row.status}
@@ -149,7 +149,7 @@ interface SortState {
 function sortRows(
   rows: SessionRow[],
   column: ColumnConfig,
-  direction: SortDirection
+  direction: SortDirection,
 ): SessionRow[] {
   const modifier = direction === "asc" ? 1 : -1;
 
@@ -266,7 +266,7 @@ export function SessionsTable() {
           cohort:cohorts(name),
           location:locations(name),
           wave:waves(wave_number, custom_wave_name)
-        `
+        `,
         )
         .eq("association_id", currentAssociation.association_id)
         .eq("season_id", seasonData.id)
@@ -280,8 +280,8 @@ export function SessionsTable() {
       // Extract unique values for filters
       const cohorts = Array.from(
         new Set(
-          typedData.map((s) => s.cohort?.name).filter(Boolean) as string[]
-        )
+          typedData.map((s) => s.cohort?.name).filter(Boolean) as string[],
+        ),
       ).sort();
       setAvailableCohorts(cohorts);
     } catch (err) {
@@ -376,7 +376,7 @@ export function SessionsTable() {
   const toggleFilter = (
     currentFilters: string[],
     setFilters: (filters: string[]) => void,
-    value: string
+    value: string,
   ) => {
     if (currentFilters.includes(value)) {
       setFilters(currentFilters.filter((f) => f !== value));
@@ -401,7 +401,7 @@ export function SessionsTable() {
             "rounded-md border px-4 py-3 text-sm",
             feedback.type === "success"
               ? "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-600/60 dark:bg-emerald-950/50 dark:text-emerald-100"
-              : "border-destructive/60 bg-destructive/10 text-destructive"
+              : "border-destructive/60 bg-destructive/10 text-destructive",
           )}
         >
           {feedback.message}
@@ -592,7 +592,7 @@ export function SessionsTable() {
                         className={cn(
                           "px-4 py-3",
                           col.align === "center" && "text-center",
-                          col.align === "right" && "text-right"
+                          col.align === "right" && "text-right",
                         )}
                       >
                         {col.getDisplayValue(session)}

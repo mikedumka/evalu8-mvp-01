@@ -19,6 +19,7 @@ import AssociationUsersPage from "@/pages/AssociationUsersPage";
 import { SchedulingDashboardPage } from "@/pages/SchedulingDashboardPage";
 import TestingOverviewPage from "@/pages/TestingOverviewPage";
 import DebugPage from "@/pages/DebugPage";
+import CheckInPage from "@/pages/CheckInPage";
 
 function App() {
   const { user, loading } = useAuth();
@@ -66,6 +67,7 @@ function App() {
               path="/session-drill-configuration"
               element={<SessionDrillConfigurationPage />}
             />
+            <Route path="/check-in" element={<CheckInPage />} />
             <Route
               path="/system/associations"
               element={<SystemAssociationsPage />}

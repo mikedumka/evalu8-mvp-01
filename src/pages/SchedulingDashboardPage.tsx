@@ -120,7 +120,10 @@ type WaveAssignmentRow = {
 
 type PlayerForCustomWave = PlayerRow & {
   position_types?: { name: string } | { name: string }[] | null;
-  previous_levels?: { name: string; rank_order?: number } | { name: string; rank_order?: number }[] | null;
+  previous_levels?:
+    | { name: string; rank_order?: number }
+    | { name: string; rank_order?: number }[]
+    | null;
 };
 
 type CustomWaveAlgorithm =
@@ -200,6 +203,7 @@ export function SchedulingDashboardPage() {
   const [cleanupInProgress, setCleanupInProgress] = useState(false);
   const [cleanupWaveId, setCleanupWaveId] = useState<string>("");
   const [cleanupOptions, setCleanupOptions] = useState({
+    removeEvaluations: false,
     removeDrills: false,
     removeEvaluators: false,
     removeIntake: false,
@@ -224,12 +228,11 @@ export function SchedulingDashboardPage() {
     useState<string>("all");
   const [customWaveLevelFilter, setCustomWaveLevelFilter] =
     useState<string>("all");
-  const [customWavePlayers, setCustomWavePlayers] = useState<PlayerForCustomWave[]>(
-    [],
-  );
-  const [customWaveSelectedPlayerIds, setCustomWaveSelectedPlayerIds] = useState<
-    Set<string>
-  >(new Set());
+  const [customWavePlayers, setCustomWavePlayers] = useState<
+    PlayerForCustomWave[]
+  >([]);
+  const [customWaveSelectedPlayerIds, setCustomWaveSelectedPlayerIds] =
+    useState<Set<string>>(new Set());
 
   const selectedCohort = cohorts.find((c) => c.id === selectedCohortId);
 
@@ -334,14 +337,16 @@ export function SchedulingDashboardPage() {
     if (sessionsError) console.error("Error fetching sessions:", sessionsError);
     else {
       // Map wave number to session if possible
-      const mappedSessions = ((sessionsData || []) as SessionFetchRow[]).map((s) => ({
-        ...s,
-        location: s.location || null, // Ensure explicit null if undefined
-        cohort: selectedCohort ? { name: selectedCohort.name } : null, // Add cohort info
-        wave_number: s.wave_id
-          ? wavesData?.find((w) => w.id === s.wave_id)?.wave_number
-          : null,
-      }));
+      const mappedSessions = ((sessionsData || []) as SessionFetchRow[]).map(
+        (s) => ({
+          ...s,
+          location: s.location || null, // Ensure explicit null if undefined
+          cohort: selectedCohort ? { name: selectedCohort.name } : null, // Add cohort info
+          wave_number: s.wave_id
+            ? wavesData?.find((w) => w.id === s.wave_id)?.wave_number
+            : null,
+        }),
+      );
       setSessions((mappedSessions as unknown as SessionRowWithCounts[]) || []);
     }
 
@@ -438,6 +443,7 @@ export function SchedulingDashboardPage() {
   const resetCleanupState = () => {
     setCleanupWaveId("");
     setCleanupOptions({
+      removeEvaluations: false,
       removeDrills: false,
       removeEvaluators: false,
       removeIntake: false,
@@ -545,7 +551,8 @@ export function SchedulingDashboardPage() {
       fullName.includes(customWavePlayerSearch.toLowerCase());
 
     const statusMatch =
-      customWaveStatusFilter === "all" || player.status === customWaveStatusFilter;
+      customWaveStatusFilter === "all" ||
+      player.status === customWaveStatusFilter;
 
     const positionName = getPositionName(player);
     const positionMatch =
@@ -560,11 +567,17 @@ export function SchedulingDashboardPage() {
   });
 
   const customWavePositions = Array.from(
-    new Set(customWavePlayers.map((p) => getPositionName(p)).filter((p) => p !== "-")),
+    new Set(
+      customWavePlayers.map((p) => getPositionName(p)).filter((p) => p !== "-"),
+    ),
   ).sort();
 
   const customWaveLevels = Array.from(
-    new Set(customWavePlayers.map((p) => getPreviousLevelName(p)).filter((l) => l !== "-")),
+    new Set(
+      customWavePlayers
+        .map((p) => getPreviousLevelName(p))
+        .filter((l) => l !== "-"),
+    ),
   ).sort();
 
   const toggleCustomWavePlayer = (playerId: string) => {
@@ -635,7 +648,9 @@ export function SchedulingDashboardPage() {
     const orderedByLevel = [...players].sort((a, b) => {
       const rankDiff = getPreviousLevelRank(a) - getPreviousLevelRank(b);
       if (rankDiff !== 0) return rankDiff;
-      const levelDiff = getPreviousLevelName(a).localeCompare(getPreviousLevelName(b));
+      const levelDiff = getPreviousLevelName(a).localeCompare(
+        getPreviousLevelName(b),
+      );
       if (levelDiff !== 0) return levelDiff;
       const last = a.last_name.localeCompare(b.last_name);
       if (last !== 0) return last;
@@ -693,13 +708,16 @@ export function SchedulingDashboardPage() {
       team_number: number;
     }> = [];
 
-    if (selectedPlayers.length === 0 || sessionIds.length === 0) return assignments;
+    if (selectedPlayers.length === 0 || sessionIds.length === 0)
+      return assignments;
 
     if (algorithm === "previous_level_balanced") {
       const levelSortedPlayers = [...selectedPlayers].sort((a, b) => {
         const rankDiff = getPreviousLevelRank(a) - getPreviousLevelRank(b);
         if (rankDiff !== 0) return rankDiff;
-        const levelDiff = getPreviousLevelName(a).localeCompare(getPreviousLevelName(b));
+        const levelDiff = getPreviousLevelName(a).localeCompare(
+          getPreviousLevelName(b),
+        );
         if (levelDiff !== 0) return levelDiff;
         const last = a.last_name.localeCompare(b.last_name);
         if (last !== 0) return last;
@@ -831,14 +849,15 @@ export function SchedulingDashboardPage() {
     setCreatingCustomWave(true);
 
     try {
-      const { data: existingWaveName, error: existingWaveError } = await supabase
-        .from("waves")
-        .select("id")
-        .eq("cohort_id", selectedCohortId)
-        .eq("season_id", activeSeason.id)
-        .eq("wave_type", "custom")
-        .eq("custom_wave_name", trimmedName)
-        .maybeSingle();
+      const { data: existingWaveName, error: existingWaveError } =
+        await supabase
+          .from("waves")
+          .select("id")
+          .eq("cohort_id", selectedCohortId)
+          .eq("season_id", activeSeason.id)
+          .eq("wave_type", "custom")
+          .eq("custom_wave_name", trimmedName)
+          .maybeSingle();
 
       if (existingWaveError) throw existingWaveError;
       if (existingWaveName) {
@@ -889,12 +908,11 @@ export function SchedulingDashboardPage() {
         },
       );
 
-      const { data: insertedSessions, error: sessionInsertError } = await supabase
-        .from("sessions")
-        .insert(newSessions)
-        .select("id");
+      const { data: insertedSessions, error: sessionInsertError } =
+        await supabase.from("sessions").insert(newSessions).select("id");
 
-      if (sessionInsertError || !insertedSessions?.length) throw sessionInsertError;
+      if (sessionInsertError || !insertedSessions?.length)
+        throw sessionInsertError;
 
       const sessionIds = insertedSessions.map((s) => s.id);
       const assignments = distributePlayersAcrossSessions(
@@ -985,7 +1003,31 @@ export function SchedulingDashboardPage() {
     setCleanupInProgress(true);
 
     try {
-      if (cleanupOptions.removeDrills) {
+      // Dependent cleanup ordering:
+      // - Evaluations must be removed before player/session assignment deletions
+      // - Schedule removal implies child cleanup first
+      const shouldRemoveEvaluations =
+        cleanupOptions.removeEvaluations ||
+        cleanupOptions.removePlayers ||
+        cleanupOptions.removeSchedule;
+      const shouldRemoveDrills =
+        cleanupOptions.removeDrills || cleanupOptions.removeSchedule;
+      const shouldRemoveEvaluators =
+        cleanupOptions.removeEvaluators || cleanupOptions.removeSchedule;
+      const shouldRemoveIntake =
+        cleanupOptions.removeIntake || cleanupOptions.removeSchedule;
+      const shouldRemovePlayers =
+        cleanupOptions.removePlayers || cleanupOptions.removeSchedule;
+
+      if (shouldRemoveEvaluations) {
+        const { error } = await supabase
+          .from("evaluations")
+          .delete()
+          .in("session_id", sessionIds);
+        if (error) throw error;
+      }
+
+      if (shouldRemoveDrills) {
         const { error } = await supabase
           .from("session_drills")
           .delete()
@@ -993,7 +1035,7 @@ export function SchedulingDashboardPage() {
         if (error) throw error;
       }
 
-      if (cleanupOptions.removeEvaluators) {
+      if (shouldRemoveEvaluators) {
         const { error } = await supabase
           .from("session_evaluators")
           .delete()
@@ -1001,7 +1043,7 @@ export function SchedulingDashboardPage() {
         if (error) throw error;
       }
 
-      if (cleanupOptions.removeIntake) {
+      if (shouldRemoveIntake) {
         const { error } = await supabase
           .from("session_intake_personnel")
           .delete()
@@ -1009,7 +1051,7 @@ export function SchedulingDashboardPage() {
         if (error) throw error;
       }
 
-      if (cleanupOptions.removePlayers) {
+      if (shouldRemovePlayers) {
         const { error } = await supabase
           .from("player_sessions")
           .delete()
@@ -1769,6 +1811,17 @@ export function SchedulingDashboardPage() {
 
                   <label className="flex items-center gap-2 text-sm">
                     <Checkbox
+                      checked={cleanupOptions.removeEvaluations}
+                      onCheckedChange={(checked) =>
+                        setCleanupOption("removeEvaluations", Boolean(checked))
+                      }
+                      disabled={cleanupInProgress}
+                    />
+                    <span>Remove Evaluations</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
                       checked={cleanupOptions.removeDrills}
                       onCheckedChange={(checked) =>
                         setCleanupOption("removeDrills", Boolean(checked))
@@ -1869,7 +1922,9 @@ export function SchedulingDashboardPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="custom-wave-sessions">Number of Sessions</Label>
+                  <Label htmlFor="custom-wave-sessions">
+                    Number of Sessions
+                  </Label>
                   <Input
                     id="custom-wave-sessions"
                     type="number"
@@ -1885,7 +1940,9 @@ export function SchedulingDashboardPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="custom-wave-algorithm">Distribution Algorithm</Label>
+                  <Label htmlFor="custom-wave-algorithm">
+                    Distribution Algorithm
+                  </Label>
                   <Select
                     value={customWaveAlgorithm}
                     onValueChange={(value: CustomWaveAlgorithm) =>
@@ -1904,7 +1961,9 @@ export function SchedulingDashboardPage() {
                       <SelectItem value="previous_level_balanced">
                         Previous Level (Balanced)
                       </SelectItem>
-                      <SelectItem value="current_ranking">Current Ranking</SelectItem>
+                      <SelectItem value="current_ranking">
+                        Current Ranking
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1913,7 +1972,9 @@ export function SchedulingDashboardPage() {
                   <Label htmlFor="custom-wave-teams">Teams Per Session</Label>
                   <Select
                     value={String(customWaveTeamsPerSession)}
-                    onValueChange={(value) => setCustomWaveTeamsPerSession(Number(value))}
+                    onValueChange={(value) =>
+                      setCustomWaveTeamsPerSession(Number(value))
+                    }
                   >
                     <SelectTrigger id="custom-wave-teams">
                       <SelectValue />
@@ -2007,10 +2068,18 @@ export function SchedulingDashboardPage() {
                     </SelectContent>
                   </Select>
 
-                  <Button variant="outline" size="sm" onClick={selectAllFilteredPlayers}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={selectAllFilteredPlayers}
+                  >
                     Select Filtered
                   </Button>
-                  <Button variant="outline" size="sm" onClick={clearFilteredPlayers}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearFilteredPlayers}
+                  >
                     Clear Filtered
                   </Button>
                 </div>
@@ -2029,7 +2098,9 @@ export function SchedulingDashboardPage() {
                     </TableHeader>
                     <TableBody>
                       {filteredCustomWavePlayers.map((player) => {
-                        const checked = customWaveSelectedPlayerIds.has(player.id);
+                        const checked = customWaveSelectedPlayerIds.has(
+                          player.id,
+                        );
                         return (
                           <TableRow
                             key={player.id}
@@ -2038,14 +2109,18 @@ export function SchedulingDashboardPage() {
                             <TableCell>
                               <Checkbox
                                 checked={checked}
-                                onCheckedChange={() => toggleCustomWavePlayer(player.id)}
+                                onCheckedChange={() =>
+                                  toggleCustomWavePlayer(player.id)
+                                }
                               />
                             </TableCell>
                             <TableCell>{player.last_name}</TableCell>
                             <TableCell>{player.first_name}</TableCell>
                             <TableCell>{player.status}</TableCell>
                             <TableCell>{getPositionName(player)}</TableCell>
-                            <TableCell>{getPreviousLevelName(player)}</TableCell>
+                            <TableCell>
+                              {getPreviousLevelName(player)}
+                            </TableCell>
                           </TableRow>
                         );
                       })}
