@@ -164,10 +164,10 @@ const navigationSections: Array<{
     label: "Reporting",
     items: [
       {
-        id: "reporting-placeholder",
-        label: "Reporting",
+        id: "rankings-report",
+        label: "Rankings Report",
         icon: LineChart,
-        disabled: true,
+        to: "/reports",
       },
     ],
   },

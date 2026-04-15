@@ -342,24 +342,23 @@ export default function TestingOverviewPage() {
       if (formattedSessions.length > 0) {
         const sessionIds = formattedSessions.map((s) => s.id);
 
-        // 3. Fetch Evaluations
-        // Fetch in chunks to avoid row-limit truncation on larger cohorts/waves.
-        const sessionIdChunks: string[][] = [];
-        const chunkSize = 5;
-        for (let i = 0; i < sessionIds.length; i += chunkSize) {
-          sessionIdChunks.push(sessionIds.slice(i, i + chunkSize));
-        }
-
+        // 3. Fetch Evaluations (paginated per session to avoid 1000-row server limit)
         const allEvaluations: Evaluation[] = [];
-        for (const sessionIdChunk of sessionIdChunks) {
-          const { data: evalChunk, error: evalError } = await supabase
-            .from("evaluations")
-            .select("player_id, session_id, drill_id, evaluator_id, score")
-            .in("session_id", sessionIdChunk);
+        for (const sid of sessionIds) {
+          let from = 0;
+          const pageSize = 500;
+          while (true) {
+            const { data: evalChunk, error: evalError } = await supabase
+              .from("evaluations")
+              .select("player_id, session_id, drill_id, evaluator_id, score")
+              .eq("session_id", sid)
+              .range(from, from + pageSize - 1);
 
-          if (evalError) throw evalError;
-          if (evalChunk?.length) {
+            if (evalError) throw evalError;
+            if (!evalChunk || evalChunk.length === 0) break;
             allEvaluations.push(...(evalChunk as Evaluation[]));
+            if (evalChunk.length < pageSize) break;
+            from += pageSize;
           }
         }
 
@@ -369,23 +368,37 @@ export default function TestingOverviewPage() {
         const { data: drillData } = await supabase
           .from("session_drills")
           .select("session_id, drill_id, weight_percent, applies_to_positions")
-          .in("session_id", sessionIds);
+          .in("session_id", sessionIds)
+          .limit(5000);
         if (drillData) setSessionDrills(drillData);
 
-        // 5. Fetch Player Sessions (Attendance)
-        const { data: psData } = await supabase
-          .from("player_sessions")
-          .select(
-            "player_id, session_id, checked_in, no_show, jersey_number, jersey_color",
-          )
-          .in("session_id", sessionIds);
-        if (psData) setPlayerSessions(psData);
+        // 5. Fetch Player Sessions (Attendance) - paginated to avoid row limit
+        const allPlayerSessions: typeof playerSessions = [];
+        {
+          let from = 0;
+          const pageSize = 500;
+          while (true) {
+            const { data: psChunk } = await supabase
+              .from("player_sessions")
+              .select(
+                "player_id, session_id, checked_in, no_show, jersey_number, jersey_color",
+              )
+              .in("session_id", sessionIds)
+              .range(from, from + pageSize - 1);
+            if (!psChunk || psChunk.length === 0) break;
+            allPlayerSessions.push(...psChunk);
+            if (psChunk.length < pageSize) break;
+            from += pageSize;
+          }
+        }
+        setPlayerSessions(allPlayerSessions);
 
         // 6. Fetch Evaluators
         const { data: seData } = await supabase
           .from("session_evaluators")
           .select("session_id, user_id")
-          .in("session_id", sessionIds);
+          .in("session_id", sessionIds)
+          .limit(5000);
         if (seData) setSessionEvaluators(seData);
       }
     } catch (e: any) {
@@ -447,12 +460,10 @@ export default function TestingOverviewPage() {
       const currentUserId = userData?.user?.id;
       let workingSessionDrills = [...sessionDrills];
       const existingEvaluationKeys = new Set(
-        evaluations
-          .filter((e) => e.evaluator_id === currentUserId)
-          .map(
-            (e) =>
-              `${e.session_id}|${e.player_id}|${e.drill_id}|${e.evaluator_id}`,
-          ),
+        evaluations.map(
+          (e) =>
+            `${e.session_id}|${e.player_id}|${e.drill_id}|${e.evaluator_id}`,
+        ),
       );
 
       let skippedNoEvaluators = 0;
@@ -496,47 +507,31 @@ export default function TestingOverviewPage() {
           `Session ${session.name} has ${evaluators.length} evaluators`,
         );
 
-        // RLS-safe generation path: seed as the current user.
-        // If policies require evaluator assignment, add temporary assignment for this session,
-        // seed, then remove it to avoid changing configured evaluator counts.
-        const alreadyAssignedAsEvaluator = evaluators.some(
-          (e) => e.user_id === currentUserId,
-        );
+        // Get evaluators assigned to this session, excluding the current user
+        const sessionEvaluatorIds = evaluators
+          .map((e) => e.user_id)
+          .filter((uid) => uid !== currentUserId);
 
-        let temporaryEvaluatorAssigned = false;
-        if (!alreadyAssignedAsEvaluator) {
-          const { error: addEvaluatorError } = await supabase
-            .from("session_evaluators")
-            .insert({
-              session_id: session.id,
-              user_id: currentUserId,
-              association_id: currentAssociation.association_id,
-            });
-
-          if (addEvaluatorError) {
-            skippedNoEvaluators++;
-            sessionDiagnostics.push({
-              sessionName: session.name,
-              evaluatorCount: evaluators.length,
-              tempEvaluatorAdded: false,
-              assignedPlayers: 0,
-              playersWithApplicableDrills: 0,
-              playersWithoutApplicableDrills: 0,
-              drillConfigRows: 0,
-              preparedRows: 0,
-              skippedExistingRows: 0,
-              insertedRows: 0,
-              status: "skipped_no_evaluator_context",
-              insertError: addEvaluatorError.message || null,
-            });
-            console.warn(
-              `Skipping session ${session.name} - Unable to assign temporary evaluator context:`,
-              addEvaluatorError,
-            );
-            continue;
-          }
-
-          temporaryEvaluatorAssigned = true;
+        if (sessionEvaluatorIds.length === 0) {
+          skippedNoEvaluators++;
+          sessionDiagnostics.push({
+            sessionName: session.name,
+            evaluatorCount: evaluators.length,
+            tempEvaluatorAdded: false,
+            assignedPlayers: 0,
+            playersWithApplicableDrills: 0,
+            playersWithoutApplicableDrills: 0,
+            drillConfigRows: 0,
+            preparedRows: 0,
+            skippedExistingRows: 0,
+            insertedRows: 0,
+            status: "skipped_no_evaluators",
+            insertError: null,
+          });
+          console.warn(
+            `Skipping session ${session.name} - No evaluators assigned (excluding current user).`,
+          );
+          continue;
         }
 
         // Find players assigned TO THIS SESSION
@@ -552,7 +547,7 @@ export default function TestingOverviewPage() {
           sessionDiagnostics.push({
             sessionName: session.name,
             evaluatorCount: evaluators.length,
-            tempEvaluatorAdded: temporaryEvaluatorAssigned,
+            tempEvaluatorAdded: false,
             assignedPlayers: 0,
             playersWithApplicableDrills: 0,
             playersWithoutApplicableDrills: 0,
@@ -622,7 +617,7 @@ export default function TestingOverviewPage() {
           sessionDiagnostics.push({
             sessionName: session.name,
             evaluatorCount: evaluators.length,
-            tempEvaluatorAdded: temporaryEvaluatorAssigned,
+            tempEvaluatorAdded: false,
             assignedPlayers: assignedPlayers.length,
             playersWithApplicableDrills: 0,
             playersWithoutApplicableDrills: assignedPlayers.length,
@@ -673,71 +668,91 @@ export default function TestingOverviewPage() {
               .match({ player_id: ps.player_id, session_id: session.id });
           }
 
-          // Generate score for each drill for the current evaluator only (RLS-safe)
+          // Generate scores for each drill from each assigned evaluator
           for (const drill of finalDrills) {
-            const evalKey = `${session.id}|${player.id}|${drill.drill_id}|${currentUserId}`;
+            for (const evaluatorId of sessionEvaluatorIds) {
+              const evalKey = `${session.id}|${player.id}|${drill.drill_id}|${evaluatorId}`;
 
-            // Skip if already exists (from DB snapshot or current run)
-            if (existingEvaluationKeys.has(evalKey)) {
-              skippedExistingRows++;
-              continue;
+              // Skip if already exists (from DB snapshot or current run)
+              if (existingEvaluationKeys.has(evalKey)) {
+                skippedExistingRows++;
+                continue;
+              }
+
+              // Random Integer Score: 6 to 9 (inclusive)
+              const score = Math.floor(Math.random() * 4) + 6;
+
+              sessionEvaluationsToInsert.push({
+                session_id: session.id,
+                player_id: player.id,
+                drill_id: drill.drill_id,
+                evaluator_id: evaluatorId,
+                score: score,
+                association_id: currentAssociation.association_id,
+              });
+              existingEvaluationKeys.add(evalKey);
             }
-
-            // Random Integer Score: 6 to 9 (inclusive)
-            const score = Math.floor(Math.random() * 4) + 6;
-
-            sessionEvaluationsToInsert.push({
-              session_id: session.id,
-              player_id: player.id,
-              drill_id: drill.drill_id,
-              evaluator_id: currentUserId,
-              score: score,
-              association_id: currentAssociation.association_id,
-            });
-            existingEvaluationKeys.add(evalKey);
           }
         }
 
         if (sessionEvaluationsToInsert.length > 0) {
-          const { error: sessionInsertError } = await supabase
-            .from("evaluations")
-            .upsert(sessionEvaluationsToInsert, {
-              onConflict: "player_id, session_id, drill_id, evaluator_id",
-            });
+          // Batch inserts to avoid hitting PostgREST/RLS limits
+          const BATCH_SIZE = 100;
+          let batchInserted = 0;
+          let batchError: string | null = null;
 
-          if (sessionInsertError) {
+          for (
+            let i = 0;
+            i < sessionEvaluationsToInsert.length;
+            i += BATCH_SIZE
+          ) {
+            const batch = sessionEvaluationsToInsert.slice(i, i + BATCH_SIZE);
+            const { error: batchInsertError } = await supabase
+              .from("evaluations")
+              .upsert(batch, {
+                onConflict: "player_id, session_id, drill_id, evaluator_id",
+              });
+
+            if (batchInsertError) {
+              batchError = batchInsertError.message || null;
+              console.error(
+                `Error seeding batch ${Math.floor(i / BATCH_SIZE) + 1} for session ${session.name}:`,
+                batchInsertError,
+              );
+              break;
+            }
+            batchInserted += batch.length;
+          }
+
+          if (batchError) {
             skippedInsertFailures++;
             sessionDiagnostics.push({
               sessionName: session.name,
               evaluatorCount: evaluators.length,
-              tempEvaluatorAdded: temporaryEvaluatorAssigned,
+              tempEvaluatorAdded: false,
               assignedPlayers: assignedPlayers.length,
               playersWithApplicableDrills,
               playersWithoutApplicableDrills,
               drillConfigRows: drillsForSession.length,
               preparedRows: sessionEvaluationsToInsert.length,
               skippedExistingRows,
-              insertedRows: 0,
+              insertedRows: batchInserted,
               status: "insert_error",
-              insertError: sessionInsertError.message || null,
+              insertError: batchError,
             });
-            console.error(
-              `Error seeding evaluations for session ${session.name}:`,
-              sessionInsertError,
-            );
           } else {
-            scoresCreated += sessionEvaluationsToInsert.length;
+            scoresCreated += batchInserted;
             sessionDiagnostics.push({
               sessionName: session.name,
               evaluatorCount: evaluators.length,
-              tempEvaluatorAdded: temporaryEvaluatorAssigned,
+              tempEvaluatorAdded: false,
               assignedPlayers: assignedPlayers.length,
               playersWithApplicableDrills,
               playersWithoutApplicableDrills,
               drillConfigRows: drillsForSession.length,
               preparedRows: sessionEvaluationsToInsert.length,
               skippedExistingRows,
-              insertedRows: sessionEvaluationsToInsert.length,
+              insertedRows: batchInserted,
               status: "seeded",
               insertError: null,
             });
@@ -746,7 +761,7 @@ export default function TestingOverviewPage() {
           sessionDiagnostics.push({
             sessionName: session.name,
             evaluatorCount: evaluators.length,
-            tempEvaluatorAdded: temporaryEvaluatorAssigned,
+            tempEvaluatorAdded: false,
             assignedPlayers: assignedPlayers.length,
             playersWithApplicableDrills,
             playersWithoutApplicableDrills,
@@ -759,11 +774,9 @@ export default function TestingOverviewPage() {
           });
         }
 
-        if (temporaryEvaluatorAssigned) {
-          console.log(
-            `Session ${session.name}: added evaluator context for test-data seeding.`,
-          );
-        }
+        console.log(
+          `Session ${session.name}: generated scores for ${sessionEvaluatorIds.length} evaluators.`,
+        );
       }
 
       const diagnosticsTotals = {
