@@ -211,16 +211,19 @@ export function SchedulingDashboardPage() {
     removeSchedule: false,
   });
   const [customWaveDialogOpen, setCustomWaveDialogOpen] = useState(false);
+  const [customWaveStep, setCustomWaveStep] = useState(1);
   const [creatingCustomWave, setCreatingCustomWave] = useState(false);
   const [customWaveName, setCustomWaveName] = useState("");
   const [customWaveSessionCount, setCustomWaveSessionCount] = useState(1);
   const [customWaveTeamsPerSession, setCustomWaveTeamsPerSession] = useState(2);
   const [customWaveAlgorithm, setCustomWaveAlgorithm] =
     useState<CustomWaveAlgorithm>("alphabetical");
-  const [customWaveDate, setCustomWaveDate] = useState<string>(
-    new Date().toISOString().slice(0, 10),
-  );
-  const [customWaveTime, setCustomWaveTime] = useState<string>("18:00:00");
+  const [customWaveSessions, setCustomWaveSessions] = useState<
+    { date: string; time: string; locationId: string; duration: number }[]
+  >([]);
+  const [customWaveLocations, setCustomWaveLocations] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [customWavePlayerSearch, setCustomWavePlayerSearch] = useState("");
   const [customWaveStatusFilter, setCustomWaveStatusFilter] =
     useState<string>("active");
@@ -473,12 +476,12 @@ export function SchedulingDashboardPage() {
   };
 
   const resetCustomWaveState = () => {
+    setCustomWaveStep(1);
     setCustomWaveName("");
     setCustomWaveSessionCount(1);
     setCustomWaveTeamsPerSession(2);
     setCustomWaveAlgorithm("alphabetical");
-    setCustomWaveDate(new Date().toISOString().slice(0, 10));
-    setCustomWaveTime("18:00:00");
+    setCustomWaveSessions([]);
     setCustomWavePlayerSearch("");
     setCustomWaveStatusFilter("active");
     setCustomWavePositionFilter("all");
@@ -486,7 +489,7 @@ export function SchedulingDashboardPage() {
     setCustomWaveSelectedPlayerIds(new Set());
   };
 
-  const openCustomWaveDialog = () => {
+  const openCustomWaveDialog = async () => {
     if (!selectedCohortId || !activeSeason) {
       toast({
         title: "Select cohort first",
@@ -496,7 +499,42 @@ export function SchedulingDashboardPage() {
       return;
     }
     resetCustomWaveState();
+
+    // Fetch locations for session step
+    if (currentAssociation?.association_id) {
+      const { data } = await supabase
+        .from("locations")
+        .select("id, name")
+        .eq("association_id", currentAssociation.association_id)
+        .order("name");
+      setCustomWaveLocations(data ?? []);
+    }
+
     setCustomWaveDialogOpen(true);
+  };
+
+  const initCustomWaveSessions = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    setCustomWaveSessions(
+      Array.from({ length: customWaveSessionCount }, () => ({
+        date: today,
+        time: "18:00",
+        locationId: "",
+        duration: 90,
+      })),
+    );
+  };
+
+  const getCustomWaveSessionName = (index: number) => {
+    const cohortPrefix = (selectedCohort?.name ?? "CUSTOM")
+      .toUpperCase()
+      .replace(/\s+/g, "-");
+    const waveSuffix = customWaveName
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, "-");
+    const num = (index + 1).toString().padStart(2, "0");
+    return `${cohortPrefix}-${waveSuffix}-${num}`;
   };
 
   const getPositionName = (player: PlayerForCustomWave) =>
@@ -887,26 +925,19 @@ export function SchedulingDashboardPage() {
 
       if (waveInsertError || !insertedWave) throw waveInsertError;
 
-      const baseDate = new Date(`${customWaveDate}T00:00:00`);
-      const newSessions = Array.from({ length: customWaveSessionCount }).map(
-        (_, index) => {
-          const sessionDate = new Date(baseDate);
-          sessionDate.setDate(baseDate.getDate() + index);
-
-          return {
-            association_id: currentAssociation.association_id,
-            season_id: activeSeason.id,
-            cohort_id: selectedCohortId,
-            wave_id: insertedWave.id,
-            name: `${trimmedName} - Session ${index + 1}`,
-            scheduled_date: sessionDate.toISOString().slice(0, 10),
-            scheduled_time: customWaveTime,
-            status: "ready",
-            drill_config_locked: false,
-            duration_minutes: 90,
-          };
-        },
-      );
+      const newSessions = customWaveSessions.map((s, index) => ({
+        association_id: currentAssociation.association_id,
+        season_id: activeSeason.id,
+        cohort_id: selectedCohortId,
+        wave_id: insertedWave.id,
+        name: getCustomWaveSessionName(index),
+        scheduled_date: s.date,
+        scheduled_time: s.time + ":00",
+        location_id: s.locationId || null,
+        status: "ready",
+        drill_config_locked: false,
+        duration_minutes: s.duration,
+      }));
 
       const { data: insertedSessions, error: sessionInsertError } =
         await supabase.from("sessions").insert(newSessions).select("id");
@@ -1901,268 +1932,510 @@ export function SchedulingDashboardPage() {
               if (!open && !creatingCustomWave) resetCustomWaveState();
             }}
           >
-            <DialogContent className="max-w-5xl">
-              <DialogHeader>
-                <DialogTitle>Create Custom Wave</DialogTitle>
-                <DialogDescription>
-                  Create a named custom wave, generate sessions, and assign a
-                  selected subset of players.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="custom-wave-name">Custom Wave Name</Label>
-                  <Input
-                    id="custom-wave-name"
-                    value={customWaveName}
-                    onChange={(e) => setCustomWaveName(e.target.value)}
-                    placeholder="e.g. Catcher Evaluation Wave"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="custom-wave-sessions">
-                    Number of Sessions
-                  </Label>
-                  <Input
-                    id="custom-wave-sessions"
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={customWaveSessionCount}
-                    onChange={(e) =>
-                      setCustomWaveSessionCount(
-                        Math.max(1, Math.min(20, Number(e.target.value || 1))),
-                      )
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="custom-wave-algorithm">
-                    Distribution Algorithm
-                  </Label>
-                  <Select
-                    value={customWaveAlgorithm}
-                    onValueChange={(value: CustomWaveAlgorithm) =>
-                      setCustomWaveAlgorithm(value)
-                    }
-                  >
-                    <SelectTrigger id="custom-wave-algorithm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="alphabetical">Alphabetical</SelectItem>
-                      <SelectItem value="random">Random</SelectItem>
-                      <SelectItem value="previous_level_grouped">
-                        Previous Level (Grouped)
-                      </SelectItem>
-                      <SelectItem value="previous_level_balanced">
-                        Previous Level (Balanced)
-                      </SelectItem>
-                      <SelectItem value="current_ranking">
-                        Current Ranking
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="custom-wave-teams">Teams Per Session</Label>
-                  <Select
-                    value={String(customWaveTeamsPerSession)}
-                    onValueChange={(value) =>
-                      setCustomWaveTeamsPerSession(Number(value))
-                    }
-                  >
-                    <SelectTrigger id="custom-wave-teams">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 6 }, (_, i) => i + 1).map((n) => (
-                        <SelectItem key={n} value={String(n)}>
-                          {n}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="custom-wave-date">Start Date</Label>
-                  <Input
-                    id="custom-wave-date"
-                    type="date"
-                    value={customWaveDate}
-                    onChange={(e) => setCustomWaveDate(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="custom-wave-time">Start Time</Label>
-                  <Input
-                    id="custom-wave-time"
-                    type="time"
-                    value={customWaveTime.slice(0, 5)}
-                    onChange={(e) => setCustomWaveTime(`${e.target.value}:00`)}
-                  />
-                </div>
+            <DialogContent className={customWaveStep <= 2 ? "max-w-lg" : "max-w-5xl"}>
+              {/* Step indicator */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                {["Configure", "Sessions", "Players", "Confirm"].map((label, i) => (
+                  <span key={label} className="flex items-center gap-1">
+                    {i > 0 && <span className="mx-1 text-muted-foreground">—</span>}
+                    <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${customWaveStep === i + 1 ? "bg-violet-600 text-white" : customWaveStep > i + 1 ? "bg-violet-200 text-violet-700" : "bg-muted text-muted-foreground"}`}>{i + 1}</span>
+                    <span className={customWaveStep === i + 1 ? "font-medium text-foreground" : ""}>{label}</span>
+                  </span>
+                ))}
               </div>
 
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Input
-                    value={customWavePlayerSearch}
-                    onChange={(e) => setCustomWavePlayerSearch(e.target.value)}
-                    placeholder="Search players by last name, first name"
-                    className="w-full md:w-80"
-                  />
+              {/* ── Step 1: Configure ──────────────────────────────── */}
+              {customWaveStep === 1 && (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Create Custom Wave</DialogTitle>
+                    <DialogDescription>
+                      Configure the custom wave settings.
+                    </DialogDescription>
+                  </DialogHeader>
 
-                  <Select
-                    value={customWaveStatusFilter}
-                    onValueChange={setCustomWaveStatusFilter}
-                  >
-                    <SelectTrigger className="w-[160px]">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="withdrawn">Withdrawn</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-wave-name">Custom Wave Name</Label>
+                      <Input
+                        id="custom-wave-name"
+                        value={customWaveName}
+                        onChange={(e) => setCustomWaveName(e.target.value)}
+                        placeholder="e.g. Goalie Evaluation"
+                      />
+                    </div>
 
-                  <Select
-                    value={customWavePositionFilter}
-                    onValueChange={setCustomWavePositionFilter}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Position" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Positions</SelectItem>
-                      {customWavePositions.map((position) => (
-                        <SelectItem key={position} value={position}>
-                          {position}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-wave-sessions">
+                        Number of Sessions
+                      </Label>
+                      <Input
+                        id="custom-wave-sessions"
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={customWaveSessionCount}
+                        onChange={(e) =>
+                          setCustomWaveSessionCount(
+                            Math.max(1, Math.min(20, Number(e.target.value || 1))),
+                          )
+                        }
+                      />
+                    </div>
 
-                  <Select
-                    value={customWaveLevelFilter}
-                    onValueChange={setCustomWaveLevelFilter}
-                  >
-                    <SelectTrigger className="w-[220px]">
-                      <SelectValue placeholder="Previous Level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Previous Levels</SelectItem>
-                      {customWaveLevels.map((level) => (
-                        <SelectItem key={level} value={level}>
-                          {level}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-wave-algorithm">
+                        Distribution Algorithm
+                      </Label>
+                      <Select
+                        value={customWaveAlgorithm}
+                        onValueChange={(value: CustomWaveAlgorithm) =>
+                          setCustomWaveAlgorithm(value)
+                        }
+                      >
+                        <SelectTrigger id="custom-wave-algorithm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                          <SelectItem value="random">Random</SelectItem>
+                          <SelectItem value="previous_level_grouped">
+                            Previous Level (Grouped)
+                          </SelectItem>
+                          <SelectItem value="previous_level_balanced">
+                            Previous Level (Balanced)
+                          </SelectItem>
+                          <SelectItem value="current_ranking">
+                            Current Ranking
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={selectAllFilteredPlayers}
-                  >
-                    Select Filtered
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={clearFilteredPlayers}
-                  >
-                    Clear Filtered
-                  </Button>
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-wave-teams">Teams Per Session</Label>
+                      <Select
+                        value={String(customWaveTeamsPerSession)}
+                        onValueChange={(value) =>
+                          setCustomWaveTeamsPerSession(Number(value))
+                        }
+                      >
+                        <SelectTrigger id="custom-wave-teams">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 6 }, (_, i) => i + 1).map((n) => (
+                            <SelectItem key={n} value={String(n)}>
+                              {n}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-                <div className="rounded-md border max-h-72 overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[60px]">Pick</TableHead>
-                        <TableHead>Last Name</TableHead>
-                        <TableHead>First Name</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Position</TableHead>
-                        <TableHead>Previous Level</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredCustomWavePlayers.map((player) => {
-                        const checked = customWaveSelectedPlayerIds.has(
-                          player.id,
-                        );
-                        return (
-                          <TableRow
-                            key={player.id}
-                            className={checked ? "bg-violet-50/50" : ""}
-                          >
-                            <TableCell>
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={() =>
-                                  toggleCustomWavePlayer(player.id)
-                                }
-                              />
-                            </TableCell>
-                            <TableCell>{player.last_name}</TableCell>
-                            <TableCell>{player.first_name}</TableCell>
-                            <TableCell>{player.status}</TableCell>
-                            <TableCell>{getPositionName(player)}</TableCell>
-                            <TableCell>
-                              {getPreviousLevelName(player)}
-                            </TableCell>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCustomWaveDialogOpen(false);
+                        resetCustomWaveState();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="bg-violet-600 hover:bg-violet-700"
+                      disabled={!customWaveName.trim()}
+                      onClick={() => {
+                        initCustomWaveSessions();
+                        setCustomWaveStep(2);
+                      }}
+                    >
+                      Next: Add Sessions
+                    </Button>
+                  </DialogFooter>
+                </>
+              )}
+
+              {/* ── Step 2: Add Sessions ──────────────────────────── */}
+              {customWaveStep === 2 && (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>
+                      Add Sessions — {customWaveName}
+                    </DialogTitle>
+                    <DialogDescription>
+                      Configure the {customWaveSessionCount} session{customWaveSessionCount !== 1 ? "s" : ""} for this custom wave.
+                      Names are auto-generated.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-3 max-h-[400px] overflow-auto">
+                    {customWaveSessions.map((session, index) => (
+                      <div
+                        key={index}
+                        className="rounded-lg border border-border p-3 space-y-3"
+                      >
+                        <div className="text-sm font-medium text-foreground">
+                          {getCustomWaveSessionName(index)}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Date</Label>
+                            <Input
+                              type="date"
+                              value={session.date}
+                              onChange={(e) => {
+                                const updated = [...customWaveSessions];
+                                updated[index] = { ...updated[index], date: e.target.value };
+                                setCustomWaveSessions(updated);
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Time</Label>
+                            <Input
+                              type="time"
+                              value={session.time}
+                              onChange={(e) => {
+                                const updated = [...customWaveSessions];
+                                updated[index] = { ...updated[index], time: e.target.value };
+                                setCustomWaveSessions(updated);
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Location</Label>
+                            <Select
+                              value={session.locationId || "none"}
+                              onValueChange={(value) => {
+                                const updated = [...customWaveSessions];
+                                updated[index] = { ...updated[index], locationId: value === "none" ? "" : value };
+                                setCustomWaveSessions(updated);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select location..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">No location</SelectItem>
+                                {customWaveLocations.map((loc) => (
+                                  <SelectItem key={loc.id} value={loc.id}>
+                                    {loc.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Duration (min)</Label>
+                            <Input
+                              type="number"
+                              min={15}
+                              max={300}
+                              value={session.duration}
+                              onChange={(e) => {
+                                const updated = [...customWaveSessions];
+                                updated[index] = { ...updated[index], duration: Math.max(15, Number(e.target.value || 90)) };
+                                setCustomWaveSessions(updated);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCustomWaveStep(1)}
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCustomWaveDialogOpen(false);
+                        resetCustomWaveState();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="bg-violet-600 hover:bg-violet-700"
+                      onClick={() => setCustomWaveStep(3)}
+                    >
+                      Next: Select Players
+                    </Button>
+                  </DialogFooter>
+                </>
+              )}
+
+              {/* ── Step 3: Select Players ────────────────────────── */}
+              {customWaveStep === 3 && (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>
+                      Select Players — {customWaveName}
+                    </DialogTitle>
+                    <DialogDescription>
+                      Choose which players to include in this custom wave.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        value={customWavePlayerSearch}
+                        onChange={(e) => setCustomWavePlayerSearch(e.target.value)}
+                        placeholder="Search players by last name, first name"
+                        className="w-full md:w-80"
+                      />
+
+                      <Select
+                        value={customWaveStatusFilter}
+                        onValueChange={setCustomWaveStatusFilter}
+                      >
+                        <SelectTrigger className="w-[160px]">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Statuses</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="withdrawn">Withdrawn</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={customWavePositionFilter}
+                        onValueChange={setCustomWavePositionFilter}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Position" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Positions</SelectItem>
+                          {customWavePositions.map((position) => (
+                            <SelectItem key={position} value={position}>
+                              {position}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={customWaveLevelFilter}
+                        onValueChange={setCustomWaveLevelFilter}
+                      >
+                        <SelectTrigger className="w-[220px]">
+                          <SelectValue placeholder="Previous Level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Previous Levels</SelectItem>
+                          {customWaveLevels.map((level) => (
+                            <SelectItem key={level} value={level}>
+                              {level}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={selectAllFilteredPlayers}
+                      >
+                        Select Filtered
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearFilteredPlayers}
+                      >
+                        Clear Filtered
+                      </Button>
+                    </div>
+
+                    <div className="rounded-md border max-h-72 overflow-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[60px]">Pick</TableHead>
+                            <TableHead>Last Name</TableHead>
+                            <TableHead>First Name</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Position</TableHead>
+                            <TableHead>Previous Level</TableHead>
                           </TableRow>
-                        );
-                      })}
+                        </TableHeader>
+                        <TableBody>
+                          {filteredCustomWavePlayers.map((player) => {
+                            const checked = customWaveSelectedPlayerIds.has(
+                              player.id,
+                            );
+                            return (
+                              <TableRow
+                                key={player.id}
+                                className={checked ? "bg-violet-50/50" : ""}
+                              >
+                                <TableCell>
+                                  <Checkbox
+                                    checked={checked}
+                                    onCheckedChange={() =>
+                                      toggleCustomWavePlayer(player.id)
+                                    }
+                                  />
+                                </TableCell>
+                                <TableCell>{player.last_name}</TableCell>
+                                <TableCell>{player.first_name}</TableCell>
+                                <TableCell>{player.status}</TableCell>
+                                <TableCell>{getPositionName(player)}</TableCell>
+                                <TableCell>
+                                  {getPreviousLevelName(player)}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
 
-                      {filteredCustomWavePlayers.length === 0 && (
-                        <TableRow>
-                          <TableCell
-                            colSpan={6}
-                            className="text-center text-muted-foreground"
-                          >
-                            No players match current filters.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                          {filteredCustomWavePlayers.length === 0 && (
+                            <TableRow>
+                              <TableCell
+                                colSpan={6}
+                                className="text-center text-muted-foreground"
+                              >
+                                No players match current filters.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
 
-                <div className="text-sm text-muted-foreground">
-                  Selected players: {customWaveSelectedPlayerIds.size}
-                </div>
-              </div>
+                    <div className="text-sm text-muted-foreground">
+                      Selected players: {customWaveSelectedPlayerIds.size}
+                    </div>
+                  </div>
 
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setCustomWaveDialogOpen(false);
-                    resetCustomWaveState();
-                  }}
-                  disabled={creatingCustomWave}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="bg-violet-600 hover:bg-violet-700"
-                  onClick={handleCreateCustomWave}
-                  disabled={creatingCustomWave}
-                >
-                  {creatingCustomWave ? "Creating..." : "Create Custom Wave"}
-                </Button>
-              </DialogFooter>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCustomWaveStep(2)}
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCustomWaveDialogOpen(false);
+                        resetCustomWaveState();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="bg-violet-600 hover:bg-violet-700"
+                      disabled={customWaveSelectedPlayerIds.size === 0}
+                      onClick={() => setCustomWaveStep(4)}
+                    >
+                      Next: Review
+                    </Button>
+                  </DialogFooter>
+                </>
+              )}
+
+              {/* ── Step 4: Confirm ───────────────────────────────── */}
+              {customWaveStep === 4 && (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>
+                      Confirm — {customWaveName}
+                    </DialogTitle>
+                    <DialogDescription>
+                      Review the custom wave configuration before creating.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-4">
+                    {/* Wave config summary */}
+                    <div className="rounded-lg border border-border p-4 space-y-2">
+                      <h4 className="text-sm font-semibold">Wave Configuration</h4>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                        <span className="text-muted-foreground">Name</span>
+                        <span>{customWaveName}</span>
+                        <span className="text-muted-foreground">Algorithm</span>
+                        <span className="capitalize">{customWaveAlgorithm.replace(/_/g, " ")}</span>
+                        <span className="text-muted-foreground">Teams per session</span>
+                        <span>{customWaveTeamsPerSession}</span>
+                        <span className="text-muted-foreground">Players selected</span>
+                        <span>{customWaveSelectedPlayerIds.size}</span>
+                      </div>
+                    </div>
+
+                    {/* Sessions summary */}
+                    <div className="rounded-lg border border-border p-4 space-y-2">
+                      <h4 className="text-sm font-semibold">Sessions ({customWaveSessions.length})</h4>
+                      <div className="rounded-md border max-h-48 overflow-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Session Name</TableHead>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Time</TableHead>
+                              <TableHead>Location</TableHead>
+                              <TableHead>Duration</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {customWaveSessions.map((s, i) => (
+                              <TableRow key={i}>
+                                <TableCell className="font-medium text-sm">{getCustomWaveSessionName(i)}</TableCell>
+                                <TableCell className="text-sm">{s.date}</TableCell>
+                                <TableCell className="text-sm">{s.time}</TableCell>
+                                <TableCell className="text-sm">
+                                  {s.locationId
+                                    ? customWaveLocations.find((l) => l.id === s.locationId)?.name ?? "—"
+                                    : "—"}
+                                </TableCell>
+                                <TableCell className="text-sm">{s.duration} min</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCustomWaveStep(3)}
+                      disabled={creatingCustomWave}
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCustomWaveDialogOpen(false);
+                        resetCustomWaveState();
+                      }}
+                      disabled={creatingCustomWave}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="bg-violet-600 hover:bg-violet-700"
+                      onClick={handleCreateCustomWave}
+                      disabled={creatingCustomWave}
+                    >
+                      {creatingCustomWave ? "Creating..." : "Create Custom Wave"}
+                    </Button>
+                  </DialogFooter>
+                </>
+              )}
             </DialogContent>
           </Dialog>
 

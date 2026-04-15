@@ -1341,6 +1341,21 @@ export default function TestingOverviewPage() {
   const filteredAndSortedData = useMemo(() => {
     let data = [...processedData];
 
+    // Wave filter — only show players assigned to a session in the selected wave
+    if (selectedWaveId !== "all") {
+      const waveSessionIds = new Set(
+        sessions
+          .filter((s) => s.wave_id === selectedWaveId)
+          .map((s) => s.id),
+      );
+      const playerIdsInWave = new Set(
+        playerSessions
+          .filter((ps) => waveSessionIds.has(ps.session_id))
+          .map((ps) => ps.player_id),
+      );
+      data = data.filter((p) => playerIdsInWave.has(p.id));
+    }
+
     // Filter
     if (filters.last_name) {
       data = data.filter((p) =>
@@ -1390,7 +1405,7 @@ export default function TestingOverviewPage() {
     }
 
     return data;
-  }, [processedData, filters, sortConfig]);
+  }, [processedData, filters, sortConfig, selectedWaveId, sessions, playerSessions]);
 
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
     if (sortConfig.key !== columnKey)

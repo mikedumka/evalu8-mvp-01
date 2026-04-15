@@ -177,7 +177,7 @@ const navigationSections: Array<{
     items: [
       {
         id: "testing-overview",
-        label: "Evaluation Overview",
+        label: "Testing Overview",
         icon: LayoutDashboard,
         to: "/testing/overview",
       },
